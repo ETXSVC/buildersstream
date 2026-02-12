@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #3B82F6; /* Electric Blue */
+  --color-primary-light: #60A5FA;
+  --color-primary-dark: #2563EB;
+
+  --color-secondary: #F59E0B; /* Amber/Orange for contrast */
+  --color-secondary-hover: #D97706;
+
+  --color-neutral-slate: #F8FAFC; /* Light Text for Dark Mode */
+  --color-neutral-light: #0F172A; /* Dark Slate Background */
+  --color-neutral-gray: #94A3B8; /* Muted Text */
+
+  --font-sans: Inter, sans-serif;
+
+  --image-grid-pattern: linear-gradient(to right, #3B82F61A 1px, transparent 1px), linear-gradient(to bottom, #3B82F61A 1px, transparent 1px);
+}
+
+@layer base {
+  body {
+    @apply bg-neutral-light text-neutral-slate antialiased font-sans;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold tracking-tight;
+  }
+}
