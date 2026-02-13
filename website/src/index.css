@@ -18,8 +18,12 @@
 }
 
 @layer base {
+  html {
+    @apply overflow-x-hidden;
+  }
+
   body {
-    @apply bg-neutral-light text-neutral-slate antialiased font-sans;
+    @apply bg-neutral-light text-neutral-slate antialiased font-sans overflow-x-hidden;
   }
 
   h1,

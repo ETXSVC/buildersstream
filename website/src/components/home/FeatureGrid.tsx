@@ -49,16 +49,16 @@ const features = [
 
 const FeatureGrid = () => {
   return (
-    <section className="py-24 bg-gray-100">
+    <section className="py-16 sm:py-24 bg-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-neutral-slate mb-4">Everything You Need to Build Better</h2>
-        <p className="text-2xl text-blue-500 max-w-2xl mx-auto">
+        <div className="text-center mb-10 sm:mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-neutral-slate mb-4">Everything You Need to Build Better</h2>
+        <p className="text-lg sm:text-xl md:text-2xl text-blue-500 max-w-2xl mx-auto">
             A modular system that grows with your business. Turn features on or off as you need them.
         </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-[minmax(200px,auto)]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 auto-rows-[minmax(180px,auto)] sm:auto-rows-[minmax(200px,auto)]">
           {features.map((feature, index) => (
             <motion.div
               key={feature.title}
@@ -66,7 +66,7 @@ const FeatureGrid = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
-              className={`group relative overflow-hidden rounded-2xl border border-neutral-800 bg-[#1e293b] p-8 hover:shadow-lg transition-all duration-300 ${feature.colSpan}`}
+              className={`group relative overflow-hidden rounded-2xl border border-neutral-800 bg-[#1e293b] p-6 sm:p-8 hover:shadow-lg transition-all duration-300 ${feature.colSpan}`}
             >
               <div className={`absolute top-0 right-0 w-32 h-32 opacity-5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 ${feature.color}`} />
               

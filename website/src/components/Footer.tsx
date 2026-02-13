@@ -16,15 +16,15 @@ const Footer = () => {
               The unified operating system for modern construction. Replace 12 tools with 1 powerful platform.
             </p>
             <div className="flex space-x-4">
-              <a href="https://github.com/BuildersStream" className="text-neutral-400 hover:text-white transition-colors">
+              <a href="https://github.com/ETXSVC/buildersstream" className="text-neutral-400 hover:text-white transition-colors">
                 <Github className="h-5 w-5" />
               </a>
-              <a href="https://twitter.com/BuildersStream" className="text-neutral-400 hover:text-white transition-colors">
+              <a href="https://twitter.com/@etxsvc24567" className="text-neutral-400 hover:text-white transition-colors">
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="https://linkedin.com/BuildersStream" className="text-neutral-400 hover:text-white transition-colors">
+              {/*<a href="https://linkedin.com/BuildersStream" className="text-neutral-400 hover:text-white transition-colors">
                 <Linkedin className="h-5 w-5" />
-              </a>
+              </a>*/}
             </div>
           </div>
 

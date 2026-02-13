@@ -10,6 +10,10 @@ const Navbar = () => {
   const location = useLocation();
 
   useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
@@ -33,16 +37,16 @@ const Navbar = () => {
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+        <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group">
-            <img 
-  src="/BuildersStream-Logo-tagline-nobg.png"  // ✓ valid string
-  alt="Builders Stream logo"                // ✓ valid string  
-  className="h-15 w-60"                    // ✓ valid string
-  width={1800}                                // ✓ valid number
-  loading="lazy"                            // ✓ valid enum value
-/>
+            <img
+              src="/BuildersStream-Logo-tagline-nobg.png"
+              alt="Builders Stream logo"
+              className="h-10 w-40 sm:h-12 sm:w-48 md:h-15 md:w-60"
+              width={1800}
+              loading="lazy"
+            />
 
 
           </Link>
@@ -73,7 +77,7 @@ const Navbar = () => {
           <div className="md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-neutral-slate hover:text-primary transition-colors focus:outline-none"
+              className="text-neutral-800 hover:text-primary transition-colors focus:outline-none"
             >
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>

@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 
 const Hero = () => {
   return (
-    <div className="relative overflow-hidden bg-neutral-light pt-16 pb-32 lg:pt-32 lg:pb-40">
+    <div className="relative overflow-hidden bg-neutral-light pt-24 pb-16 sm:pb-24 lg:pt-32 lg:pb-40">
       {/* Background Pattern */}
       <div className="absolute inset-0 z-0 bg-grid-pattern bg-[length:40px_40px] opacity-30" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-neutral-light/50 to-neutral-light z-0" />
@@ -17,19 +17,19 @@ const Hero = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1 }}
           >
-            <div className="inline-flex items-center space-x-2 bg-red-500/10 text-red-500 px-4 py-1.5 rounded-full text-2xl font-medium mb-8">
+            <div className="inline-flex items-center space-x-2 bg-red-500/5 text-red-500 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium mb-6 sm:mb-8">
               <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-100 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
               </span>
               <span>Currently in development Coming June 2026</span>
             </div>
 
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-neutral-slate mb-8 leading-tight">
+            <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight text-neutral-slate mb-6 sm:mb-8 leading-tight">
               The Unified <span className="text-primary">Construction</span> <br className="hidden md:block" /> Operating System
             </h1>
 
-            <p className="text-xl text-neutral-gray mb-10 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-neutral-gray mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-2 sm:px-0">
               Replace 10 disconnected tools with one powerful platform. From lead capture to final punchlist, run your entire construction business in one place.
             </p>
 
@@ -51,7 +51,7 @@ const Hero = () => {
            initial={{ opacity: 0, y: 40 }}
            animate={{ opacity: 1, y: 0 }}
            transition={{ duration: 0.7, delay: 0.2 }}
-           className="mt-20 relative mx-auto max-w-6xl"
+           className="mt-12 sm:mt-16 md:mt-20 relative mx-auto max-w-6xl px-2 sm:px-0"
         >
             <div className="relative rounded-2xl bg-neutral-slate p-2 shadow-2xl ring-1 ring-gray-900/10">
                 <div className="absolute -top-12 -left-12 w-24 h-24 bg-secondary rounded-full blur-2xl opacity-20 animate-pulse"></div>

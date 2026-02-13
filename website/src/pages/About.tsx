@@ -3,10 +3,10 @@ import React from 'react';
 const About = () => {
   return (
     <div className="bg-[#0f172a] min-h-screen">
-      <div className="max-w-4xl mx-auto px-4 py-24">
-        <h1 className="text-4xl md:text-5xl font-bold text-neutral-slate mb-8">Built by Builders, For Builders</h1>
-        
-        <div className="prose prose-lg text-neutral-gray text-lg leading-relaxed space-y-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-24 pb-12 sm:py-24">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-neutral-slate mb-6 sm:mb-8">Built by Builders, For Builders</h1>
+
+        <div className="prose prose-lg text-neutral-gray text-base sm:text-lg leading-relaxed space-y-6 sm:space-y-8">
             <p>
                 Builders Stream Pro wasn't born in a Silicon Valley boardroom. It was built on job sites, in dusty trucks, and during late-night estimating sessions at the kitchen table.
             </p>
