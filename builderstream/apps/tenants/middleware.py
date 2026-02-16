@@ -88,6 +88,8 @@ class TenantMiddleware:
             "/admin/",
             "/api/v1/auth/",
             "/api/v1/users/",
+            "/api/v1/webhooks/",
+            "/api/v1/billing/plans/",
             "/api/docs/",
             "/api/v1/tenants/organizations/",
         ]
