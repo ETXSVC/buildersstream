@@ -38,9 +38,11 @@ class Command(BaseCommand):
         owner, created = User.objects.get_or_create(
             email=owner_email,
             defaults={
+                "username": owner_email.split("@")[0],
                 "first_name": "Demo",
                 "last_name": "Owner",
                 "is_staff": True,
+                "is_superuser": True,
             },
         )
         if created:
@@ -115,6 +117,7 @@ class Command(BaseCommand):
                 user, _ = User.objects.get_or_create(
                     email=email,
                     defaults={
+                        "username": email.split("@")[0],
                         "first_name": first,
                         "last_name": last,
                     },

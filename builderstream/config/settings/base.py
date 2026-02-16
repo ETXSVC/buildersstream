@@ -114,12 +114,6 @@ DATABASES = {
         "PORT": env("DB_PORT", default="5432"),
         "CONN_MAX_AGE": 600,
         "CONN_HEALTH_CHECKS": True,
-        "OPTIONS": {
-            "pool": {
-                "min_size": 2,
-                "max_size": 10,
-            },
-        },
     }
 }
 
