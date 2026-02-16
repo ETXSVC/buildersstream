@@ -207,6 +207,14 @@ CORS_ALLOWED_ORIGINS = env.list(
 )
 CORS_ALLOW_CREDENTIALS = True
 
+# Cache (Redis db 1, separate from Celery on db 0)
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": env("REDIS_CACHE_URL", default="redis://localhost:6379/1"),
+    }
+}
+
 # Celery
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://localhost:6379/0")
@@ -217,6 +225,16 @@ CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_BEAT_SCHEDULE = {
+    "calculate-health-scores": {
+        "task": "projects.calculate_all_health_scores",
+        "schedule": 3600,  # every hour
+    },
+    "generate-action-items": {
+        "task": "projects.generate_action_items",
+        "schedule": 1800,  # every 30 minutes
+    },
+}
 
 # AWS S3 / django-storages
 AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", default="")

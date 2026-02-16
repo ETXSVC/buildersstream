@@ -2,6 +2,17 @@
 
 Construction management SaaS platform built with Django 5.x, Django REST Framework, Celery, and PostgreSQL.
 
+## Implementation Status
+
+**Completed Sections:**
+- ✅ **Section 1:** Django 5.x scaffold with multi-app structure
+- ✅ **Section 2:** Multi-tenant foundation (organizations, memberships, modules)
+- ✅ **Section 3:** Authentication & user management (email-only JWT, registration)
+- ✅ **Section 4:** Billing integration (Stripe subscriptions, webhooks, usage metering)
+- ✅ **Section 5:** Project Command Center (lifecycle state machine, health scoring, dashboard with Redis caching, action items, activity stream)
+
+**Next Steps:** CRM & Pipeline → Estimating → Scheduling → Job Costing → Client Portal → Document Management → Field Operations → Quality & Safety → Payroll → Service & Warranty → Analytics
+
 ## Architecture
 
 - **Backend**: Django 5.x + Django REST Framework
@@ -217,26 +228,68 @@ Permission classes:
 
 All API endpoints are mounted under `/api/v1/`:
 
-| App | Endpoint | Description |
-|-----|----------|-------------|
-| Auth | `/api/v1/auth/` | Registration, login, JWT tokens, password reset |
-| Users | `/api/v1/users/` | Profile, organizations |
-| Tenants | `/api/v1/tenants/` | Organizations, memberships |
-| Billing | `/api/v1/billing/` | Plans, subscriptions |
-| Projects | `/api/v1/projects/` | Project CRUD and lifecycle |
-| CRM | `/api/v1/crm/` | Contacts, pipeline, deals |
-| Estimating | `/api/v1/estimating/` | Cost codes, estimates, line items |
-| Scheduling | `/api/v1/scheduling/` | Crews, schedule tasks |
-| Financials | `/api/v1/financials/` | Budgets, invoices, change orders |
-| Clients | `/api/v1/clients/` | Portal access, selections |
-| Documents | `/api/v1/documents/` | Folders, files, RFIs, submittals |
-| Field Ops | `/api/v1/field-ops/` | Daily logs, time entries, expenses |
-| Quality & Safety | `/api/v1/quality-safety/` | Inspections, incidents, checklists |
-| Payroll | `/api/v1/payroll/` | Pay periods, records, certified payroll |
-| Service | `/api/v1/service/` | Tickets, warranties |
-| Analytics | `/api/v1/analytics/` | Dashboards, reports, KPIs |
+| App | Endpoint | Description | Status |
+|-----|----------|-------------|--------|
+| Auth | `/api/v1/auth/` | Registration, login, JWT tokens, password reset | ✅ Complete |
+| Users | `/api/v1/users/` | Profile, organizations | ✅ Complete |
+| Tenants | `/api/v1/tenants/` | Organizations, memberships | ✅ Complete |
+| Billing | `/api/v1/billing/` | Plans, subscriptions | ✅ Complete |
+| **Projects** | `/api/v1/projects/` | **Project CRUD and lifecycle** | **✅ Complete** |
+| **Dashboard** | `/api/v1/dashboard/` | **Org dashboard, action items, activity** | **✅ Complete** |
+| **Action Items** | `/api/v1/action-items/` | **Tasks, deadlines, alerts** | **✅ Complete** |
+| **Activity** | `/api/v1/activity/` | **Org-wide activity stream** | **✅ Complete** |
+| CRM | `/api/v1/crm/` | Contacts, pipeline, deals | 🚧 Planned |
+| Estimating | `/api/v1/estimating/` | Cost codes, estimates, line items | 🚧 Planned |
+| Scheduling | `/api/v1/scheduling/` | Crews, schedule tasks | 🚧 Planned |
+| Financials | `/api/v1/financials/` | Budgets, invoices, change orders | 🚧 Planned |
+| Clients | `/api/v1/clients/` | Portal access, selections | 🚧 Planned |
+| Documents | `/api/v1/documents/` | Folders, files, RFIs, submittals | 🚧 Planned |
+| Field Ops | `/api/v1/field-ops/` | Daily logs, time entries, expenses | 🚧 Planned |
+| Quality & Safety | `/api/v1/quality-safety/` | Inspections, incidents, checklists | 🚧 Planned |
+| Payroll | `/api/v1/payroll/` | Pay periods, records, certified payroll | 🚧 Planned |
+| Service | `/api/v1/service/` | Tickets, warranties | 🚧 Planned |
+| Analytics | `/api/v1/analytics/` | Dashboards, reports, KPIs | 🚧 Planned |
 
 Interactive API documentation is available at `/api/docs/`.
+
+### Project Management Endpoints (Section 5)
+
+**Project CRUD:**
+- `GET /api/v1/projects/` — List projects with filtering (status, type, health, archived)
+- `POST /api/v1/projects/` — Create project (auto-generates project number `BSP-{YEAR}-{SEQ}`)
+- `GET /api/v1/projects/{pk}/` — Project detail with team members and milestones
+- `PUT/PATCH /api/v1/projects/{pk}/` — Update project
+- `DELETE /api/v1/projects/{pk}/` — Delete project
+
+**Project Lifecycle:**
+- `POST /api/v1/projects/{pk}/transition-status/` — Transition status with stage-gate validation
+- `GET /api/v1/projects/{pk}/transitions/` — View transition audit trail
+
+**Project Team & Milestones:**
+- `GET/POST/DELETE /api/v1/projects/{pk}/team-members/` — Manage team members with roles
+- `GET/POST /api/v1/projects/{pk}/milestones/` — Manage project milestones
+
+**Project Activity:**
+- `GET /api/v1/projects/{pk}/activity/` — View project activity log (last 50 entries)
+
+**Dashboard:**
+- `GET /api/v1/dashboard/` — Organization dashboard (cached 60s)
+  - Active projects count and status distribution
+  - Financial snapshot (estimated/actual values and costs)
+  - Schedule overview (on-track/at-risk/behind counts)
+  - Action items (top 20 unresolved)
+  - Activity stream (last 50 entries)
+- `GET/PUT /api/v1/dashboard/layout/` — User's dashboard widget layout
+
+**Action Items:**
+- `GET /api/v1/action-items/` — List action items with filtering
+- `POST /api/v1/action-items/` — Create action item
+- `GET /api/v1/action-items/{pk}/` — Action item detail
+- `PUT/PATCH /api/v1/action-items/{pk}/` — Update (auto-sets `resolved_at`)
+- `DELETE /api/v1/action-items/{pk}/` — Delete action item
+
+**Activity Stream:**
+- `GET /api/v1/activity/` — Organization-wide activity stream (paginated)
 
 ## Multi-Tenancy
 

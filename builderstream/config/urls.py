@@ -11,6 +11,11 @@ from drf_spectacular.views import (
 
 from apps.accounts.urls import auth_urlpatterns, user_urlpatterns
 from apps.billing.urls import webhook_urlpatterns as stripe_webhook_urls
+from apps.projects.urls import (
+    action_item_urlpatterns,
+    activity_urlpatterns,
+    dashboard_urlpatterns,
+)
 
 urlpatterns = [
     # Root redirect to API docs
@@ -31,6 +36,9 @@ urlpatterns = [
     # Stripe webhook (separate from billing — no auth, no CSRF)
     path("api/v1/webhooks/stripe/", include((stripe_webhook_urls, "stripe_webhooks"))),
     path("api/v1/projects/", include("apps.projects.urls", namespace="projects")),
+    path("api/v1/dashboard/", include((dashboard_urlpatterns, "dashboard"))),
+    path("api/v1/action-items/", include((action_item_urlpatterns, "action_items"))),
+    path("api/v1/activity/", include((activity_urlpatterns, "activity"))),
     path("api/v1/crm/", include("apps.crm.urls", namespace="crm")),
     path("api/v1/estimating/", include("apps.estimating.urls", namespace="estimating")),
     path("api/v1/scheduling/", include("apps.scheduling.urls", namespace="scheduling")),
