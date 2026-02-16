@@ -30,8 +30,8 @@ builderstream/apps/
   tenants/      # Organization, Membership, ActiveModule, middleware, context
   accounts/     # User model, JWT auth, registration, invitations
   billing/      # Stripe billing, plans, webhooks, subscription enforcement
-  projects/     # Project management (scaffold)
-  crm/          # Customer relationship management (scaffold)
+  projects/     # Project Command Center: lifecycle, health, dashboard, action items, activity
+  crm/          # CRM & Lead Management: 7 models, pipeline, scoring, automation, analytics
   estimating/   # Cost estimation (scaffold)
   scheduling/   # Project scheduling (scaffold)
   financials/   # Financial management (scaffold)
@@ -83,7 +83,9 @@ OWNER(7) > ADMIN(6) > PM(5) > ESTIMATOR(4) > ACCOUNTANT(3) > FIELD_WORKER(2) > R
 - [x] Section 2: Multi-tenant architecture (models, middleware, context, permissions, signals)
 - [x] Section 3: Auth & Registration (JWT, email verify, password reset, roles, invitations, 38 tests)
 - [x] Section 4: Subscription & Billing (Stripe integration, tiered plans, module-gating, webhooks)
-- [ ] Section 5+: Remaining feature apps (projects, crm, estimating, etc.)
+- [x] Section 5: Project Command Center (lifecycle state machine, health scoring, dashboard, action items, activity stream)
+- [🔧] Section 6: CRM & Lead Management (7 models, lead scoring, pipeline, automation - in progress)
+- [ ] Section 7+: Remaining feature apps (estimating, scheduling, financials, etc.)
 
 ## Testing
 ```bash
@@ -93,9 +95,35 @@ python -m pytest apps/accounts/tests/      # Run specific app tests
 python manage.py test apps.billing         # Django test runner
 ```
 
+## Section 6: CRM & Lead Management (In Progress)
+
+### Models (7 total)
+- **Contact**: CRM contacts (leads, clients, vendors) with lead scoring (0-100), referral tracking
+- **Company**: Organizations for contacts with compliance tracking (insurance, licenses)
+- **PipelineStage**: Configurable sales stages with auto-actions, is_won/is_lost flags (8 default stages seeded on org creation)
+- **Lead**: Sales opportunities with Deal→Lead migration, estimated value, urgency, conversion tracking
+- **Interaction**: Communication log (email, phone, SMS, site visit, meeting, note) with direction tracking
+- **AutomationRule**: CRM workflow automation with trigger/action JSONField configs
+- **EmailTemplate**: Templates with variable substitution ({{first_name}}, {{project_type}}, etc.)
+
+### Services
+- **LeadScoringService**: 0-100 score (value 30pts, urgency 20pts, source 20pts, engagement 20pts, response time 10pts)
+- **LeadConversionService**: Convert lead→project, links contact as client, moves to Won stage
+- **AutomationEngine**: 6 action types (SEND_EMAIL, CREATE_TASK, ASSIGN_LEAD, CHANGE_STAGE, NOTIFY_USER, SEND_SMS)
+
+### Celery Tasks
+- **process_time_based_automations**: Every 15min, check inactive leads
+- **calculate_lead_scores**: Hourly, recalculate all active lead scores
+- **send_follow_up_reminders**: Daily 9am, notify users of leads needing follow-up
+
+### Known Issues
+- **has_module_access permission**: Factory function implementation has issues with DRF permission instantiation (workaround: use IsOrganizationMember only, or fix factory pattern)
+- Module key case sensitivity: Must use lowercase enum values ("crm", not "CRM") when calling has_module_access()
+
 ## Common Pitfalls
 - `timezone` CharField on User model shadows `django.utils.timezone` — use `from django.utils import timezone as django_tz`
 - Signal auto-creates OWNER membership — don't manually create in tests (unique constraint)
 - Paginated ListAPIView responses: access via `data["results"]`, not `data`
 - Stripe errors expected in dev with dummy API key — signals catch and log
 - `.env` must use Docker service names: `DB_HOST=db`, `redis://redis:6379`
+- **Module keys are lowercase**: ActiveModule enum values are lowercase strings ("crm", "project_center"), not uppercase

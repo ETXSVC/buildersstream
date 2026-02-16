@@ -10,8 +10,9 @@ Construction management SaaS platform built with Django 5.x, Django REST Framewo
 - ✅ **Section 3:** Authentication & user management (email-only JWT, registration)
 - ✅ **Section 4:** Billing integration (Stripe subscriptions, webhooks, usage metering)
 - ✅ **Section 5:** Project Command Center (lifecycle state machine, health scoring, dashboard with Redis caching, action items, activity stream)
+- 🔧 **Section 6:** CRM & Lead Management (7 models, lead scoring, pipeline automation - in progress)
 
-**Next Steps:** CRM & Pipeline → Estimating → Scheduling → Job Costing → Client Portal → Document Management → Field Operations → Quality & Safety → Payroll → Service & Warranty → Analytics
+**Next Steps:** Complete Section 6 → Estimating → Scheduling → Job Costing → Client Portal → Document Management → Field Operations → Quality & Safety → Payroll → Service & Warranty → Analytics
 
 ## Architecture
 
@@ -238,7 +239,7 @@ All API endpoints are mounted under `/api/v1/`:
 | **Dashboard** | `/api/v1/dashboard/` | **Org dashboard, action items, activity** | **✅ Complete** |
 | **Action Items** | `/api/v1/action-items/` | **Tasks, deadlines, alerts** | **✅ Complete** |
 | **Activity** | `/api/v1/activity/` | **Org-wide activity stream** | **✅ Complete** |
-| CRM | `/api/v1/crm/` | Contacts, pipeline, deals | 🚧 Planned |
+| **CRM** | `/api/v1/crm/` | **7 models: contacts, companies, pipeline, leads, interactions, automation, templates** | **🔧 In Progress** |
 | Estimating | `/api/v1/estimating/` | Cost codes, estimates, line items | 🚧 Planned |
 | Scheduling | `/api/v1/scheduling/` | Crews, schedule tasks | 🚧 Planned |
 | Financials | `/api/v1/financials/` | Budgets, invoices, change orders | 🚧 Planned |

@@ -79,6 +79,75 @@ class IsOrganizationOwner(BasePermission):
         ).exists()
 
 
+class HasModuleAccess(BasePermission):
+    """Permission class that checks if a module is active for the organization."""
+
+    def __init__(self, module_key):
+        """Initialize with the module key to check."""
+        self.module_key = module_key
+        super().__init__()
+
+    def has_permission(self, request, view):
+        """Check if the user's organization has the module active."""
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        org = getattr(request, "organization", None)
+        if not org:
+            return False
+
+        # Check if module is active for this organization
+        from apps.tenants.models import ActiveModule
+
+        # Always-active modules - compare string values
+        always_active_keys = {mod.value for mod in ActiveModule.ALWAYS_ACTIVE}
+        if self.module_key in always_active_keys:
+            return True
+
+        # Check if module is explicitly activated
+        return ActiveModule.objects.filter(
+            organization=org,
+            module_key=self.module_key,
+            is_active=True,
+        ).exists()
+
+
+def has_module_access(module_key):
+    """Factory function returning a permission class for module access.
+
+    Usage:
+        permission_classes = [IsOrganizationMember, has_module_access('CRM')]
+    """
+
+    class ModuleAccessPermission(BasePermission):
+        def has_permission(self, request, view):
+            if not request.user or not request.user.is_authenticated:
+                return False
+
+            org = getattr(request, "organization", None)
+            if not org:
+                return False
+
+            # Check if module is active for this organization
+            from apps.tenants.models import ActiveModule
+
+            # Always-active modules - compare string values
+            always_active_keys = {mod.value for mod in ActiveModule.ALWAYS_ACTIVE}
+            if module_key in always_active_keys:
+                return True
+
+            # Check if module is explicitly activated
+            return ActiveModule.objects.filter(
+                organization=org,
+                module_key=module_key,
+                is_active=True,
+            ).exists()
+
+    ModuleAccessPermission.__name__ = f"HasModuleAccess_{module_key}"
+    ModuleAccessPermission.__qualname__ = f"HasModuleAccess_{module_key}"
+    return ModuleAccessPermission
+
+
 # ---------------------------------------------------------------------------
 # Role hierarchy for organization-level RBAC
 # ---------------------------------------------------------------------------

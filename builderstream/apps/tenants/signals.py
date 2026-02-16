@@ -41,9 +41,40 @@ def setup_new_organization(sender, instance, created, **kwargs):
             defaults={"is_active": True},
         )
 
+    # 2.5. Seed default CRM pipeline stages
+    _seed_default_pipeline_stages(instance)
+
     # 3. Create Stripe customer (placeholder - implement with Stripe API)
     if not instance.stripe_customer_id:
         _create_stripe_customer(instance)
+
+
+def _seed_default_pipeline_stages(organization):
+    """Seed 8 default CRM pipeline stages on org creation."""
+    try:
+        from apps.crm.models import PipelineStage
+
+        default_stages = [
+            {"name": "New Lead", "sort_order": 1, "color": "#3B82F6"},
+            {"name": "Contacted", "sort_order": 2, "color": "#8B5CF6"},
+            {"name": "Site Visit Scheduled", "sort_order": 3, "color": "#10B981"},
+            {"name": "Site Visit Complete", "sort_order": 4, "color": "#F59E0B"},
+            {"name": "Estimate Sent", "sort_order": 5, "color": "#EF4444"},
+            {"name": "Negotiating", "sort_order": 6, "color": "#F97316"},
+            {"name": "Won", "sort_order": 7, "color": "#22C55E", "is_won_stage": True},
+            {"name": "Lost", "sort_order": 8, "color": "#DC2626", "is_lost_stage": True},
+        ]
+
+        for stage_data in default_stages:
+            PipelineStage.objects.get_or_create(
+                organization=organization,
+                name=stage_data["name"],
+                defaults=stage_data,
+            )
+
+        logger.info("Seeded %d default pipeline stages for %s", len(default_stages), organization)
+    except Exception:
+        logger.exception("Failed to seed pipeline stages for %s", organization)
 
 
 def _create_stripe_customer(organization):

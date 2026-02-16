@@ -7,6 +7,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from celery.schedules import crontab
 
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -233,6 +234,19 @@ CELERY_BEAT_SCHEDULE = {
     "generate-action-items": {
         "task": "projects.generate_action_items",
         "schedule": 1800,  # every 30 minutes
+    },
+    # CRM tasks
+    "process-time-based-automations": {
+        "task": "crm.process_time_based_automations",
+        "schedule": 900,  # every 15 minutes
+    },
+    "calculate-lead-scores": {
+        "task": "crm.calculate_lead_scores",
+        "schedule": 3600,  # hourly
+    },
+    "send-follow-up-reminders": {
+        "task": "crm.send_follow_up_reminders",
+        "schedule": crontab(hour=9, minute=0),  # daily at 9am
     },
 }
 
