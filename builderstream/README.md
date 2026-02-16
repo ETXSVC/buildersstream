@@ -6,7 +6,7 @@ Construction management SaaS platform built with Django 5.x, Django REST Framewo
 
 - **Backend**: Django 5.x + Django REST Framework
 - **Frontend**: React 18 + Vite + TailwindCSS (separate SPA)
-- **Database**: PostgreSQL 16 with connection pooling
+- **Database**: PostgreSQL 16
 - **Cache/Broker**: Redis 7
 - **Task Queue**: Celery with django-celery-beat
 - **Auth**: JWT (SimpleJWT) + django-allauth
@@ -50,8 +50,12 @@ builderstream/
 # 1. Clone and enter the project
 cd builderstream
 
-# 2. Copy environment file
+# 2. Copy environment file and update hosts for Docker
 cp .env.example .env
+# IMPORTANT: Change these in .env for Docker:
+#   DB_HOST=db              (not localhost)
+#   CELERY_BROKER_URL=redis://redis:6379/0    (not localhost)
+#   CELERY_RESULT_BACKEND=redis://redis:6379/0
 
 # 3. Start all services
 docker compose up -d
@@ -59,7 +63,11 @@ docker compose up -d
 # 4. Run migrations
 docker compose exec web python manage.py migrate
 
-# 5. Create superuser
+# 5. Seed demo data (creates superuser + org + sample team)
+docker compose exec web python manage.py create_demo_org
+# Login: admin@builderstream.com / demo1234!
+
+# Or create your own superuser:
 docker compose exec web python manage.py createsuperuser
 
 # 6. Access the application
@@ -68,6 +76,17 @@ docker compose exec web python manage.py createsuperuser
 #    API Docs: http://localhost:8000/api/docs/
 #    Frontend: http://localhost:5173/
 ```
+
+### Docker Services
+
+| Service | Image | Port | Description |
+|---------|-------|------|-------------|
+| db | postgres:16 | 5432 | PostgreSQL database |
+| redis | redis:7-alpine | 6379 | Cache and Celery broker |
+| web | builderstream-web | 8000 | Django dev server |
+| celery_worker | builderstream-web | - | Async task worker |
+| celery_beat | builderstream-web | - | Periodic task scheduler |
+| frontend | node:20 | 5173 | React SPA (Vite) |
 
 ### Local Development (Without Docker)
 
