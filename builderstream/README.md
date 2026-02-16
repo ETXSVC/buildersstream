@@ -127,11 +127,82 @@ Interactive API documentation is available at `/api/docs/`.
 
 ## Multi-Tenancy
 
-BuilderStream uses organization-based multi-tenancy:
+BuilderStream uses **row-level organization-based multi-tenancy** with thread-local isolation:
 
-- `TenantModel` base class automatically links records to an organization
-- `TenantViewSetMixin` auto-filters querysets by the user's active organization
-- Permission classes (`IsOrganizationMember`, `IsOrganizationAdmin`, `IsOrganizationOwner`) enforce role-based access
+### Architecture
+
+- **`TenantModel`** abstract base: auto-links records to an organization via FK; auto-filters querysets using `TenantManager`
+- **`TenantManager`**: custom manager that reads thread-local storage to auto-scope all queries to the current organization
+  - `.for_organization(org)` — explicit filter bypassing thread-local
+  - `.unscoped()` — admin/system access without filtering
+- **`TenantMiddleware`** (`apps.tenants.middleware`): resolves organization context per-request via:
+  1. `X-Organization-ID` header (API clients)
+  2. `user.active_organization` field (default)
+  3. First active membership (fallback)
+- **Thread-local context** (`apps.tenants.context`): `set_current_organization()`, `get_current_organization()`, `tenant_context()` context manager for Celery tasks
+
+### Organization Model
+
+| Field | Description |
+|-------|-------------|
+| `name`, `slug` | Identity with unique slug for URL routing |
+| `owner` | FK to User (PROTECT) |
+| `industry_type` | Residential Remodel, Custom Home, Commercial GC, Specialty Trade, Roofing, Enterprise |
+| `subscription_plan` | Starter, Professional, Enterprise, Trial |
+| `subscription_status` | Active, Past Due, Canceled, Trialing |
+| `stripe_customer_id` | Stripe integration (auto-created via signal) |
+| `max_users` | Seat limit per subscription |
+| `settings` | JSONField for org-level config (timezone, fiscal year, currency) |
+
+### Membership Roles
+
+| Role | Description |
+|------|-------------|
+| `owner` | Full control, billing, org deletion |
+| `admin` | Manage members, modules, settings |
+| `project_manager` | Full project lifecycle access |
+| `estimator` | Estimating and proposals |
+| `field_worker` | Daily logs, time tracking, expenses |
+| `accountant` | Financial management, invoicing |
+| `read_only` | View-only access |
+
+### Module System
+
+Organizations can activate/deactivate feature modules. Always-active modules: **Project Center**, **Analytics**.
+
+Available modules: Project Center, CRM, Estimating, Scheduling, Financials, Client Portal, Documents, Field Ops, Quality & Safety, Payroll, Service & Warranty, Analytics.
+
+Use `HasModuleAccess('module_key')` permission class to gate views by active module.
+
+### Tenant API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/tenants/organizations/` | GET, POST | List/create organizations |
+| `/api/v1/tenants/organizations/{slug}/` | GET, PUT, DELETE | Organization detail |
+| `/api/v1/tenants/memberships/` | GET, POST | List/manage members |
+| `/api/v1/tenants/memberships/invite/` | POST | Invite member by email |
+| `/api/v1/tenants/modules/` | GET, POST, PUT | List/manage active modules |
+| `/api/v1/tenants/switch-organization/` | POST | Switch active organization |
+
+### Permission Classes
+
+- `IsOrganizationMember` — any active member
+- `IsOrganizationAdmin` — admin or owner role
+- `IsOrganizationOwner` — owner role only
+- `HasModuleAccess(module_key)` — module feature gate
+
+### Management Commands
+
+```bash
+# Create demo organization with sample users and all modules
+python manage.py create_demo_org
+
+# Options:
+#   --owner-email   Owner email (default: admin@builderstream.com)
+#   --org-name      Organization name (default: Demo Construction Co.)
+#   --no-sample-users  Skip sample team members
+```
 
 ## Environment Variables
 

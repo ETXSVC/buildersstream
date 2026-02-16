@@ -18,17 +18,32 @@ class TimeStampedModel(models.Model):
 
 
 class TenantManager(models.Manager):
-    """Manager that auto-filters querysets by organization."""
+    """Manager that auto-filters querysets by organization via thread-local context."""
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        from apps.tenants.context import get_current_organization
+
+        current_org = get_current_organization()
+        if current_org is not None:
+            qs = qs.filter(organization=current_org)
+        return qs
 
     def for_organization(self, organization):
-        return self.get_queryset().filter(organization=organization)
+        """Explicit filter — bypasses thread-local and filters directly."""
+        return super().get_queryset().filter(organization=organization)
+
+    def unscoped(self):
+        """Return queryset without tenant filtering (for admin/system use)."""
+        return super().get_queryset()
 
 
 class TenantModel(TimeStampedModel):
     """Abstract base model for multi-tenant resources.
 
     Extends TimeStampedModel with an organization FK and
-    a custom manager that supports organization-scoped filtering.
+    a custom manager that auto-filters by the current organization
+    from thread-local storage.
     """
 
     organization = models.ForeignKey(
@@ -49,3 +64,13 @@ class TenantModel(TimeStampedModel):
 
     class Meta:
         abstract = True
+
+    def save(self, *args, **kwargs):
+        """Auto-set organization from thread-local if not already set."""
+        if not self.organization_id:
+            from apps.tenants.context import get_current_organization
+
+            current_org = get_current_organization()
+            if current_org is not None:
+                self.organization = current_org
+        super().save(*args, **kwargs)
