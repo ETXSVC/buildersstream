@@ -9,7 +9,7 @@ class TenantMiddleware:
     """Resolve and enforce tenant context on every request.
 
     For authenticated users:
-    1. Read 'X-Organization-ID' header (or fall back to user's active_organization)
+    1. Read 'X-Organization-ID' header (or fall back to user's last_active_organization)
     2. Validate the user has an active membership in that organization
     3. Store organization in thread-local AND request.organization
     4. Return 403 if no valid organization can be resolved
@@ -63,9 +63,9 @@ class TenantMiddleware:
                 return org
             return None
 
-        # 2. Fall back to user's active organization
-        if hasattr(user, "active_organization") and user.active_organization_id:
-            org = user.active_organization
+        # 2. Fall back to user's last active organization
+        if hasattr(user, "last_active_organization") and user.last_active_organization_id:
+            org = user.last_active_organization
             if org and org.is_active and OrganizationMembership.objects.filter(
                 user=user, organization=org, is_active=True
             ).exists():
@@ -87,8 +87,7 @@ class TenantMiddleware:
         exempt_prefixes = [
             "/admin/",
             "/api/v1/auth/",
-            "/api/v1/accounts/register/",
-            "/api/v1/accounts/token/",
+            "/api/v1/users/",
             "/api/docs/",
             "/api/v1/tenants/organizations/",
         ]

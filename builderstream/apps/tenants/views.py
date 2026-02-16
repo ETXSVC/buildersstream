@@ -200,9 +200,9 @@ class SwitchOrganizationView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Update user's active organization
-        request.user.active_organization = membership.organization
-        request.user.save(update_fields=["active_organization"])
+        # Update user's last active organization
+        request.user.last_active_organization = membership.organization
+        request.user.save(update_fields=["last_active_organization"])
 
         return Response(
             {"detail": "Switched organization.", "organization": OrganizationSerializer(membership.organization).data},

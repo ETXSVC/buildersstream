@@ -9,7 +9,7 @@ Construction management SaaS platform built with Django 5.x, Django REST Framewo
 - **Database**: PostgreSQL 16
 - **Cache/Broker**: Redis 7
 - **Task Queue**: Celery with django-celery-beat
-- **Auth**: JWT (SimpleJWT) + django-allauth
+- **Auth**: JWT (SimpleJWT) + django-allauth, email-only (no username)
 - **Storage**: AWS S3 via django-storages
 - **Billing**: Stripe subscriptions
 - **API Docs**: drf-spectacular (OpenAPI/Swagger)
@@ -71,9 +71,9 @@ docker compose exec web python manage.py create_demo_org
 docker compose exec web python manage.py createsuperuser
 
 # 6. Access the application
-#    API:      http://localhost:8000/api/v1/
-#    Admin:    http://localhost:8000/admin/
+#    Home:     http://localhost:8000/         (redirects to API docs)
 #    API Docs: http://localhost:8000/api/docs/
+#    Admin:    http://localhost:8000/admin/
 #    Frontend: http://localhost:5173/
 ```
 
@@ -120,13 +120,107 @@ celery -A config worker -l info
 celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
 ```
 
+## Authentication & Registration
+
+BuilderStream uses **email-only authentication** with UUID primary keys and JWT tokens.
+
+### User Model
+
+Custom `AbstractBaseUser + PermissionsMixin` with:
+- UUID primary key (no auto-increment)
+- Email as sole login identifier (no username field)
+- `email_verified` flag with token-based verification
+- `last_active_organization` FK for org context switching
+- Timezone preference (US timezones)
+- Notification preferences (JSONField)
+
+### Auth Endpoints
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/api/v1/auth/register/` | POST | Public | Create user + org + membership, returns JWT |
+| `/api/v1/auth/login/` | POST | Public | Authenticate, returns JWT + user profile + orgs |
+| `/api/v1/auth/token/refresh/` | POST | Public | Refresh JWT access token |
+| `/api/v1/auth/verify-email/` | GET | Public | Verify email with `?token=` query param |
+| `/api/v1/auth/resend-verification/` | POST | Auth | Resend verification email |
+| `/api/v1/auth/forgot-password/` | POST | Public | Send password reset email |
+| `/api/v1/auth/reset-password/` | POST | Public | Reset password with token |
+| `/api/v1/auth/change-password/` | POST | Auth | Change password (requires old password) |
+| `/api/v1/auth/invite/accept/` | POST | Public | Accept org invitation, returns JWT |
+| `/api/v1/auth/oauth/google/` | POST | Public | Google OAuth (scaffolded) |
+| `/api/v1/auth/oauth/github/` | POST | Public | GitHub OAuth (scaffolded) |
+| `/api/v1/users/me/` | GET, PATCH | Auth | User profile |
+| `/api/v1/users/me/organizations/` | GET | Auth | List user's organizations |
+
+### Registration Flow
+
+1. `POST /api/v1/auth/register/` with email, password, first_name, last_name, company_name
+2. Creates User + Organization atomically (signal auto-creates OWNER membership + default modules)
+3. Sends verification email via Celery task
+4. Returns JWT tokens + user info
+
+### Login Response
+
+Login returns enriched JWT response with user profile and organizations:
+```json
+{
+  "access": "eyJ...",
+  "refresh": "eyJ...",
+  "user": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "first_name": "...",
+    "last_name": "...",
+    "email_verified": true,
+    "timezone": "America/Chicago",
+    "last_active_organization": "uuid"
+  },
+  "organizations": [
+    {"organization_id": "uuid", "organization_name": "...", "role": "owner"}
+  ]
+}
+```
+
+### Role-Based Access Control
+
+| Role | Level | Description |
+|------|-------|-------------|
+| `owner` | 7 | Full control, billing, org deletion |
+| `admin` | 6 | Manage members, modules, settings |
+| `project_manager` | 5 | Full project lifecycle access |
+| `estimator` | 4 | Estimating and proposals |
+| `accountant` | 3 | Financial management, invoicing |
+| `field_worker` | 2 | Daily logs, time tracking, expenses |
+| `read_only` | 1 | View-only access |
+
+Permission classes:
+- `IsOrganizationMember` — any active member
+- `IsOrganizationAdmin` — admin or owner
+- `IsOrganizationOwner` — owner only
+- `role_required('project_manager')` — factory function, allows role and above
+- `HasModuleAccess(module_key)` — module feature gate
+
+### Password Requirements
+
+- Minimum 8 characters
+- At least 1 uppercase letter
+- At least 1 number
+
+### Password Reset Flow
+
+1. `POST /api/v1/auth/forgot-password/` with email (never reveals if email exists)
+2. Token stored in Redis cache with 24-hour TTL
+3. Reset link sent via Celery email task
+4. `POST /api/v1/auth/reset-password/` with token + new_password
+
 ## API Endpoints
 
 All API endpoints are mounted under `/api/v1/`:
 
 | App | Endpoint | Description |
 |-----|----------|-------------|
-| Accounts | `/api/v1/accounts/` | Users, registration, JWT tokens |
+| Auth | `/api/v1/auth/` | Registration, login, JWT tokens, password reset |
+| Users | `/api/v1/users/` | Profile, organizations |
 | Tenants | `/api/v1/tenants/` | Organizations, memberships |
 | Billing | `/api/v1/billing/` | Plans, subscriptions |
 | Projects | `/api/v1/projects/` | Project CRUD and lifecycle |
@@ -156,7 +250,7 @@ BuilderStream uses **row-level organization-based multi-tenancy** with thread-lo
   - `.unscoped()` — admin/system access without filtering
 - **`TenantMiddleware`** (`apps.tenants.middleware`): resolves organization context per-request via:
   1. `X-Organization-ID` header (API clients)
-  2. `user.active_organization` field (default)
+  2. `user.last_active_organization` field (default)
   3. First active membership (fallback)
 - **Thread-local context** (`apps.tenants.context`): `set_current_organization()`, `get_current_organization()`, `tenant_context()` context manager for Celery tasks
 
@@ -172,18 +266,6 @@ BuilderStream uses **row-level organization-based multi-tenancy** with thread-lo
 | `stripe_customer_id` | Stripe integration (auto-created via signal) |
 | `max_users` | Seat limit per subscription |
 | `settings` | JSONField for org-level config (timezone, fiscal year, currency) |
-
-### Membership Roles
-
-| Role | Description |
-|------|-------------|
-| `owner` | Full control, billing, org deletion |
-| `admin` | Manage members, modules, settings |
-| `project_manager` | Full project lifecycle access |
-| `estimator` | Estimating and proposals |
-| `field_worker` | Daily logs, time tracking, expenses |
-| `accountant` | Financial management, invoicing |
-| `read_only` | View-only access |
 
 ### Module System
 
@@ -204,13 +286,6 @@ Use `HasModuleAccess('module_key')` permission class to gate views by active mod
 | `/api/v1/tenants/modules/` | GET, POST, PUT | List/manage active modules |
 | `/api/v1/tenants/switch-organization/` | POST | Switch active organization |
 
-### Permission Classes
-
-- `IsOrganizationMember` — any active member
-- `IsOrganizationAdmin` — admin or owner role
-- `IsOrganizationOwner` — owner role only
-- `HasModuleAccess(module_key)` — module feature gate
-
 ### Management Commands
 
 ```bash
@@ -221,6 +296,19 @@ python manage.py create_demo_org
 #   --owner-email   Owner email (default: admin@builderstream.com)
 #   --org-name      Organization name (default: Demo Construction Co.)
 #   --no-sample-users  Skip sample team members
+```
+
+## Testing
+
+```bash
+# Run all tests
+docker compose exec web pytest
+
+# Run auth tests only
+docker compose exec web pytest apps/accounts/tests/test_auth.py -v
+
+# Run with coverage
+docker compose exec web pytest --cov=apps --cov-report=term-missing
 ```
 
 ## Environment Variables

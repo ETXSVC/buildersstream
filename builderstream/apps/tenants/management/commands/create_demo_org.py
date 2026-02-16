@@ -38,7 +38,6 @@ class Command(BaseCommand):
         owner, created = User.objects.get_or_create(
             email=owner_email,
             defaults={
-                "username": owner_email.split("@")[0],
                 "first_name": "Demo",
                 "last_name": "Owner",
                 "is_staff": True,
@@ -117,7 +116,6 @@ class Command(BaseCommand):
                 user, _ = User.objects.get_or_create(
                     email=email,
                     defaults={
-                        "username": email.split("@")[0],
                         "first_name": first,
                         "last_name": last,
                     },
@@ -138,9 +136,9 @@ class Command(BaseCommand):
                 )
                 self.stdout.write(f"  Created {role} member: {email}")
 
-        # 6. Set owner's active organization
-        owner.active_organization = org
-        owner.save(update_fields=["active_organization"])
+        # 6. Set owner's last active organization
+        owner.last_active_organization = org
+        owner.save(update_fields=["last_active_organization"])
 
         self.stdout.write(self.style.SUCCESS(
             f"\nDemo organization '{org_name}' created successfully!\n"

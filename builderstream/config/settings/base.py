@@ -37,6 +37,7 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "django_filters",
     "corsheaders",
     "storages",
@@ -44,6 +45,8 @@ THIRD_PARTY_APPS = [
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
+    "allauth.socialaccount.providers.github",
     "drf_spectacular",
     "imagekit",
 ]
@@ -183,6 +186,7 @@ SIMPLE_JWT = {
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
+    "TOKEN_OBTAIN_SERIALIZER": "apps.accounts.serializers.CustomTokenObtainPairSerializer",
 }
 
 # DRF Spectacular (OpenAPI)
@@ -230,11 +234,34 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
 ]
+
+# Social Auth Providers
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "SCOPE": ["profile", "email"],
+        "AUTH_PARAMS": {"access_type": "online"},
+        "APP": {
+            "client_id": env("GOOGLE_CLIENT_ID", default=""),
+            "secret": env("GOOGLE_CLIENT_SECRET", default=""),
+        },
+    },
+    "github": {
+        "SCOPE": ["user:email"],
+        "APP": {
+            "client_id": env("GITHUB_CLIENT_ID", default=""),
+            "secret": env("GITHUB_CLIENT_SECRET", default=""),
+        },
+    },
+}
+
+# Frontend URL (for email verification links, password reset links)
+FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:5173")
 
 # Stripe
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default="")

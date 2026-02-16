@@ -129,6 +129,7 @@ class OrganizationMembership(TimeStampedModel):
     )
     invited_at = models.DateTimeField(blank=True, null=True)
     accepted_at = models.DateTimeField(blank=True, null=True)
+    invitation_token = models.UUIDField(null=True, blank=True, unique=True, db_index=True)
 
     class Meta:
         unique_together = ["user", "organization"]
