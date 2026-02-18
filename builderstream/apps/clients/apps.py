@@ -1,7 +1,12 @@
+"""Client Collaboration Portal app configuration."""
 from django.apps import AppConfig
 
 
 class ClientsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "apps.clients"
-    verbose_name = "Client Portal"
+    verbose_name = "Client Collaboration Portal"
+
+    def ready(self):
+        """Import signals when app is ready."""
+        import apps.clients.signals  # noqa: F401

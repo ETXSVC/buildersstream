@@ -9,9 +9,21 @@ Project-specific instructions for BuilderStream Django SaaS platform.
 - ✅ Section 2: Multi-Tenant Foundation (organizations, memberships, modules)
 - ✅ Section 3: Authentication & User Management (email-only JWT, registration, password reset)
 - ✅ Section 4: Billing Integration (Stripe subscriptions, webhooks, plan enforcement)
-- ✅ Section 5: Project Command Center (lifecycle state machine, health scoring, dashboard)
+- ✅ Section 5: Project Command Center (lifecycle state machine, health scoring, dashboard API)
+- ✅ Section 6: CRM & Lead Management (7 models, lead scoring, pipeline automation, backend complete)
+- ✅ Section 7: Estimating & Takeoffs (9 models, 4 services, 23 serializers, 10 viewsets, PDF/Excel export, e-signature)
+- ✅ Section 8: Client Collaboration Portal (7 models, 4 services, magic-link JWT, portal views, /api/v1/portal/ routes)
+- ✅ Dashboard UI: Frontend implementation (React + TypeScript, 5 widgets, customization)
 
-**Remaining Sections:** CRM, Estimating, Scheduling, Financials, Client Portal, Documents, Field Ops, Quality & Safety, Payroll, Service & Warranty, Analytics
+**Remaining Sections (per master prompt order):**
+- 🔄 Section 9: Document & Photo Control (folders, RFIs, submittals, photo galleries, S3)
+- Section 10: Scheduling & Resource Management (Gantt, crews, availability)
+- Section 11: Financial Management Suite (budgets, change orders, draw schedules)
+- Section 12: Field Operations Hub (daily logs, time tracking, expenses)
+- Section 13: Quality & Safety Compliance (inspections, incidents, OSHA)
+- Section 14: Payroll & Workforce Management (timesheets, certified payroll)
+- Section 15: Service & Warranty Management (tickets, maintenance)
+- Section 16: Analytics & Reporting Engine (custom dashboards, exports)
 
 ## Architecture Patterns
 
@@ -125,6 +137,52 @@ score, status = ProjectLifecycleService.calculate_health_score(project)
 - `projects.generate_action_items` — every 30min, auto-creates for overdue projects + upcoming milestones
 - `projects.cache_dashboard_data` — on-demand cache warming
 
+### CRM & Lead Management (Section 6)
+
+**Pattern:** Complete sales pipeline from first contact through project conversion
+
+**7 Models:**
+- `Contact` — expanded with mobile_phone, job_title, address, lead_score (0-100), tags, custom_fields, referred_by FK
+- `Company` — compliance tracking with insurance_expiry, license_number, performance_rating
+- `PipelineStage` — 8 default stages (New Lead → Won/Lost), is_won_stage, is_lost_stage, auto_actions JSONField
+- `Lead` — replaces Deal, adds urgency, lost_reason, converted_project FK, last_contacted_at, next_follow_up
+- `Interaction` — 6 types (EMAIL, PHONE_CALL, SMS, SITE_VISIT, MEETING, NOTE) with direction tracking
+- `AutomationRule` — trigger/action configuration (STAGE_CHANGE, TIME_DELAY, LEAD_SCORE_CHANGE, NO_ACTIVITY)
+- `EmailTemplate` — variable substitution support for automated communications
+
+**Lead Scoring Algorithm (0-100):**
+```python
+LeadScoringService.calculate_lead_score(lead):
+    # Estimated value (30pts): 500K+ = 30, 100K+ = 20, 50K+ = 10
+    # Urgency (20pts): HOT = 20, WARM = 10, COLD = 0
+    # Source quality (20pts): REFERRAL = 20, HOME_ADVISOR = 15, etc.
+    # Engagement (20pts): 5+ interactions = 20, 3+ = 15, 1+ = 10
+    # Response time (10pts): ≤3 days = 10, ≤7 days = 5
+```
+
+**Lead Conversion:**
+```python
+LeadConversionService.convert_to_project(lead, user):
+    # Creates Project with auto-generated project_number
+    # Links contact as client
+    # Moves lead to Won stage
+    # Logs activity
+```
+
+**Celery Tasks:**
+- `crm.process_time_based_automations` — every 15min, triggers automations for inactive leads
+- `crm.calculate_lead_scores` — hourly, recalculates all active lead scores
+- `crm.send_follow_up_reminders` — daily 9am, notifies users of leads needing follow-up
+
+**Signals:**
+- `on_contact_created` — auto-creates Lead for contact_type="lead", logs activity
+- `on_lead_stage_changed` — logs activity, triggers AutomationEngine for STAGE_CHANGE rules
+
+**Known Issues:**
+- `has_module_access()` factory function has DRF permission system compatibility issues
+- Workaround: Use `IsOrganizationMember` only in ContactViewSet (line 49 of views.py)
+- Module key case sensitivity: enum values are lowercase strings ("crm" not "CRM")
+
 **Project Signals:**
 - `pre_save` — caches old status for transition detection
 - `post_save (created)` — logs creation activity + seeds 7 default milestones
@@ -146,6 +204,72 @@ score, status = ProjectLifecycleService.calculate_health_score(project)
 - `GET/PUT /api/v1/dashboard/layout/` — per-user widget layout (auto-creates on first access)
 - `GET/POST/PUT/DELETE /api/v1/action-items/` — action items CRUD with org scoping
 - `GET /api/v1/activity/` — org-wide activity stream (paginated, filterable)
+
+**CRM Endpoints (Section 6):**
+- `GET/POST /api/v1/crm/contacts/` — contact management
+- `POST /api/v1/crm/contacts/{pk}/merge/` — merge contacts, preserve interactions
+- `GET /api/v1/crm/contacts/{pk}/interactions/` — list interactions for contact
+- `POST /api/v1/crm/contacts/{pk}/add-note/` — quick note creation
+- `GET/POST /api/v1/crm/leads/` — lead management
+- `POST /api/v1/crm/leads/{pk}/move-stage/` — transition to new stage, trigger automations
+- `POST /api/v1/crm/leads/{pk}/convert-to-project/` — convert lead to project
+- `POST /api/v1/crm/leads/{pk}/log-interaction/` — quick interaction logging
+- `GET /api/v1/crm/leads/pipeline-board/` — kanban-style pipeline data
+- `GET /api/v1/crm/analytics/` — conversion rates, win/loss reasons, lead velocity
+
+## Dashboard UI (Frontend)
+
+**Stack:** React 18 + TypeScript + Vite + TailwindCSS + React Query + Zustand
+
+**Architecture:**
+- `frontend/src/types/dashboard.ts` — TypeScript interfaces matching backend API
+- `frontend/src/api/dashboard.ts` — API functions (fetchDashboard, fetchDashboardLayout, updateDashboardLayout)
+- `frontend/src/hooks/useDashboard.ts` — React Query hooks with 60s stale time (matches backend cache)
+
+**5 Dashboard Widgets:**
+1. **ProjectMetricsWidget** — Total/active/on-hold/completed projects, health distribution bars, status breakdown
+2. **FinancialSummaryWidget** — Monthly revenue/costs, budget utilization progress bar, upcoming invoices
+3. **ScheduleOverviewWidget** — Upcoming milestones with due dates, overdue tasks alert, crew availability
+4. **ActionItemsWidget** — Top 20 priority items with badges, metadata (project, assignee, due date)
+5. **ActivityStreamWidget** — Recent activity feed with icons, timestamps, entity type badges
+
+**Features:**
+- Responsive grid layout (mobile → tablet → desktop)
+- Loading states with spinner animations
+- Error states with retry functionality
+- Refresh button with manual cache invalidation
+- Customization modal for toggling widget visibility (persists to backend)
+- Conditional rendering based on user's saved layout
+
+**File Structure:**
+```
+frontend/src/features/dashboard/
+├── DashboardPage.tsx               # Main container with hooks
+└── components/
+    ├── WidgetCard.tsx              # Shared wrapper component
+    ├── ProjectMetricsWidget.tsx
+    ├── FinancialSummaryWidget.tsx
+    ├── ScheduleOverviewWidget.tsx
+    ├── ActionItemsWidget.tsx
+    ├── ActivityStreamWidget.tsx
+    └── DashboardCustomizer.tsx     # Modal for customization
+```
+
+**How to Run:**
+```bash
+cd frontend
+npm install
+npm run dev
+# Access: http://localhost:5173/
+# Login: admin@builderstream.com / demo1234!
+```
+
+**Future Enhancements:**
+- Drag-and-drop layout with `react-grid-layout`
+- Widget resizing
+- Date range filters
+- Export dashboard as PDF/CSV
+- Real-time updates via WebSocket
 
 ## Docker Workflow
 
@@ -352,7 +476,7 @@ def authenticated_client(user, org):
 
 To continue implementation, follow the master spec in `Documentation/builders_prompt.md`:
 - Section 6: CRM & Pipeline (Contact model, deal stages, funnel)
-- Section 7: Estimating & Takeoffs (cost database, line items, assemblies)
+- ~~Section 7: Estimating & Takeoffs~~ ✅ COMPLETE (9 models, 4 services, 23 serializers, 10 viewsets, PDF/Excel export, e-signature)
 - Section 8: Scheduling & Crews (Gantt, resource allocation, availability)
 - Section 9: Job Costing & Financials (budgets, actuals, change orders)
 - Section 10: Client Portal (selections, approvals, communication)

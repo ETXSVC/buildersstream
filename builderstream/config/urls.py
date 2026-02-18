@@ -11,6 +11,7 @@ from drf_spectacular.views import (
 
 from apps.accounts.urls import auth_urlpatterns, user_urlpatterns
 from apps.billing.urls import webhook_urlpatterns as stripe_webhook_urls
+from apps.clients.urls import portal_urlpatterns
 from apps.projects.urls import (
     action_item_urlpatterns,
     activity_urlpatterns,
@@ -44,6 +45,7 @@ urlpatterns = [
     path("api/v1/scheduling/", include("apps.scheduling.urls", namespace="scheduling")),
     path("api/v1/financials/", include("apps.financials.urls", namespace="financials")),
     path("api/v1/clients/", include("apps.clients.urls", namespace="clients")),
+    path("api/v1/portal/", include((portal_urlpatterns, "portal"))),
     path("api/v1/documents/", include("apps.documents.urls", namespace="documents")),
     path("api/v1/field-ops/", include("apps.field_ops.urls", namespace="field_ops")),
     path("api/v1/quality-safety/", include("apps.quality_safety.urls", namespace="quality_safety")),

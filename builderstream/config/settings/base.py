@@ -248,6 +248,15 @@ CELERY_BEAT_SCHEDULE = {
         "task": "crm.send_follow_up_reminders",
         "schedule": crontab(hour=9, minute=0),  # daily at 9am
     },
+    # Client portal tasks
+    "send-client-daily-digest": {
+        "task": "clients.send_client_daily_digest",
+        "schedule": crontab(hour=8, minute=0),  # daily at 8am
+    },
+    "send-approval-reminders": {
+        "task": "clients.send_approval_reminders",
+        "schedule": crontab(hour=9, minute=30),  # daily at 9:30am
+    },
 }
 
 # AWS S3 / django-storages

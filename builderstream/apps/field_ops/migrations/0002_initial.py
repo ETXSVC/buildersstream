@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('estimating', '0002_initial'),
+        ('estimating', '0001_initial'),
         ('field_ops', '0001_initial'),
         ('projects', '0001_initial'),
         ('tenants', '0001_initial'),
