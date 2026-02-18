@@ -5,3 +5,6 @@ class SchedulingConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "apps.scheduling"
     verbose_name = "Scheduling"
+
+    def ready(self):
+        import apps.scheduling.signals  # noqa: F401

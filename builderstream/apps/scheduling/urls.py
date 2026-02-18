@@ -8,7 +8,9 @@ app_name = "scheduling"
 
 router = DefaultRouter()
 router.register("crews", views.CrewViewSet)
-router.register("tasks", views.ScheduleTaskViewSet)
+router.register("tasks", views.TaskViewSet)
+router.register("dependencies", views.TaskDependencyViewSet, basename="taskdependency")
+router.register("equipment", views.EquipmentViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),

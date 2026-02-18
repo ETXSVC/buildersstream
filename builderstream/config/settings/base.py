@@ -266,6 +266,19 @@ CELERY_BEAT_SCHEDULE = {
         "task": "documents.check_document_expirations",
         "schedule": crontab(hour=2, minute=0, day_of_week=1),  # Monday 2am
     },
+    # Scheduling tasks
+    "recalculate-critical-paths": {
+        "task": "scheduling.recalculate_critical_paths",
+        "schedule": 3600,  # hourly
+    },
+    "check-schedule-conflicts": {
+        "task": "scheduling.check_schedule_conflicts",
+        "schedule": crontab(hour=6, minute=0),  # daily at 6am
+    },
+    "calculate-equipment-depreciation": {
+        "task": "scheduling.calculate_equipment_depreciation",
+        "schedule": crontab(hour=1, minute=0, day_of_month=1),  # monthly at 1am on 1st
+    },
 }
 
 # AWS S3 / django-storages
