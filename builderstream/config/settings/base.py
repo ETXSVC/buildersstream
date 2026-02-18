@@ -317,6 +317,19 @@ CELERY_BEAT_SCHEDULE = {
         "task": "field_ops.calculate_overtime",
         "schedule": crontab(hour=0, minute=30),  # nightly at 12:30am
     },
+    # Quality & Safety tasks
+    "check-overdue-inspections": {
+        "task": "quality_safety.check_overdue_inspections",
+        "schedule": crontab(hour=7, minute=0),  # daily at 7am
+    },
+    "check-overdue-deficiencies": {
+        "task": "quality_safety.check_overdue_deficiencies",
+        "schedule": crontab(hour=8, minute=0),  # daily at 8am
+    },
+    "generate-weekly-safety-report": {
+        "task": "quality_safety.generate_weekly_safety_report",
+        "schedule": crontab(hour=6, minute=0, day_of_week=1),  # Monday 6am
+    },
 }
 
 # AWS S3 / django-storages

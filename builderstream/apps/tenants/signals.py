@@ -44,6 +44,9 @@ def setup_new_organization(sender, instance, created, **kwargs):
     # 2.5. Seed default CRM pipeline stages
     _seed_default_pipeline_stages(instance)
 
+    # 2.6. Seed default inspection checklist templates
+    _seed_default_inspection_checklists(instance)
+
     # 3. Create Stripe customer (placeholder - implement with Stripe API)
     if not instance.stripe_customer_id:
         _create_stripe_customer(instance)
@@ -75,6 +78,108 @@ def _seed_default_pipeline_stages(organization):
         logger.info("Seeded %d default pipeline stages for %s", len(default_stages), organization)
     except Exception:
         logger.exception("Failed to seed pipeline stages for %s", organization)
+
+
+def _seed_default_inspection_checklists(organization):
+    """Seed default inspection checklist templates on org creation."""
+    try:
+        from apps.quality_safety.models import ChecklistItem, InspectionChecklist
+
+        default_checklists = [
+            {
+                "name": "Framing Inspection",
+                "checklist_type": InspectionChecklist.ChecklistType.QUALITY,
+                "category": InspectionChecklist.Category.FRAMING,
+                "description": "Standard framing inspection checklist.",
+                "items": [
+                    "Structural members installed per plans",
+                    "Headers sized correctly",
+                    "Shear wall blocking installed",
+                    "Joist hangers and connectors secure",
+                    "Exterior sheathing installed",
+                ],
+            },
+            {
+                "name": "Rough Electrical Inspection",
+                "checklist_type": InspectionChecklist.ChecklistType.QUALITY,
+                "category": InspectionChecklist.Category.ELECTRICAL,
+                "description": "Rough electrical inspection prior to drywall.",
+                "items": [
+                    "Panel location and clearance correct",
+                    "Breaker sizing matches load schedule",
+                    "All boxes secured and accessible",
+                    "Wire gauge appropriate for circuit",
+                    "AFCI/GFCI protection in required locations",
+                ],
+            },
+            {
+                "name": "Rough Plumbing Inspection",
+                "checklist_type": InspectionChecklist.ChecklistType.QUALITY,
+                "category": InspectionChecklist.Category.PLUMBING,
+                "description": "Rough plumbing inspection prior to insulation.",
+                "items": [
+                    "Water supply lines pressure tested",
+                    "DWV slope meets code (1/4\" per foot)",
+                    "Cleanouts installed at required locations",
+                    "Pipe hangers/supports spaced correctly",
+                    "Penetrations through fire-rated assemblies sealed",
+                ],
+            },
+            {
+                "name": "Daily Safety Walk",
+                "checklist_type": InspectionChecklist.ChecklistType.SAFETY,
+                "category": InspectionChecklist.Category.SAFETY_DAILY,
+                "description": "Daily site safety inspection.",
+                "items": [
+                    "PPE compliance — hard hats and safety vests",
+                    "Fall protection in place above 6 feet",
+                    "Housekeeping and debris cleared from pathways",
+                    "Fire extinguisher accessible and in-date",
+                    "First aid kit stocked and accessible",
+                    "Electrical cords in good condition (no fraying)",
+                    "Ladder safety — proper angle and secured",
+                ],
+            },
+            {
+                "name": "Final Inspection",
+                "checklist_type": InspectionChecklist.ChecklistType.QUALITY,
+                "category": InspectionChecklist.Category.FINAL,
+                "description": "Final quality inspection before handover.",
+                "items": [
+                    "All punch-list items resolved",
+                    "Doors and windows operate correctly",
+                    "Grading slopes away from foundation",
+                    "Exterior caulking complete",
+                    "All fixtures operational",
+                    "Certificate of Occupancy obtained",
+                ],
+            },
+        ]
+
+        for cl_data in default_checklists:
+            items = cl_data.pop("items", [])
+            checklist, created = InspectionChecklist.objects.get_or_create(
+                organization=organization,
+                name=cl_data["name"],
+                defaults={**cl_data, "is_template": True, "is_active": True},
+            )
+            if created:
+                ChecklistItem.objects.bulk_create([
+                    ChecklistItem(
+                        checklist=checklist,
+                        description=desc,
+                        sort_order=i,
+                        is_required=True,
+                    )
+                    for i, desc in enumerate(items)
+                ])
+
+        logger.info(
+            "Seeded %d default inspection checklists for %s",
+            len(default_checklists), organization,
+        )
+    except Exception:
+        logger.exception("Failed to seed inspection checklists for %s", organization)
 
 
 def _create_stripe_customer(organization):
