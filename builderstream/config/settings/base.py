@@ -257,6 +257,15 @@ CELERY_BEAT_SCHEDULE = {
         "task": "clients.send_approval_reminders",
         "schedule": crontab(hour=9, minute=30),  # daily at 9:30am
     },
+    # Document & Photo tasks
+    "check-rfi-due-dates": {
+        "task": "documents.check_rfi_due_dates",
+        "schedule": crontab(hour=7, minute=0),  # daily at 7am
+    },
+    "check-document-expirations": {
+        "task": "documents.check_document_expirations",
+        "schedule": crontab(hour=2, minute=0, day_of_week=1),  # Monday 2am
+    },
 }
 
 # AWS S3 / django-storages

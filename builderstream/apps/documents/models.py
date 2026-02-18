@@ -338,8 +338,8 @@ class Submittal(TenantModel):
             )
         ]
         indexes = [
-            models.Index(fields=["organization", "project", "status"], name="docs_submittal_org_proj_status_idx"),
-            models.Index(fields=["organization", "reviewer"], name="docs_submittal_org_reviewer_idx"),
+            models.Index(fields=["organization", "project", "status"], name="docs_sub_org_proj_status_idx"),
+            models.Index(fields=["organization", "reviewer"], name="docs_sub_org_reviewer_idx"),
             models.Index(fields=["project", "submittal_number"], name="docs_submittal_proj_num_idx"),
         ]
 
