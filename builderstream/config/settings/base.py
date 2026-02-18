@@ -330,6 +330,15 @@ CELERY_BEAT_SCHEDULE = {
         "task": "quality_safety.generate_weekly_safety_report",
         "schedule": crontab(hour=6, minute=0, day_of_week=1),  # Monday 6am
     },
+    # Payroll & Workforce tasks
+    "check-certification-expirations": {
+        "task": "payroll.check_certification_expirations",
+        "schedule": crontab(hour=6, minute=30),  # daily at 6:30am
+    },
+    "prevailing-wage-compliance-check": {
+        "task": "payroll.prevailing_wage_compliance_check",
+        "schedule": crontab(hour=5, minute=0, day_of_week=1),  # Monday 5am
+    },
 }
 
 # AWS S3 / django-storages
