@@ -304,6 +304,19 @@ CELERY_BEAT_SCHEDULE = {
         "task": "financials.generate_aging_report",
         "schedule": crontab(hour=3, minute=0, day_of_week=1),  # Monday 3am
     },
+    # Field Operations tasks
+    "auto-clock-out": {
+        "task": "field_ops.auto_clock_out",
+        "schedule": crontab(hour=23, minute=59),  # nightly at 11:59pm
+    },
+    "reminder-daily-log": {
+        "task": "field_ops.reminder_daily_log",
+        "schedule": crontab(hour=16, minute=0),  # daily at 4pm
+    },
+    "calculate-overtime": {
+        "task": "field_ops.calculate_overtime",
+        "schedule": crontab(hour=0, minute=30),  # nightly at 12:30am
+    },
 }
 
 # AWS S3 / django-storages
