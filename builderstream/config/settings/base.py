@@ -339,6 +339,19 @@ CELERY_BEAT_SCHEDULE = {
         "task": "payroll.prevailing_wage_compliance_check",
         "schedule": crontab(hour=5, minute=0, day_of_week=1),  # Monday 5am
     },
+    # Service & Warranty tasks
+    "check-expiring-warranties": {
+        "task": "service.check_expiring_warranties",
+        "schedule": crontab(hour=7, minute=0),  # daily 7am
+    },
+    "expire-old-agreements": {
+        "task": "service.expire_old_agreements",
+        "schedule": crontab(hour=7, minute=15),  # daily 7:15am
+    },
+    "generate-recurring-invoices": {
+        "task": "service.generate_recurring_invoices",
+        "schedule": crontab(hour=8, minute=0, day_of_month=1),  # 1st of month 8am
+    },
 }
 
 # AWS S3 / django-storages
