@@ -291,6 +291,19 @@ CELERY_BEAT_SCHEDULE = {
         "task": "scheduling.calculate_equipment_depreciation",
         "schedule": crontab(hour=1, minute=0, day_of_month=1),  # monthly at 1am on 1st
     },
+    # Financial tasks
+    "check-overdue-invoices": {
+        "task": "financials.check_overdue_invoices",
+        "schedule": crontab(hour=7, minute=30),  # daily at 7:30am
+    },
+    "calculate-budget-variances": {
+        "task": "financials.calculate_budget_variances",
+        "schedule": 3600,  # hourly
+    },
+    "generate-aging-report": {
+        "task": "financials.generate_aging_report",
+        "schedule": crontab(hour=3, minute=0, day_of_week=1),  # Monday 3am
+    },
 }
 
 # AWS S3 / django-storages

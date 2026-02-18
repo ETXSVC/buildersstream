@@ -15,10 +15,10 @@ Project-specific instructions for BuilderStream Django SaaS platform.
 - ✅ Section 8: Client Collaboration Portal (7 models, 4 services, magic-link JWT, portal views, /api/v1/portal/ routes)
 - ✅ Section 9: Document & Photo Control (7 models, 4 services, S3 presigned URLs, versioning, RFIs, submittals, photo galleries)
 - ✅ Section 10: Scheduling & Resource Management (4 models, 3 services, CPM algorithm, Gantt data, crew availability, equipment depreciation)
+- ✅ Section 11: Financial Management Suite (10 models, 5 services, 14 viewsets, job costing, invoicing, change orders, POs, cash flow forecast)
 - ✅ Dashboard UI: Frontend implementation (React + TypeScript, 5 widgets, customization)
 
 **Remaining Sections (per master prompt order):**
-- Section 11: Financial Management Suite (budgets, change orders, draw schedules)
 - Section 12: Field Operations Hub (daily logs, time tracking, expenses)
 - Section 13: Quality & Safety Compliance (inspections, incidents, OSHA)
 - Section 14: Payroll & Workforce Management (timesheets, certified payroll)
