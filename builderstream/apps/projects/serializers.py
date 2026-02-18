@@ -200,12 +200,15 @@ class ActivityLogSerializer(serializers.ModelSerializer):
 class DashboardSerializer(serializers.Serializer):
     """Read-only serializer for dashboard aggregate data."""
 
-    active_projects = serializers.DictField()
-    financial_snapshot = serializers.DictField()
+    organization_id = serializers.CharField()
+    organization_name = serializers.CharField()
+    project_metrics = serializers.DictField()
+    financial_summary = serializers.DictField()
     schedule_overview = serializers.DictField()
     action_items = serializers.ListField()
     activity_stream = serializers.ListField()
-    weather = serializers.DictField()
+    user_role = serializers.CharField()
+    cached_at = serializers.CharField(allow_null=True)
 
 
 class DashboardLayoutSerializer(serializers.ModelSerializer):

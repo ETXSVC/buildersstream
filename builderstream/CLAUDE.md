@@ -34,7 +34,7 @@ Project-specific instructions for BuilderStream Django SaaS platform.
 **Key Components:**
 - `TenantModel` — abstract base with `organization` FK and `TenantManager`
 - `TenantManager` — `.for_organization(org)`, `.unscoped()` methods
-- `TenantMiddleware` — resolves org context via `X-Organization-ID` header or user's last active org
+- `TenantMiddleware` — resolves org context via `X-Organization-ID` header or user's last active org. Uses `_try_jwt_auth()` to manually invoke `JWTAuthentication` when session user is anonymous (JWT auth otherwise only runs inside DRF views)
 - `TenantViewSetMixin` — auto-injects org filtering into ViewSets
 
 **Thread-Local Context:**
@@ -472,19 +472,35 @@ def authenticated_client(user, org):
     return client
 ```
 
+## Common Pitfalls
+
+- **timezone shadowing**: User model's `timezone` CharField shadows `django.utils.timezone`. Use `from django.utils import timezone as django_tz`
+- **Signal creates membership**: Don't manually create OWNER membership when creating Org in tests (unique constraint violation)
+- **Paginated responses**: Access via `data["results"]` not `data` directly
+- **Module key case**: Enum values are lowercase strings (`"crm"` not `"CRM"`) — compare string values
+- **has_module_access permission**: Factory function has DRF instantiation issues — use `IsOrganizationMember` as workaround
+- **SelectionOption** (Section 8): NOT a TenantModel — org accessible via Selection FK chain
+- **DocumentAcknowledgment** (Section 9): NOT a TenantModel — org accessible via Document FK
+- **PostgreSQL index names**: Max 30 chars — shorten long index names in migrations
+- **TenantMiddleware + JWT**: Django middleware sees `AnonymousUser` for JWT API requests. `TenantMiddleware._try_jwt_auth()` manually calls `JWTAuthentication().authenticate(request)` to resolve org context when session user is anonymous
+- **CORS_ALLOW_HEADERS**: Must explicitly list `x-organization-id` in `base.py` — not in django-cors-headers defaults, causes browser preflight block
+- **REDIS_CACHE_URL**: `.env` needs `REDIS_CACHE_URL=redis://redis:6379/1` separately from broker — missing causes `ConnectionError: localhost:6379` inside Docker
+- **Dashboard API shape**: `_build_dashboard_data()` returns `project_metrics`/`financial_summary` (not `active_projects`/`financial_snapshot`). Activity entries use `timestamp` field (not `created_at`) and `user_name` (not ORM double-underscore notation). Must match `frontend/src/types/dashboard.ts`
+- **Docker build context**: `.dockerignore` must exclude `frontend/node_modules/` — without it the build fails
+- **Stripe errors in dev**: Expected with dummy API key — signals catch and log, don't block
+- `.env` must use Docker service names: `DB_HOST=db`, `redis://redis:6379`
+
 ## Next Steps
 
-To continue implementation, follow the master spec in `Documentation/builders_prompt.md`:
-- Section 6: CRM & Pipeline (Contact model, deal stages, funnel)
-- ~~Section 7: Estimating & Takeoffs~~ ✅ COMPLETE (9 models, 4 services, 23 serializers, 10 viewsets, PDF/Excel export, e-signature)
-- Section 8: Scheduling & Crews (Gantt, resource allocation, availability)
-- Section 9: Job Costing & Financials (budgets, actuals, change orders)
-- Section 10: Client Portal (selections, approvals, communication)
-- Section 11: Document Management (folders, RFIs, submittals, OCR)
-- Section 12: Field Operations (daily logs, time tracking, expenses)
-- Section 13: Quality & Safety (inspections, incidents, OSHA compliance)
-- Section 14: Payroll (time sheets, pay periods, certified payroll)
-- Section 15: Service & Warranty (tickets, maintenance, scheduling)
-- Section 16: Analytics & Reporting (dashboards, custom reports, exports)
+To continue implementation, follow the master spec in `Documentation/builders_prompt.md`.
+
+**Sections 1–10 are complete.** Next up:
+
+- **Section 11: Financial Management Suite** — job costing, budget line items, change orders, draw schedules, AIA G702/G703 invoicing, QuickBooks/Xero integration hooks, `/api/v1/financials/`
+- Section 12: Field Operations Hub (daily logs, time tracking, GPS geofencing, expenses)
+- Section 13: Quality & Safety Compliance (inspections, incidents, OSHA forms)
+- Section 14: Payroll & Workforce Management (timesheets, pay periods, certified payroll)
+- Section 15: Service & Warranty Management (tickets, maintenance agreements)
+- Section 16: Analytics & Reporting Engine (custom dashboards, custom reports, exports)
 
 Each section follows the same pattern: models → services → serializers → views → URLs → signals/tasks → tests.

@@ -17,7 +17,7 @@ docker compose exec web python manage.py create_demo_org
 
 ### Stack
 - **Backend**: Django 5.2.x + Django REST Framework + Celery + Redis
-- **Frontend**: React 18 (in `builderstream/frontend/`)
+- **Frontend**: React 18 + TypeScript + Vite + TailwindCSS (in `builderstream/frontend/`)
 - **Database**: PostgreSQL 16 with UUID primary keys
 - **Auth**: JWT via SimpleJWT, email-only (no username)
 - **Multi-tenancy**: Row-level isolation via thread-local storage (not schema-based)
@@ -26,22 +26,22 @@ docker compose exec web python manage.py create_demo_org
 ### App Structure (16 apps)
 ```
 builderstream/apps/
-  core/         # Base models (TimeStampedModel, TenantModel), permissions
-  tenants/      # Organization, Membership, ActiveModule, middleware, context
-  accounts/     # User model, JWT auth, registration, invitations
-  billing/      # Stripe billing, plans, webhooks, subscription enforcement
-  projects/     # Project Command Center: lifecycle, health, dashboard, action items, activity
-  crm/          # CRM & Lead Management: 7 models, pipeline, scoring, automation, analytics
-  estimating/   # Cost estimation (scaffold)
-  scheduling/   # Project scheduling (scaffold)
-  financials/   # Financial management (scaffold)
-  clients/      # Client portal (scaffold)
-  documents/    # Document management (scaffold)
-  field_ops/    # Field operations (scaffold)
-  quality_safety/ # Quality & safety (scaffold)
-  payroll/      # Payroll management (scaffold)
-  service/      # Service & warranty (scaffold)
-  analytics/    # Analytics & reporting (scaffold)
+  core/           # Base models (TimeStampedModel, TenantModel), permissions
+  tenants/        # Organization, Membership, ActiveModule, middleware, context
+  accounts/       # User model, JWT auth, registration, invitations
+  billing/        # Stripe billing, plans, webhooks, subscription enforcement
+  projects/       # Project Command Center: lifecycle, health, dashboard, action items, activity
+  crm/            # CRM & Lead Management: 7 models, pipeline, scoring, automation, analytics
+  estimating/     # Estimating & takeoffs: 9 models, proposals, e-signature, PDF/Excel export
+  clients/        # Client portal: selections, approvals, messaging, magic-link JWT auth
+  documents/      # Document & photo control: RFIs, submittals, versioning, S3 presigned URLs
+  scheduling/     # Scheduling & resource management: Gantt, CPM, crews, equipment
+  financials/     # Financial management suite (Section 11 — next)
+  field_ops/      # Field operations hub (Section 12)
+  quality_safety/ # Quality & safety compliance (Section 13)
+  payroll/        # Payroll & workforce management (Section 14)
+  service/        # Service & warranty management (Section 15)
+  analytics/      # Analytics & reporting engine (Section 16)
 ```
 
 ### Key Patterns
@@ -58,14 +58,21 @@ OWNER(7) > ADMIN(6) > PM(5) > ESTIMATOR(4) > ACCOUNTANT(3) > FIELD_WORKER(2) > R
 
 ### URL Structure
 ```
-/api/v1/auth/          # Login, register, verify, password reset
-/api/v1/users/         # User profile, org switching
-/api/v1/tenants/       # Organizations, memberships, invitations
-/api/v1/billing/       # Subscription, portal, invoices, plans
+/api/v1/auth/             # Login, register, verify, password reset
+/api/v1/users/            # User profile, org switching
+/api/v1/tenants/          # Organizations, memberships, invitations
+/api/v1/billing/          # Subscription, portal, invoices, plans
 /api/v1/webhooks/stripe/  # Stripe webhook (no auth, no CSRF)
-/api/v1/{app}/         # Feature app endpoints (projects, crm, etc.)
-/api/docs/             # Swagger UI (drf-spectacular)
-/admin/                # Django admin
+/api/v1/projects/         # Project lifecycle, milestones, team, activity
+/api/v1/dashboard/        # Cached org dashboard + layout
+/api/v1/crm/              # Contacts, leads, pipeline, analytics
+/api/v1/estimating/       # Estimates, takeoffs, proposals, e-signature
+/api/v1/clients/          # Client portal contractor-facing endpoints
+/api/v1/portal/           # Client portal client-facing endpoints (magic-link JWT)
+/api/v1/documents/        # Folders, documents, RFIs, submittals, photos
+/api/v1/scheduling/       # Schedules, tasks, crews, equipment, resources
+/api/docs/                # Swagger UI (drf-spectacular)
+/admin/                   # Django admin
 ```
 
 ## Settings
@@ -84,41 +91,27 @@ OWNER(7) > ADMIN(6) > PM(5) > ESTIMATOR(4) > ACCOUNTANT(3) > FIELD_WORKER(2) > R
 - [x] Section 3: Auth & Registration (JWT, email verify, password reset, roles, invitations, 38 tests)
 - [x] Section 4: Subscription & Billing (Stripe integration, tiered plans, module-gating, webhooks)
 - [x] Section 5: Project Command Center (lifecycle state machine, health scoring, dashboard, action items, activity stream)
-- [🔧] Section 6: CRM & Lead Management (7 models, lead scoring, pipeline, automation - in progress)
-- [ ] Section 7+: Remaining feature apps (estimating, scheduling, financials, etc.)
+- [x] Section 6: CRM & Lead Management (7 models, lead scoring, pipeline automation, backend complete)
+- [x] Section 7: Estimating & Takeoffs (9 models, 4 services, 23 serializers, 10 viewsets, PDF/Excel export, e-signature)
+- [x] Section 8: Client Collaboration Portal (7 models, 4 services, magic-link JWT, portal views, /api/v1/portal/ routes)
+- [x] Section 9: Document & Photo Control (7 models, S3 presigned URLs, versioning, RFIs, submittals, photo galleries)
+- [x] Section 10: Scheduling & Resource Management (4 models, 3 services, CPM algorithm, Gantt data, crew availability, equipment depreciation)
+- [x] Dashboard UI: Frontend implementation (React + TypeScript, 5 widgets, customization)
+
+## Next: Section 11 — Financial Management Suite
+- Job costing with real-time variance tracking
+- Budget line items, change orders, draw schedules
+- AIA G702/G703 invoice format support
+- QuickBooks / Xero integration hooks
+- `/api/v1/financials/` endpoints
 
 ## Testing
 ```bash
 cd builderstream
 python -m pytest                           # Run all tests
 python -m pytest apps/accounts/tests/      # Run specific app tests
-python manage.py test apps.billing         # Django test runner
+python -m pytest -v --tb=short            # Verbose with short tracebacks
 ```
-
-## Section 6: CRM & Lead Management (In Progress)
-
-### Models (7 total)
-- **Contact**: CRM contacts (leads, clients, vendors) with lead scoring (0-100), referral tracking
-- **Company**: Organizations for contacts with compliance tracking (insurance, licenses)
-- **PipelineStage**: Configurable sales stages with auto-actions, is_won/is_lost flags (8 default stages seeded on org creation)
-- **Lead**: Sales opportunities with Deal→Lead migration, estimated value, urgency, conversion tracking
-- **Interaction**: Communication log (email, phone, SMS, site visit, meeting, note) with direction tracking
-- **AutomationRule**: CRM workflow automation with trigger/action JSONField configs
-- **EmailTemplate**: Templates with variable substitution ({{first_name}}, {{project_type}}, etc.)
-
-### Services
-- **LeadScoringService**: 0-100 score (value 30pts, urgency 20pts, source 20pts, engagement 20pts, response time 10pts)
-- **LeadConversionService**: Convert lead→project, links contact as client, moves to Won stage
-- **AutomationEngine**: 6 action types (SEND_EMAIL, CREATE_TASK, ASSIGN_LEAD, CHANGE_STAGE, NOTIFY_USER, SEND_SMS)
-
-### Celery Tasks
-- **process_time_based_automations**: Every 15min, check inactive leads
-- **calculate_lead_scores**: Hourly, recalculate all active lead scores
-- **send_follow_up_reminders**: Daily 9am, notify users of leads needing follow-up
-
-### Known Issues
-- **has_module_access permission**: Factory function implementation has issues with DRF permission instantiation (workaround: use IsOrganizationMember only, or fix factory pattern)
-- Module key case sensitivity: Must use lowercase enum values ("crm", not "CRM") when calling has_module_access()
 
 ## Common Pitfalls
 - `timezone` CharField on User model shadows `django.utils.timezone` — use `from django.utils import timezone as django_tz`
@@ -127,3 +120,12 @@ python manage.py test apps.billing         # Django test runner
 - Stripe errors expected in dev with dummy API key — signals catch and log
 - `.env` must use Docker service names: `DB_HOST=db`, `redis://redis:6379`
 - **Module keys are lowercase**: ActiveModule enum values are lowercase strings ("crm", "project_center"), not uppercase
+- **has_module_access permission**: Factory function has DRF instantiation issues — use `IsOrganizationMember` as workaround
+- **SelectionOption** (Section 8): NOT a TenantModel — org accessible via Selection FK chain
+- **DocumentAcknowledgment** (Section 9): NOT a TenantModel — org accessible via Document FK
+- PostgreSQL index names max 30 chars — shorten long index names in migrations
+- **TenantMiddleware + JWT**: Django middleware sees `AnonymousUser` for JWT API requests (DRF auth runs inside views, not middleware). `TenantMiddleware` has a `_try_jwt_auth()` method that manually calls `JWTAuthentication().authenticate(request)` when session user is anonymous — this is required for org context to work with Bearer tokens
+- **CORS custom headers**: `X-Organization-ID` must be listed explicitly in `CORS_ALLOW_HEADERS` in `config/settings/base.py` — the default django-cors-headers allowlist does not include it
+- **Redis cache URL**: `.env` needs `REDIS_CACHE_URL=redis://redis:6379/1` separately from `CELERY_BROKER_URL` — if missing, cache falls back to `localhost:6379` which fails inside Docker
+- **Dashboard API shape**: `DashboardService._build_dashboard_data()` returns `project_metrics`, `financial_summary` (not `active_projects`, `financial_snapshot`) — field names must match frontend TypeScript types in `frontend/src/types/dashboard.ts`
+- **Docker build context**: Requires `.dockerignore` to exclude `frontend/node_modules/` — without it the build context sends the entire node_modules tree and fails

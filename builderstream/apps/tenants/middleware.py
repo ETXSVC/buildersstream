@@ -13,6 +13,10 @@ class TenantMiddleware:
     2. Validate the user has an active membership in that organization
     3. Store organization in thread-local AND request.organization
     4. Return 403 if no valid organization can be resolved
+
+    Note: Django's AuthenticationMiddleware resolves session-based users.
+    For JWT-authenticated API requests, we must attempt JWT auth here because
+    DRF only resolves request.user inside the view, after middleware has run.
     """
 
     def __init__(self, get_response):
@@ -22,8 +26,13 @@ class TenantMiddleware:
         request.organization = None
         clear_current_organization()
 
-        if request.user and request.user.is_authenticated:
-            org = self._resolve_organization(request)
+        # Get the authenticated user — try session first, then JWT Bearer token
+        user = request.user if (request.user and request.user.is_authenticated) else None
+        if user is None:
+            user = self._try_jwt_auth(request)
+
+        if user and user.is_authenticated:
+            org = self._resolve_organization(request, user)
 
             if org is None:
                 # Allow admin and auth endpoints without org context
@@ -44,9 +53,29 @@ class TenantMiddleware:
         clear_current_organization()
         return response
 
-    def _resolve_organization(self, request):
+    def _try_jwt_auth(self, request):
+        """Attempt JWT authentication for Bearer-token API requests.
+
+        Django middleware runs before DRF view authentication, so request.user
+        is AnonymousUser for JWT clients. We authenticate here so TenantMiddleware
+        can resolve the org context before the view executes.
+        """
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return None
+        try:
+            from rest_framework_simplejwt.authentication import JWTAuthentication
+            result = JWTAuthentication().authenticate(request)
+            if result:
+                return result[0]  # (user, validated_token)
+        except Exception:
+            pass
+        return None
+
+    def _resolve_organization(self, request, user=None):
         """Resolve organization from header or user default."""
-        user = request.user
+        if user is None:
+            user = request.user
 
         # 1. Check X-Organization-ID header
         org_id = request.headers.get("X-Organization-ID")

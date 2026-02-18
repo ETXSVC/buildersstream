@@ -207,6 +207,18 @@ CORS_ALLOWED_ORIGINS = env.list(
     default=["http://localhost:5173"],
 )
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    "x-organization-id",
+]
 
 # Cache (Redis db 1, separate from Celery on db 0)
 CACHES = {
