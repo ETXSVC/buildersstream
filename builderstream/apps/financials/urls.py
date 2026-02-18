@@ -23,4 +23,15 @@ urlpatterns = [
     # Report views
     path("reports/job-cost/", views.JobCostReportView.as_view(), name="report-job-cost"),
     path("reports/cash-flow/", views.CashFlowForecastView.as_view(), name="report-cash-flow"),
+    # Public (unauthenticated) client-facing invoice endpoints
+    path(
+        "public/invoices/<uuid:public_token>/",
+        views.PublicInvoiceView.as_view(),
+        name="public-invoice",
+    ),
+    path(
+        "public/invoices/<uuid:public_token>/pay/",
+        views.InvoicePaymentView.as_view(),
+        name="invoice-pay",
+    ),
 ]

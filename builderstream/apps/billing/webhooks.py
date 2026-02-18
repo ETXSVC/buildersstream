@@ -3,9 +3,12 @@
 Receives Stripe events, verifies the signature, and dispatches to
 the appropriate handler.  Creates a SubscriptionEvent audit record
 for every processed event.
+
+Also handles payment_intent.succeeded for financials.Invoice client payments.
 """
 import logging
 from datetime import datetime, timezone as dt_tz
+from decimal import Decimal
 
 import stripe
 from django.conf import settings
@@ -75,6 +78,8 @@ class StripeWebhookView(APIView):
             "invoice.payment_succeeded": self._handle_payment_succeeded,
             "invoice.payment_failed": self._handle_payment_failed,
             "customer.subscription.trial_will_end": self._handle_trial_will_end,
+            # Financial invoice online payments
+            "payment_intent.succeeded": self._handle_invoice_payment_intent_succeeded,
         }
         return handlers.get(event_type)
 
@@ -290,6 +295,64 @@ class StripeWebhookView(APIView):
             )
         except Exception:
             logger.exception("Failed to send trial ending email for %s", org)
+
+    def _handle_invoice_payment_intent_succeeded(self, event):
+        """Auto-record a payment on a financials.Invoice when client pays online via Stripe."""
+        from datetime import date
+
+        from apps.financials.models import Invoice as FinancialInvoice
+        from apps.financials.services import InvoicingService
+
+        pi = event["data"]["object"]
+        pi_id = pi.get("id", "")
+        invoice_id = pi.get("metadata", {}).get("invoice_id")
+
+        if not invoice_id:
+            logger.debug(
+                "payment_intent.succeeded: no invoice_id in metadata (pi=%s), skipping",
+                pi_id,
+            )
+            return
+
+        try:
+            invoice = FinancialInvoice.objects.get(
+                pk=invoice_id, stripe_payment_intent_id=pi_id
+            )
+        except FinancialInvoice.DoesNotExist:
+            logger.warning(
+                "payment_intent.succeeded: no matching financials invoice (pi=%s, id=%s)",
+                pi_id,
+                invoice_id,
+            )
+            return
+
+        if invoice.status == "paid":
+            logger.info(
+                "payment_intent.succeeded: invoice %s already paid, skipping",
+                invoice.invoice_number,
+            )
+            return
+
+        amount_received = Decimal(str(pi.get("amount_received", 0))) / Decimal("100")
+        if amount_received <= 0:
+            logger.warning(
+                "payment_intent.succeeded: zero amount_received for pi %s", pi_id
+            )
+            return
+
+        InvoicingService.record_payment(
+            invoice=invoice,
+            amount=amount_received,
+            payment_date=date.today(),
+            payment_method="card",
+            reference_number=pi_id,
+            notes=f"Paid online via Stripe ({pi_id})",
+        )
+        logger.info(
+            "payment_intent.succeeded: recorded $%.2f payment for invoice %s",
+            amount_received,
+            invoice.invoice_number,
+        )
 
     # -- Plan resolution helpers --------------------------------------------
 

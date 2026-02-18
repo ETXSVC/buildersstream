@@ -335,6 +335,214 @@ class PurchaseOrderService:
         logger.info("PO %s receiving recorded", purchase_order.po_number)
 
 
+class InvoiceExportService:
+    """Invoice PDF generation and email delivery."""
+
+    @staticmethod
+    def generate_invoice_pdf(invoice):
+        """Generate a professional invoice PDF using reportlab. Returns BytesIO."""
+        from io import BytesIO
+
+        from reportlab.lib import colors
+        from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+        from reportlab.lib.units import inch
+        from reportlab.platypus import (
+            SimpleDocTemplate,
+            Paragraph,
+            Spacer,
+            Table,
+            TableStyle,
+        )
+
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=letter,
+            topMargin=0.5 * inch,
+            bottomMargin=0.5 * inch,
+            leftMargin=0.75 * inch,
+            rightMargin=0.75 * inch,
+        )
+        story = []
+        styles = getSampleStyleSheet()
+
+        title_style = ParagraphStyle(
+            "InvoiceTitle",
+            parent=styles["Heading1"],
+            fontSize=22,
+            textColor=colors.HexColor("#1e40af"),
+            spaceAfter=6,
+            alignment=TA_CENTER,
+        )
+        right_style = ParagraphStyle(
+            "Right", parent=styles["Normal"], alignment=TA_RIGHT
+        )
+        heading_style = ParagraphStyle(
+            "SectionHeading",
+            parent=styles["Heading2"],
+            fontSize=11,
+            textColor=colors.HexColor("#1e40af"),
+            spaceBefore=10,
+            spaceAfter=4,
+        )
+
+        # ── Header ──────────────────────────────────────────────────────────
+        story.append(Paragraph(invoice.organization.name, title_style))
+        story.append(Spacer(1, 0.1 * inch))
+
+        # Two-column: bill-to on left, invoice meta on right
+        right_lines = [
+            f"<b>INVOICE #{invoice.invoice_number}</b>",
+            f"Type: {invoice.get_invoice_type_display()}",
+            f"Status: {invoice.get_status_display()}",
+        ]
+        if invoice.issue_date:
+            right_lines.append(f"Issue Date: {invoice.issue_date.strftime('%B %d, %Y')}")
+        if invoice.due_date:
+            right_lines.append(f"Due Date: {invoice.due_date.strftime('%B %d, %Y')}")
+
+        left_lines = []
+        if invoice.client:
+            left_lines += [
+                "<b>Bill To:</b>",
+                f"{invoice.client.first_name} {invoice.client.last_name}",
+                invoice.client.email or "",
+            ]
+            if invoice.client.phone:
+                left_lines.append(invoice.client.phone)
+        left_lines += ["", f"<b>Project:</b> {invoice.project}"]
+
+        header_table = Table(
+            [[
+                Paragraph("<br/>".join(left_lines), styles["Normal"]),
+                Paragraph("<br/>".join(right_lines), right_style),
+            ]],
+            colWidths=[3.5 * inch, 3 * inch],
+        )
+        header_table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
+        story.append(header_table)
+        story.append(Spacer(1, 0.3 * inch))
+
+        # ── Line Items ───────────────────────────────────────────────────────
+        story.append(Paragraph("Invoice Details", heading_style))
+        table_data = [["Description", "Qty", "Unit", "Unit Price", "Total"]]
+        for item in invoice.line_items.all():
+            table_data.append([
+                Paragraph(item.description, styles["Normal"]),
+                str(item.quantity),
+                item.unit or "",
+                f"${item.unit_price:,.2f}",
+                f"${item.line_total:,.2f}",
+            ])
+
+        table_data.append(["", "", "", "", ""])  # spacer row
+        table_data.append([
+            "", "", "",
+            Paragraph("<b>Subtotal:</b>", styles["Normal"]),
+            f"${invoice.subtotal:,.2f}",
+        ])
+        if invoice.tax_rate:
+            table_data.append([
+                "", "", "",
+                Paragraph(f"<b>Tax ({invoice.tax_rate}%):</b>", styles["Normal"]),
+                f"${invoice.tax_amount:,.2f}",
+            ])
+        if invoice.retainage_percent:
+            table_data.append([
+                "", "", "",
+                Paragraph(f"<b>Retainage ({invoice.retainage_percent}%):</b>", styles["Normal"]),
+                f"(${invoice.retainage_amount:,.2f})",
+            ])
+        if invoice.amount_paid > 0:
+            table_data.append([
+                "", "", "",
+                Paragraph("<b>Amount Paid:</b>", styles["Normal"]),
+                f"(${invoice.amount_paid:,.2f})",
+            ])
+        table_data.append([
+            "", "", "",
+            Paragraph("<b>BALANCE DUE:</b>", styles["Heading3"]),
+            Paragraph(f"<b>${invoice.balance_due:,.2f}</b>", styles["Heading3"]),
+        ])
+
+        line_count = invoice.line_items.count()
+        tbl = Table(
+            table_data,
+            colWidths=[3.25 * inch, 0.5 * inch, 0.5 * inch, 1.5 * inch, 1 * inch],
+        )
+        tbl.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2563eb")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 10),
+            ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+            ("ALIGN", (1, 0), (-1, -1), "RIGHT"),
+            ("GRID", (0, 0), (-1, line_count), 0.5, colors.lightgrey),
+            ("LINEABOVE", (3, -1), (-1, -1), 1.5, colors.black),
+        ]))
+        story.append(tbl)
+        story.append(Spacer(1, 0.4 * inch))
+
+        # ── Terms / Notes ────────────────────────────────────────────────────
+        if invoice.terms:
+            story.append(Paragraph("<b>Terms &amp; Payment Instructions</b>", heading_style))
+            story.append(Paragraph(invoice.terms, styles["Normal"]))
+            story.append(Spacer(1, 0.2 * inch))
+
+        if invoice.notes:
+            story.append(Paragraph("<b>Notes</b>", heading_style))
+            story.append(Paragraph(invoice.notes, styles["Normal"]))
+
+        doc.build(story)
+        buffer.seek(0)
+        return buffer
+
+    @staticmethod
+    def send_invoice_by_email(invoice, recipient_email, public_url):
+        """Send invoice PDF by email. Generates PDF inline (no file storage required)."""
+        from django.conf import settings as django_settings
+        from django.core.mail import EmailMessage
+
+        pdf_buffer = InvoiceExportService.generate_invoice_pdf(invoice)
+
+        client_name = (
+            invoice.client.first_name if invoice.client else "Valued Client"
+        )
+        due_str = (
+            f"by {invoice.due_date.strftime('%B %d, %Y')}"
+            if invoice.due_date
+            else "upon receipt"
+        )
+
+        subject = f"Invoice #{invoice.invoice_number} from {invoice.organization.name}"
+        body = (
+            f"Dear {client_name},\n\n"
+            f"Please find attached invoice #{invoice.invoice_number} "
+            f"for ${invoice.balance_due:,.2f} due {due_str}.\n\n"
+            f"You can also view and pay your invoice online:\n{public_url}\n\n"
+            f"Thank you for your business.\n\n"
+            f"Best regards,\n{invoice.organization.name}"
+        )
+
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=django_settings.DEFAULT_FROM_EMAIL,
+            to=[recipient_email],
+        )
+        email.attach(
+            f"Invoice_{invoice.invoice_number}.pdf",
+            pdf_buffer.read(),
+            "application/pdf",
+        )
+        email.send(fail_silently=False)
+        logger.info(
+            "Invoice email sent: %s → %s", invoice.invoice_number, recipient_email
+        )
+
+
 class QuickBooksSyncService:
     """Stub for QuickBooks / Xero integration hooks (Phase 2 feature)."""
 

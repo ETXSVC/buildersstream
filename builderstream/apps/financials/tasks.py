@@ -94,3 +94,40 @@ def generate_aging_report():
         buckets["over_90_days"], totals["over_90_days"],
     )
     return {"buckets": buckets, "totals": totals}
+
+
+@shared_task(name="financials.generate_invoice_pdf")
+def generate_invoice_pdf(invoice_id):
+    """Async: pre-generate invoice PDF (on-demand). Logs completion."""
+    from .models import Invoice
+    from .services import InvoiceExportService
+
+    try:
+        invoice = Invoice.objects.get(pk=invoice_id)
+    except Invoice.DoesNotExist:
+        logger.error("generate_invoice_pdf: invoice %s not found", invoice_id)
+        return
+
+    try:
+        InvoiceExportService.generate_invoice_pdf(invoice)
+        logger.info("generate_invoice_pdf: generated for invoice %s", invoice.invoice_number)
+    except Exception:
+        logger.exception("generate_invoice_pdf: failed for invoice %s", invoice_id)
+
+
+@shared_task(name="financials.send_invoice_email")
+def send_invoice_email(invoice_id, recipient_email, public_url):
+    """Async: send invoice email with PDF attachment."""
+    from .models import Invoice
+    from .services import InvoiceExportService
+
+    try:
+        invoice = Invoice.objects.get(pk=invoice_id)
+    except Invoice.DoesNotExist:
+        logger.error("send_invoice_email: invoice %s not found", invoice_id)
+        return
+
+    try:
+        InvoiceExportService.send_invoice_by_email(invoice, recipient_email, public_url)
+    except Exception:
+        logger.exception("send_invoice_email: failed for invoice %s", invoice_id)

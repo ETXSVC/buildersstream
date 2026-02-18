@@ -1,10 +1,14 @@
 """Financial Management Suite — ViewSets and report views."""
 import logging
 from datetime import date
+from decimal import Decimal
 
+from django.db.models import F
+from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -199,6 +203,17 @@ class InvoiceViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
             created_by=self.request.user,
         )
 
+    def create(self, request, *args, **kwargs):
+        """Override to return full InvoiceSerializer (with id, public_token) on create."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        response_data = InvoiceSerializer(
+            serializer.instance, context=self.get_serializer_context()
+        ).data
+        headers = self.get_success_headers(response_data)
+        return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
+
     @action(detail=True, methods=["post"], url_path="send")
     def send_invoice(self, request, pk=None):
         """POST /invoices/{pk}/send/ — mark invoice as sent."""
@@ -233,6 +248,38 @@ class InvoiceViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
         invoice = self.get_object()
         InvoicingService.recalculate_invoice(invoice)
         return Response(InvoiceSerializer(invoice, context=self.get_serializer_context()).data)
+
+    @action(detail=True, methods=["get"], url_path="export-pdf")
+    def export_pdf(self, request, pk=None):
+        """GET /invoices/{pk}/export-pdf/ — download invoice as PDF."""
+        from .services import InvoiceExportService
+
+        invoice = self.get_object()
+        pdf_buffer = InvoiceExportService.generate_invoice_pdf(invoice)
+        response = HttpResponse(pdf_buffer.read(), content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'attachment; filename="Invoice_{invoice.invoice_number}.pdf"'
+        )
+        return response
+
+    @action(detail=True, methods=["post"], url_path="send-email")
+    def send_email(self, request, pk=None):
+        """POST /invoices/{pk}/send-email/ — send invoice PDF to client via email (async)."""
+        from .tasks import send_invoice_email as send_invoice_email_task
+
+        invoice = self.get_object()
+        recipient = request.data.get("email") or ""
+        if not recipient and invoice.client:
+            recipient = invoice.client.email or ""
+        if not recipient:
+            return Response({"detail": "Recipient email required."}, status=400)
+
+        public_url = request.build_absolute_uri(
+            f"/api/v1/financials/public/invoices/{invoice.public_token}/"
+        )
+        InvoicingService.mark_sent(invoice, recipient, user=request.user)
+        send_invoice_email_task.delay(str(invoice.pk), recipient, public_url)
+        return Response({"detail": f"Invoice email queued for {recipient}."})
 
 
 class InvoiceLineItemViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
@@ -486,3 +533,165 @@ class CashFlowForecastView(APIView):
 
         data = JobCostingService.get_cash_flow_forecast(org, months=months)
         return Response({"months": months, "forecast": data})
+
+
+# ─────────────────────────────────────────────────────────────────────────── #
+#  Public (unauthenticated) Invoice Views                                     #
+# ─────────────────────────────────────────────────────────────────────────── #
+
+class PublicInvoiceView(APIView):
+    """Client-facing invoice view — no authentication required.
+
+    GET  /financials/public/invoices/{public_token}/
+         Returns invoice details safe for client consumption.
+         Increments view_count and sets viewed_at on first view.
+
+    GET  /financials/public/invoices/{public_token}/pdf/
+         Download invoice as PDF.
+    """
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def get(self, request, public_token):
+        try:
+            invoice = (
+                Invoice.objects.select_related("project", "client", "organization")
+                .prefetch_related("line_items")
+                .get(public_token=public_token)
+            )
+        except Invoice.DoesNotExist:
+            return Response({"detail": "Invoice not found."}, status=404)
+
+        if invoice.status == "void":
+            return Response({"detail": "This invoice has been voided."}, status=410)
+
+        # Track view
+        if invoice.viewed_at is None:
+            invoice.viewed_at = timezone.now()
+            invoice.save(update_fields=["viewed_at"])
+
+        Invoice.objects.filter(pk=invoice.pk).update(view_count=F("view_count") + 1)
+
+        # Upgrade status from "sent" → "viewed"
+        if invoice.status == "sent":
+            Invoice.objects.filter(pk=invoice.pk).update(status="viewed")
+            invoice.status = "viewed"
+
+        line_items = [
+            {
+                "description": item.description,
+                "quantity": str(item.quantity),
+                "unit": item.unit,
+                "unit_price": str(item.unit_price),
+                "line_total": str(item.line_total),
+                "cost_code": item.cost_code_id and str(item.cost_code_id),
+            }
+            for item in invoice.line_items.all()
+        ]
+
+        data = {
+            "invoice_number": invoice.invoice_number,
+            "invoice_type": invoice.get_invoice_type_display(),
+            "status": invoice.status,
+            "organization_name": invoice.organization.name,
+            "project_name": str(invoice.project),
+            "client_name": (
+                f"{invoice.client.first_name} {invoice.client.last_name}"
+                if invoice.client
+                else ""
+            ),
+            "issue_date": invoice.issue_date,
+            "due_date": invoice.due_date,
+            "subtotal": str(invoice.subtotal),
+            "tax_rate": str(invoice.tax_rate),
+            "tax_amount": str(invoice.tax_amount),
+            "retainage_percent": str(invoice.retainage_percent),
+            "retainage_amount": str(invoice.retainage_amount),
+            "total": str(invoice.total),
+            "amount_paid": str(invoice.amount_paid),
+            "balance_due": str(invoice.balance_due),
+            "terms": invoice.terms,
+            "notes": invoice.notes,
+            "is_paid": invoice.status == "paid",
+            "line_items": line_items,
+            "public_token": str(invoice.public_token),
+        }
+        return Response(data)
+
+
+class InvoicePaymentView(APIView):
+    """Create a Stripe PaymentIntent so clients can pay invoices online.
+
+    POST /financials/public/invoices/{public_token}/pay/
+         Returns { client_secret, amount, currency }.
+         Frontend uses Stripe.js to complete the payment.
+    """
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request, public_token):
+        try:
+            invoice = Invoice.objects.select_related("organization").get(
+                public_token=public_token
+            )
+        except Invoice.DoesNotExist:
+            return Response({"detail": "Invoice not found."}, status=404)
+
+        if invoice.status in ("paid", "void"):
+            return Response(
+                {"detail": "Invoice is already paid or void."}, status=400
+            )
+        if invoice.balance_due <= 0:
+            return Response({"detail": "No balance due on this invoice."}, status=400)
+
+        import stripe
+        from django.conf import settings as django_settings
+
+        stripe.api_key = django_settings.STRIPE_SECRET_KEY
+
+        try:
+            # Retrieve existing PaymentIntent if we already created one
+            if invoice.stripe_payment_intent_id:
+                try:
+                    pi = stripe.PaymentIntent.retrieve(invoice.stripe_payment_intent_id)
+                    if pi.status not in ("succeeded", "canceled", "requires_payment_method"):
+                        return Response({
+                            "client_secret": pi.client_secret,
+                            "amount": float(invoice.balance_due),
+                            "currency": "usd",
+                        })
+                except stripe.error.InvalidRequestError:
+                    pass  # create a fresh one below
+
+            pi = stripe.PaymentIntent.create(
+                amount=int(invoice.balance_due * Decimal("100")),  # cents
+                currency="usd",
+                metadata={
+                    "invoice_id": str(invoice.pk),
+                    "invoice_number": invoice.invoice_number,
+                    "organization_id": str(invoice.organization_id),
+                },
+                description=f"Invoice #{invoice.invoice_number} – {invoice.organization.name}",
+            )
+
+            Invoice.objects.filter(pk=invoice.pk).update(
+                stripe_payment_intent_id=pi.id
+            )
+
+            return Response({
+                "client_secret": pi.client_secret,
+                "amount": float(invoice.balance_due),
+                "currency": "usd",
+            })
+
+        except stripe.error.StripeError as exc:
+            logger.error(
+                "Stripe PaymentIntent error for invoice %s: %s",
+                invoice.invoice_number,
+                str(exc),
+            )
+            return Response(
+                {"detail": "Payment service temporarily unavailable."}, status=503
+            )
