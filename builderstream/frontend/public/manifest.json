@@ -1,0 +1,37 @@
+{
+  "name": "Builders Stream Pro",
+  "short_name": "BuilderStream",
+  "description": "Construction & Renovation Management Platform",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1e3a5f",
+  "background_color": "#0f172a",
+  "scope": "/",
+  "lang": "en-US",
+  "categories": ["business", "productivity"],
+  "icons": [
+    { "src": "/icons/icon-72.png",  "sizes": "72x72",   "type": "image/png", "purpose": "maskable any" },
+    { "src": "/icons/icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "maskable any" },
+    { "src": "/icons/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "maskable any" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable any" },
+    { "src": "/icons/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "maskable any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable any" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Clock In/Out",
+      "short_name": "Clock",
+      "description": "Record your time",
+      "url": "/field-ops/clock",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Daily Log",
+      "short_name": "Log",
+      "description": "Submit daily log",
+      "url": "/field-ops/daily-log",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }]
+    }
+  ]
+}

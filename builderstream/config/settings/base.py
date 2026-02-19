@@ -69,6 +69,7 @@ LOCAL_APPS = [
     "apps.payroll",
     "apps.service",
     "apps.analytics",
+    "apps.integrations",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -365,6 +366,15 @@ CELERY_BEAT_SCHEDULE = {
         "task": "analytics.generate_weekly_summary",
         "schedule": crontab(hour=5, minute=0, day_of_week=1),  # Monday 5am
     },
+    # Integration tasks
+    "refresh-oauth-tokens": {
+        "task": "integrations.refresh_oauth_tokens",
+        "schedule": 1800,  # every 30 minutes
+    },
+    "fetch-weather-forecasts": {
+        "task": "integrations.fetch_weather_forecasts",
+        "schedule": 10800,  # every 3 hours
+    },
 }
 
 # AWS S3 / django-storages
@@ -417,6 +427,12 @@ FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:5173")
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default="")
 STRIPE_PUBLISHABLE_KEY = env("STRIPE_PUBLISHABLE_KEY", default="")
 STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default="")
+
+# Integrations
+OPENWEATHERMAP_API_KEY = env("OPENWEATHERMAP_API_KEY", default="")
+QUICKBOOKS_CLIENT_ID = env("QUICKBOOKS_CLIENT_ID", default="")
+QUICKBOOKS_CLIENT_SECRET = env("QUICKBOOKS_CLIENT_SECRET", default="")
+QUICKBOOKS_REDIRECT_URI = env("QUICKBOOKS_REDIRECT_URI", default="http://localhost:8000/api/v1/integrations/quickbooks/callback/")
 
 # Email
 EMAIL_BACKEND = env(

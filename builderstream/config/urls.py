@@ -10,6 +10,7 @@ from drf_spectacular.views import (
 )
 
 from apps.accounts.urls import auth_urlpatterns, user_urlpatterns
+from apps.integrations.urls import public_api_urlpatterns
 from apps.billing.urls import webhook_urlpatterns as stripe_webhook_urls
 from apps.clients.urls import portal_urlpatterns
 from apps.projects.urls import (
@@ -52,6 +53,8 @@ urlpatterns = [
     path("api/v1/payroll/", include("apps.payroll.urls", namespace="payroll")),
     path("api/v1/service/", include("apps.service.urls", namespace="service")),
     path("api/v1/analytics/", include("apps.analytics.urls", namespace="analytics")),
+    path("api/v1/integrations/", include("apps.integrations.urls", namespace="integrations")),
+    path("api/v1/public/", include((public_api_urlpatterns, "public_api"))),
 ]
 
 if settings.DEBUG:

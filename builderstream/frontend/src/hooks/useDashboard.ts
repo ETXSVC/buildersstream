@@ -4,7 +4,6 @@ import {
   fetchDashboardLayout,
   updateDashboardLayout,
 } from '@/api/dashboard';
-import type { DashboardLayoutPayload } from '@/types/dashboard';
 
 /**
  * Fetch main dashboard data with 60-second cache
