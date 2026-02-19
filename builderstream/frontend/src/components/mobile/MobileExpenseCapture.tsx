@@ -12,11 +12,11 @@ const CATEGORIES = [
 ] as const;
 
 type Props = {
-  projectId: string;
+  projectId?: string;
   onSaved?: () => void;
 };
 
-export const MobileExpenseCapture = ({ projectId, onSaved }: Props) => {
+export const MobileExpenseCapture = ({ projectId = '', onSaved }: Props) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [receiptBlob, setReceiptBlob] = useState<Blob | null>(null);

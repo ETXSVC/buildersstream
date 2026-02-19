@@ -7,8 +7,8 @@ import { offlineDb } from '@/services/offlineDb';
 import { apiClient } from '@/api/client';
 
 type Props = {
-  projectId: string;
-  logDate: string; // YYYY-MM-DD
+  projectId?: string;
+  logDate?: string; // YYYY-MM-DD
   onSubmit?: () => void;
 };
 
@@ -29,7 +29,11 @@ declare global {
   }
 }
 
-export const MobileDailyLog = ({ projectId, logDate, onSubmit }: Props) => {
+export const MobileDailyLog = ({
+  projectId = '',
+  logDate = new Date().toISOString().slice(0, 10),
+  onSubmit,
+}: Props) => {
   const [notes, setNotes] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');

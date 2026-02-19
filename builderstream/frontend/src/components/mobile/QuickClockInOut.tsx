@@ -10,11 +10,11 @@ import { apiClient } from '@/api/client';
 type ClockState = 'idle' | 'checking' | 'clocked_in' | 'submitting';
 
 type Props = {
-  projectId: string;
-  projectName: string;
+  projectId?: string;
+  projectName?: string;
 };
 
-export const QuickClockInOut = ({ projectId, projectName }: Props) => {
+export const QuickClockInOut = ({ projectId = '', projectName = 'No project selected' }: Props) => {
   const [state, setState] = useState<ClockState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [clockInTime, setClockInTime] = useState<string | null>(null);

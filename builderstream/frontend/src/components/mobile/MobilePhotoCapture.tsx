@@ -6,12 +6,12 @@ import { useRef, useState } from 'react';
 import { offlineDb } from '@/services/offlineDb';
 
 type Props = {
-  projectId: string;
+  projectId?: string;
   albumId?: string;
   onCapture?: (photoId: string) => void;
 };
 
-export const MobilePhotoCapture = ({ projectId, albumId, onCapture }: Props) => {
+export const MobilePhotoCapture = ({ projectId = '', albumId, onCapture }: Props) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [description, setDescription] = useState('');
