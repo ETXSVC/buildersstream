@@ -352,6 +352,19 @@ CELERY_BEAT_SCHEDULE = {
         "task": "service.generate_recurring_invoices",
         "schedule": crontab(hour=8, minute=0, day_of_month=1),  # 1st of month 8am
     },
+    # Analytics & Reporting tasks
+    "calculate-kpis": {
+        "task": "analytics.calculate_kpis",
+        "schedule": crontab(hour=2, minute=0),  # daily 2am
+    },
+    "run-scheduled-reports": {
+        "task": "analytics.run_scheduled_reports",
+        "schedule": crontab(hour=6, minute=0),  # daily 6am
+    },
+    "generate-weekly-summary": {
+        "task": "analytics.generate_weekly_summary",
+        "schedule": crontab(hour=5, minute=0, day_of_week=1),  # Monday 5am
+    },
 }
 
 # AWS S3 / django-storages
