@@ -12,6 +12,9 @@ import { SchedulingPage } from '@/features/scheduling';
 import { DocumentsPage } from '@/features/documents';
 import { EstimatingPage } from '@/features/estimating';
 import { AnalyticsPage } from '@/features/analytics';
+import { QualitySafetyPage } from '@/features/quality-safety';
+import { PayrollPage } from '@/features/payroll';
+import { ServicePage } from '@/features/service';
 
 export const router = createBrowserRouter(
   [
@@ -75,6 +78,15 @@ export const router = createBrowserRouter(
 
             // Analytics
             { path: '/analytics', element: <AnalyticsPage /> },
+
+            // Quality & Safety
+            { path: '/quality-safety', element: <QualitySafetyPage /> },
+
+            // Payroll
+            { path: '/payroll', element: <PayrollPage /> },
+
+            // Service & Warranty
+            { path: '/service', element: <ServicePage /> },
           ],
         },
       ],
