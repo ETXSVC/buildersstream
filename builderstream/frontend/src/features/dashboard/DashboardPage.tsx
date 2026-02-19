@@ -14,6 +14,14 @@ import { ActivityStreamWidget } from './components/ActivityStreamWidget';
 import { DashboardCustomizer } from './components/DashboardCustomizer';
 import type { Widget } from '@/types/dashboard';
 
+const DEFAULT_WIDGETS: Widget[] = [
+  { id: 'projects', type: 'projects', title: 'Project Overview', x: 0, y: 0, width: 2, height: 1, isVisible: true },
+  { id: 'financial', type: 'financial', title: 'Financial Summary', x: 2, y: 0, width: 1, height: 1, isVisible: true },
+  { id: 'schedule', type: 'schedule', title: 'Schedule Overview', x: 0, y: 1, width: 2, height: 1, isVisible: true },
+  { id: 'actions', type: 'actions', title: 'Action Items', x: 2, y: 1, width: 1, height: 1, isVisible: true },
+  { id: 'activity', type: 'activity', title: 'Recent Activity', x: 0, y: 2, width: 3, height: 1, isVisible: true },
+];
+
 export const DashboardPage = () => {
   const { user, organizations, currentOrganizationId } = useAuth();
   const { data: dashboard, isLoading, error } = useDashboard();
@@ -226,7 +234,7 @@ export const DashboardPage = () => {
       <DashboardCustomizer
         isOpen={isCustomizing}
         onClose={() => setIsCustomizing(false)}
-        widgets={layout?.widgets || []}
+        widgets={layout?.widgets?.length ? layout.widgets : DEFAULT_WIDGETS}
         onSave={handleSaveCustomization}
       />
     </div>

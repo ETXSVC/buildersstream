@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { Widget } from '@/types/dashboard';
 
 interface DashboardCustomizerProps {
@@ -17,6 +17,15 @@ export const DashboardCustomizer = ({
   const [localWidgets, setLocalWidgets] = useState(widgets);
   const dragIndex = useRef<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  // Sync local state every time the modal opens so it always reflects the
+  // current widgets (handles cases where the component stays mounted).
+  useEffect(() => {
+    if (isOpen) {
+      setLocalWidgets(widgets);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
