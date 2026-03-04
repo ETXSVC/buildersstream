@@ -19,20 +19,27 @@ export const QuickClockInOut = ({ projectId = '', projectName = 'No project sele
   const [error, setError] = useState<string | null>(null);
   const [clockInTime, setClockInTime] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
+  const [entryId, setEntryId] = useState<string | null>(null);
 
   const handleClockIn = async () => {
+    if (!projectId) {
+      setError('Please select a project before clocking in.');
+      return;
+    }
     setState('checking');
     setError(null);
     setWarning(null);
 
-    let position = { latitude: 0, longitude: 0, accuracy: 0 };
-    let withinGeofence = true;
+    let gpsData: Record<string, number> | undefined;
 
     try {
       const check = await geofenceService.checkGeofence(projectId);
-      position = check.position;
-      withinGeofence = check.isWithin;
-      if (!withinGeofence) {
+      gpsData = {
+        latitude: check.position.latitude,
+        longitude: check.position.longitude,
+        accuracy: check.position.accuracy,
+      };
+      if (!check.isWithin) {
         setWarning(
           `You appear to be ${Math.round(check.distanceMeters)}m from the job site (allowed: ${check.radiusMeters}m). Clocking in anyway.`
         );
@@ -46,16 +53,19 @@ export const QuickClockInOut = ({ projectId = '', projectName = 'No project sele
 
     if (navigator.onLine) {
       try {
-        await apiClient.post('/api/v1/field-ops/time-entries/clock-in/', {
+        const { data } = await apiClient.post<{ id: string }>('/api/v1/field-ops/time-entries/clock-in/', {
           project: projectId,
-          latitude: position.latitude || undefined,
-          longitude: position.longitude || undefined,
+          gps_data: gpsData ?? null,
         });
+        setEntryId(data.id);
         setClockInTime(clockIn);
         setState('clocked_in');
         return;
-      } catch {
-        // Fall through to offline path
+      } catch (err: unknown) {
+        const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+        setError(msg ?? 'Clock in failed. Please try again.');
+        setState('idle');
+        return;
       }
     }
 
@@ -64,8 +74,8 @@ export const QuickClockInOut = ({ projectId = '', projectName = 'No project sele
       id,
       projectId,
       clockIn,
-      latitude: position.latitude || undefined,
-      longitude: position.longitude || undefined,
+      latitude: gpsData?.latitude,
+      longitude: gpsData?.longitude,
     });
     setClockInTime(clockIn);
     setState('clocked_in');
@@ -73,16 +83,18 @@ export const QuickClockInOut = ({ projectId = '', projectName = 'No project sele
 
   const handleClockOut = async () => {
     setState('submitting');
+    setError(null);
     try {
-      if (navigator.onLine) {
-        await apiClient.post('/api/v1/field-ops/time-entries/clock-out/', {
-          project: projectId,
-        });
+      if (navigator.onLine && entryId) {
+        await apiClient.post(`/api/v1/field-ops/time-entries/${entryId}/clock-out/`, {});
       }
+      setEntryId(null);
       setClockInTime(null);
       setState('idle');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Clock out failed');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } | Error })?.response?.data?.detail
+        ?? (err instanceof Error ? err.message : 'Clock out failed');
+      setError(msg);
       setState('clocked_in');
     }
   };

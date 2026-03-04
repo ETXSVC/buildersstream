@@ -122,6 +122,7 @@ function LeadsView({ search }: { search: string }) {
                 </td>
                 <td className="px-4 py-3">
                   <select
+                    title="Pipeline stage"
                     value={lead.pipeline_stage ?? ''}
                     onChange={(e) =>
                       updateLead.mutate({ id: lead.id, payload: { pipeline_stage: e.target.value || null } as Partial<Lead> })
@@ -352,12 +353,12 @@ function ContactModal({ contact, onClose }: ContactModalProps) {
     e.preventDefault();
     const payload = {
       ...form,
-      email: form.email || null,
-      phone: form.phone || null,
+      email: form.email || '',
+      phone: form.phone || '',
       mobile_phone: form.mobile_phone || null,
-      company_name: form.company_name || null,
+      company_name: form.company_name || '',
       job_title: form.job_title || null,
-      notes: form.notes || null,
+      notes: form.notes || '',
     };
     if (isEdit) {
       updateContact.mutate({ id: contact.id, payload }, { onSuccess: onClose });
@@ -398,9 +399,11 @@ function ContactModal({ contact, onClose }: ContactModalProps) {
         </div>
         <Field label="Notes">
           <textarea
+            title="Notes"
             value={form.notes}
             onChange={set('notes')}
             rows={3}
+            placeholder="Additional notes…"
             className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
           />
         </Field>
@@ -423,8 +426,10 @@ function LeadModal({ lead, stages, onClose }: LeadModalProps) {
   const createLead = useCreateLead();
   const updateLead = useUpdateLead();
   const isPending = createLead.isPending || updateLead.isPending;
+  const { data: contactsData } = useContacts();
 
   const [form, setForm] = useState({
+    contact: lead?.contact ?? '',
     pipeline_stage: lead?.pipeline_stage ?? '',
     project_type: lead?.project_type ?? '',
     estimated_value: lead?.estimated_value ?? '',
@@ -438,31 +443,45 @@ function LeadModal({ lead, stages, onClose }: LeadModalProps) {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   const [stageError, setStageError] = useState('');
+  const [contactError, setContactError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    let hasError = false;
+
+    // contact is required on create
+    if (!isEdit && !form.contact) {
+      setContactError('Please select a contact.');
+      hasError = true;
+    } else {
+      setContactError('');
+    }
+
     // pipeline_stage is required on create (allow_null=False on serializer)
     if (!isEdit && !form.pipeline_stage) {
       setStageError('Please select a pipeline stage.');
-      return;
+      hasError = true;
+    } else {
+      setStageError('');
     }
-    setStageError('');
+
+    if (hasError) return;
 
     // Build payload carefully matching backend validation:
     // - description/project_type: allow_null=False → send '' not null
     // - estimated_value/start/next_follow_up: allow_null=True → null is OK
-    // - pipeline_stage: allow_null=False → only include if non-empty
+    // - contact/pipeline_stage: allow_null=False → only include if non-empty
     const payload: Record<string, unknown> = {
       urgency: form.urgency || 'warm',
-      description: form.description,          // '' is valid (allow_blank=True)
-      project_type: form.project_type,        // '' is valid (allow_blank=True)
+      description: form.description,
+      project_type: form.project_type,
       estimated_value: form.estimated_value || null,
       estimated_start: form.estimated_start || null,
       next_follow_up: form.next_follow_up || null,
     };
 
-    // Only include pipeline_stage when it has a value (required, non-nullable)
+    if (form.contact) payload.contact = form.contact;
     if (form.pipeline_stage) payload.pipeline_stage = form.pipeline_stage;
 
     if (isEdit) {
@@ -475,8 +494,23 @@ function LeadModal({ lead, stages, onClose }: LeadModalProps) {
   return (
     <Modal title={isEdit ? 'Edit Lead' : 'New Lead'} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
+        <Field label={`Contact${!isEdit ? ' *' : ''}`}>
+          <select
+            title="Contact"
+            value={form.contact}
+            onChange={(e) => { set('contact')(e); setContactError(''); }}
+            className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 ${contactError ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-amber-400 focus:ring-amber-400'}`}
+          >
+            <option value="">— Select contact —</option>
+            {contactsData?.results.map((c) => (
+              <option key={c.id} value={c.id}>{c.full_name}</option>
+            ))}
+          </select>
+          {contactError && <p className="mt-1 text-xs text-red-600">{contactError}</p>}
+        </Field>
         <Field label={`Pipeline Stage${!isEdit ? ' *' : ''}`}>
           <select
+            title="Pipeline stage"
             value={form.pipeline_stage}
             onChange={(e) => { set('pipeline_stage')(e); setStageError(''); }}
             className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 ${stageError ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-amber-400 focus:ring-amber-400'}`}
@@ -490,6 +524,7 @@ function LeadModal({ lead, stages, onClose }: LeadModalProps) {
         </Field>
         <Field label="Project Type">
           <select
+            title="Project type"
             value={form.project_type}
             onChange={set('project_type')}
             className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
@@ -506,6 +541,7 @@ function LeadModal({ lead, stages, onClose }: LeadModalProps) {
           </Field>
           <Field label="Urgency">
             <select
+              title="Urgency"
               value={form.urgency}
               onChange={set('urgency')}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
@@ -547,7 +583,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
       <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
           <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600">
+          <button type="button" onClick={onClose} title="Close" className="text-slate-400 hover:text-slate-600">
             <XIcon />
           </button>
         </div>

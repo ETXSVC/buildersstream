@@ -3,9 +3,19 @@ import {
   fetchTimeEntries,
   fetchDailyLogs,
   fetchTimesheetSummary,
+  fetchExpenses,
   getOpenTimeEntry,
   clockIn,
   clockOut,
+  createManualEntry,
+  approveTimeEntry,
+  rejectTimeEntry,
+  createDailyLog,
+  submitDailyLog,
+  approveDailyLog,
+  createExpense,
+  approveExpense,
+  rejectExpense,
 } from '@/api/field-ops';
 
 export function useOpenTimeEntry() {
@@ -13,7 +23,7 @@ export function useOpenTimeEntry() {
     queryKey: ['field-ops', 'open-entry'],
     queryFn: getOpenTimeEntry,
     staleTime: 10 * 1000,
-    refetchInterval: 30 * 1000, // poll every 30s while page open
+    refetchInterval: 30 * 1000,
   });
 }
 
@@ -25,11 +35,91 @@ export function useTimeEntries(params: Record<string, string> = {}) {
   });
 }
 
+export function useCreateManualEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) => createManualEntry(payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['field-ops', 'time-entries'] }),
+  });
+}
+
+export function useApproveTimeEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => approveTimeEntry(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['field-ops', 'time-entries'] }),
+  });
+}
+
+export function useRejectTimeEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => rejectTimeEntry(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['field-ops', 'time-entries'] }),
+  });
+}
+
 export function useDailyLogs(params: Record<string, string> = {}) {
   return useQuery({
     queryKey: ['field-ops', 'daily-logs', params],
     queryFn: () => fetchDailyLogs(params),
     staleTime: 30 * 1000,
+  });
+}
+
+export function useCreateDailyLog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) => createDailyLog(payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['field-ops', 'daily-logs'] }),
+  });
+}
+
+export function useSubmitDailyLog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => submitDailyLog(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['field-ops', 'daily-logs'] }),
+  });
+}
+
+export function useApproveDailyLog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => approveDailyLog(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['field-ops', 'daily-logs'] }),
+  });
+}
+
+export function useExpenses(params: Record<string, string> = {}) {
+  return useQuery({
+    queryKey: ['field-ops', 'expenses', params],
+    queryFn: () => fetchExpenses(params),
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useCreateExpense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) => createExpense(payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['field-ops', 'expenses'] }),
+  });
+}
+
+export function useApproveExpense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => approveExpense(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['field-ops', 'expenses'] }),
+  });
+}
+
+export function useRejectExpense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => rejectExpense(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['field-ops', 'expenses'] }),
   });
 }
 

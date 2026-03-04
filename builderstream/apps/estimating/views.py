@@ -225,9 +225,10 @@ class EstimateViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Auto-generate estimate number on creation."""
-        # TODO: Implement auto-increment estimate number service
-        estimate_number = f"EST-{timezone.now().year}-{Estimate.objects.filter(organization=self.request.organization).count() + 1:03d}"
+        org_id = self.get_organization()
+        estimate_number = f"EST-{timezone.now().year}-{Estimate.objects.filter(organization_id=org_id).count() + 1:03d}"
         serializer.save(
+            organization_id=org_id,
             created_by=self.request.user,
             estimate_number=estimate_number,
         )
@@ -423,9 +424,12 @@ class ProposalViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Auto-generate proposal number on creation."""
-        # TODO: Implement auto-increment proposal number service
-        proposal_number = f"PROP-{timezone.now().year}-{Proposal.objects.filter(organization=self.request.organization).count() + 1:03d}"
-        serializer.save(proposal_number=proposal_number)
+        org_id = self.get_organization()
+        proposal_number = f"PROP-{timezone.now().year}-{Proposal.objects.filter(organization_id=org_id).count() + 1:03d}"
+        serializer.save(
+            organization_id=org_id,
+            proposal_number=proposal_number,
+        )
 
     @action(detail=True, methods=["post"])
     def send(self, request, pk=None):

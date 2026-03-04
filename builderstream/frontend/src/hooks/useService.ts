@@ -1,5 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
-import { fetchServiceRequests, fetchWarranties, fetchWarrantyClaims, fetchDispatchBoard } from '@/api/service';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  fetchServiceRequests, fetchWarranties, fetchWarrantyClaims, fetchDispatchBoard,
+  createServiceRequest, updateServiceRequest, deleteServiceRequest,
+  createWarranty, updateWarranty, deleteWarranty,
+} from '@/api/service';
 
 export const useServiceRequests = (params?: Record<string, string>) =>
   useQuery({
@@ -8,12 +12,60 @@ export const useServiceRequests = (params?: Record<string, string>) =>
     staleTime: 30_000,
   });
 
+export function useCreateServiceRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) => createServiceRequest(payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['service-requests'] }),
+  });
+}
+
+export function useUpdateServiceRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Record<string, unknown> }) => updateServiceRequest(id, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['service-requests'] }),
+  });
+}
+
+export function useDeleteServiceRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteServiceRequest(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['service-requests'] }),
+  });
+}
+
 export const useWarranties = (params?: Record<string, string>) =>
   useQuery({
     queryKey: ['warranties', params],
     queryFn: () => fetchWarranties(params),
     staleTime: 30_000,
   });
+
+export function useCreateWarranty() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) => createWarranty(payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['warranties'] }),
+  });
+}
+
+export function useUpdateWarranty() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Record<string, unknown> }) => updateWarranty(id, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['warranties'] }),
+  });
+}
+
+export function useDeleteWarranty() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteWarranty(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['warranties'] }),
+  });
+}
 
 export const useWarrantyClaims = (params?: Record<string, string>) =>
   useQuery({

@@ -16,10 +16,28 @@ export async function fetchRFIs(params: Record<string, string> = {}): Promise<Li
   return data;
 }
 
+export const createRFI = (payload: Record<string, unknown>) =>
+  apiClient.post<RFI>('/api/v1/documents/rfis/', payload).then((r) => r.data);
+
+export const updateRFI = (id: string, payload: Record<string, unknown>) =>
+  apiClient.patch<RFI>(`/api/v1/documents/rfis/${id}/`, payload).then((r) => r.data);
+
+export const deleteRFI = (id: string) =>
+  apiClient.delete(`/api/v1/documents/rfis/${id}/`);
+
 export async function fetchSubmittals(params: Record<string, string> = {}): Promise<ListResponse<Submittal>> {
   const { data } = await apiClient.get<ListResponse<Submittal>>('/api/v1/documents/submittals/', { params });
   return data;
 }
+
+export const createSubmittal = (payload: Record<string, unknown>) =>
+  apiClient.post<Submittal>('/api/v1/documents/submittals/', payload).then((r) => r.data);
+
+export const updateSubmittal = (id: string, payload: Record<string, unknown>) =>
+  apiClient.patch<Submittal>(`/api/v1/documents/submittals/${id}/`, payload).then((r) => r.data);
+
+export const deleteSubmittal = (id: string) =>
+  apiClient.delete(`/api/v1/documents/submittals/${id}/`);
 
 export async function fetchPhotos(params: Record<string, string> = {}): Promise<ListResponse<Photo>> {
   const { data } = await apiClient.get<ListResponse<Photo>>('/api/v1/documents/photos/', { params });
