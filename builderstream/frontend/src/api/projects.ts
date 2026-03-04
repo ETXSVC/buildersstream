@@ -16,7 +16,24 @@ export async function fetchProject(id: string): Promise<ProjectDetail> {
   return data;
 }
 
-export async function updateProjectStatus(id: string, status: string): Promise<Project> {
-  const { data } = await apiClient.post<Project>(`/api/v1/projects/${id}/transition/`, { status });
+export async function createProject(payload: Partial<Project>): Promise<Project> {
+  const { data } = await apiClient.post<Project>('/api/v1/projects/', payload);
+  return data;
+}
+
+export async function updateProject(id: string, payload: Partial<Project>): Promise<Project> {
+  const { data } = await apiClient.patch<Project>(`/api/v1/projects/${id}/`, payload);
+  return data;
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  await apiClient.delete(`/api/v1/projects/${id}/`);
+}
+
+export async function updateProjectStatus(id: string, new_status: string): Promise<Project> {
+  const { data } = await apiClient.post<Project>(
+    `/api/v1/projects/${id}/transition-status/`,
+    { new_status },
+  );
   return data;
 }

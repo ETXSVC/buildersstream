@@ -55,6 +55,54 @@ export interface WorkforceSummary {
   labor_cost_this_week: number;
 }
 
+export type EmploymentType = 'w2_full_time' | 'w2_part_time' | '1099_contractor';
+export type EmployeeTrade = 'general' | 'framing' | 'electrical' | 'plumbing' | 'hvac' | 'painting' | 'flooring' | 'roofing' | 'concrete' | 'drywall' | 'finish_carpentry' | 'other';
+
+export interface Employee {
+  id: string;
+  employee_id: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  employment_type: EmploymentType;
+  trade: EmployeeTrade;
+  hire_date: string;
+  termination_date: string | null;
+  is_active: boolean;
+  base_hourly_rate: string;
+  burdened_rate: string;
+  created_at: string;
+}
+
+export const EMPLOYMENT_TYPE_LABELS: Record<EmploymentType, string> = {
+  w2_full_time: 'W-2 Full Time',
+  w2_part_time: 'W-2 Part Time',
+  '1099_contractor': '1099 Contractor',
+};
+
+export const EMPLOYMENT_TYPE_COLORS: Record<EmploymentType, string> = {
+  w2_full_time: 'bg-blue-100 text-blue-700',
+  w2_part_time: 'bg-sky-100 text-sky-700',
+  '1099_contractor': 'bg-amber-100 text-amber-700',
+};
+
+export const TRADE_LABELS: Record<EmployeeTrade, string> = {
+  general: 'General',
+  framing: 'Framing',
+  electrical: 'Electrical',
+  plumbing: 'Plumbing',
+  hvac: 'HVAC',
+  painting: 'Painting',
+  flooring: 'Flooring',
+  roofing: 'Roofing',
+  concrete: 'Concrete',
+  drywall: 'Drywall',
+  finish_carpentry: 'Finish Carpentry',
+  other: 'Other',
+};
+
 export interface ListResponse<T> {
   count: number;
   next: string | null;

@@ -1,13 +1,13 @@
 export type ProjectStatus =
-  | 'lead'
   | 'prospect'
-  | 'estimate'
+  | 'site_survey'
   | 'proposal'
-  | 'contract'
-  | 'production'
-  | 'punch_list'
-  | 'closeout'
-  | 'completed'
+  | 'acceptance'
+  | 'in_progress'
+  | 'milestones'
+  | 'finish_project'
+  | 'billing'
+  | 'paid_complete'
   | 'canceled';
 
 export type HealthStatus = 'green' | 'yellow' | 'red';
@@ -34,6 +34,7 @@ export interface Project {
   name: string;
   description: string | null;
   status: ProjectStatus;
+  project_type: string | null;
   client: string | null;
   client_name: string | null;
   address: string | null;
@@ -42,7 +43,7 @@ export interface Project {
   estimated_value: string | null;
   actual_value: string | null;
   start_date: string | null;
-  target_completion: string | null;
+  estimated_completion: string | null;
   actual_completion: string | null;
   health_score: number | null;
   health_status: HealthStatus | null;
@@ -75,28 +76,28 @@ export interface ProjectFilters {
 }
 
 export const STATUS_LABELS: Record<ProjectStatus, string> = {
-  lead: 'Lead',
   prospect: 'Prospect',
-  estimate: 'Estimate',
+  site_survey: 'Site Survey',
   proposal: 'Proposal',
-  contract: 'Contract',
-  production: 'Production',
-  punch_list: 'Punch List',
-  closeout: 'Closeout',
-  completed: 'Completed',
+  acceptance: 'Acceptance',
+  in_progress: 'In Progress',
+  milestones: 'Milestones',
+  finish_project: 'Finish Project',
+  billing: 'Billing',
+  paid_complete: 'Paid / Complete',
   canceled: 'Canceled',
 };
 
 export const STATUS_COLORS: Record<ProjectStatus, string> = {
-  lead: 'bg-slate-100 text-slate-700',
   prospect: 'bg-blue-100 text-blue-700',
-  estimate: 'bg-purple-100 text-purple-700',
+  site_survey: 'bg-purple-100 text-purple-700',
   proposal: 'bg-indigo-100 text-indigo-700',
-  contract: 'bg-cyan-100 text-cyan-700',
-  production: 'bg-amber-100 text-amber-700',
-  punch_list: 'bg-orange-100 text-orange-700',
-  closeout: 'bg-teal-100 text-teal-700',
-  completed: 'bg-green-100 text-green-700',
+  acceptance: 'bg-cyan-100 text-cyan-700',
+  in_progress: 'bg-amber-100 text-amber-700',
+  milestones: 'bg-orange-100 text-orange-700',
+  finish_project: 'bg-teal-100 text-teal-700',
+  billing: 'bg-lime-100 text-lime-700',
+  paid_complete: 'bg-green-100 text-green-700',
   canceled: 'bg-red-100 text-red-700',
 };
 

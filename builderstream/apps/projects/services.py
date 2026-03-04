@@ -46,22 +46,22 @@ class ProjectLifecycleService:
     """Manages project status transitions and health scoring."""
 
     VALID_TRANSITIONS = {
-        "lead": ["prospect", "canceled"],
-        "prospect": ["estimate", "lead", "canceled"],
-        "estimate": ["proposal", "prospect", "canceled"],
-        "proposal": ["contract", "estimate", "canceled"],
-        "contract": ["production", "proposal", "canceled"],
-        "production": ["punch_list", "canceled"],
-        "punch_list": ["closeout", "production", "canceled"],
-        "closeout": ["completed", "punch_list"],
-        "completed": [],
-        "canceled": ["lead"],
+        "prospect": ["site_survey", "canceled"],
+        "site_survey": ["proposal", "prospect", "canceled"],
+        "proposal": ["acceptance", "site_survey", "canceled"],
+        "acceptance": ["in_progress", "proposal", "canceled"],
+        "in_progress": ["milestones", "canceled"],
+        "milestones": ["finish_project", "in_progress", "canceled"],
+        "finish_project": ["billing", "milestones", "canceled"],
+        "billing": ["paid_complete", "finish_project"],
+        "paid_complete": [],
+        "canceled": ["prospect"],
     }
 
     STAGE_REQUIREMENTS = {
-        "contract": ["client_assigned", "estimated_value_set"],
-        "production": ["start_date_set", "team_assigned"],
-        "completed": ["actual_completion_set"],
+        "acceptance": ["client_assigned", "estimated_value_set"],
+        "in_progress": ["start_date_set", "team_assigned"],
+        "paid_complete": ["actual_completion_set"],
     }
 
     @staticmethod
@@ -202,12 +202,12 @@ class DashboardService:
             organization=organization, is_archived=False, is_active=True
         )
         # Projects that are in-progress (not yet completed/canceled)
-        active_projects = all_projects.exclude(status__in=["completed", "canceled"])
+        active_projects = all_projects.exclude(status__in=["paid_complete", "canceled"])
 
         # --- project_metrics ---
         total_count = all_projects.count()
         active_count = active_projects.count()
-        completed_count = all_projects.filter(status="completed").count()
+        completed_count = all_projects.filter(status="paid_complete").count()
         health_dist = {
             "green": active_projects.filter(health_status="green").count(),
             "yellow": active_projects.filter(health_status="yellow").count(),

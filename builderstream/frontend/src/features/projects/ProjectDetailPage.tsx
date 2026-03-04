@@ -1,14 +1,31 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useProject } from '@/hooks/useProjects';
+import { useProject, useUpdateProjectStatus } from '@/hooks/useProjects';
+import type { ProjectStatus } from '@/types/projects';
 import { STATUS_LABELS, STATUS_COLORS, HEALTH_COLORS } from '@/types/projects';
 
 type Tab = 'overview' | 'milestones' | 'team';
+
+const VALID_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
+  prospect:       ['site_survey', 'canceled'],
+  site_survey:    ['proposal', 'prospect', 'canceled'],
+  proposal:       ['acceptance', 'site_survey', 'canceled'],
+  acceptance:     ['in_progress', 'proposal', 'canceled'],
+  in_progress:    ['milestones', 'canceled'],
+  milestones:     ['finish_project', 'in_progress', 'canceled'],
+  finish_project: ['billing', 'milestones', 'canceled'],
+  billing:        ['paid_complete', 'finish_project'],
+  paid_complete:  [],
+  canceled:       ['prospect'],
+};
 
 export const ProjectDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { data: project, isLoading, error } = useProject(id ?? '');
   const [tab, setTab] = useState<Tab>('overview');
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const [transitionError, setTransitionError] = useState('');
+  const updateStatus = useUpdateProjectStatus();
 
   if (isLoading) {
     return (
@@ -27,6 +44,24 @@ export const ProjectDetailPage = () => {
       </div>
     );
   }
+
+  const nextStatuses = VALID_TRANSITIONS[project.status] ?? [];
+
+  const handleTransition = (new_status: ProjectStatus) => {
+    setStatusMenuOpen(false);
+    setTransitionError('');
+    updateStatus.mutate(
+      { id: project.id, new_status },
+      {
+        onError: (err: unknown) => {
+          const msg =
+            (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+            ?? 'Failed to change status.';
+          setTransitionError(msg);
+        },
+      },
+    );
+  };
 
   return (
     <div className="p-6">
@@ -48,10 +83,47 @@ export const ProjectDetailPage = () => {
           </div>
           <p className="mt-1 text-sm text-slate-500">{project.project_number}</p>
         </div>
-        <span className={`rounded-full px-3 py-1 text-sm font-medium ${STATUS_COLORS[project.status]}`}>
-          {STATUS_LABELS[project.status]}
-        </span>
+
+        {/* Status badge + transition dropdown */}
+        <div className="relative flex items-center gap-2">
+          <span className={`rounded-full px-3 py-1 text-sm font-medium ${STATUS_COLORS[project.status]}`}>
+            {STATUS_LABELS[project.status]}
+          </span>
+          {nextStatuses.length > 0 && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setStatusMenuOpen((o) => !o)}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 focus:outline-none"
+                disabled={updateStatus.isPending}
+              >
+                {updateStatus.isPending ? 'Updating…' : 'Move to →'}
+              </button>
+              {statusMenuOpen && (
+                <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-slate-200 bg-white shadow-lg">
+                  {nextStatuses.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => handleTransition(s)}
+                      className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-amber-50 first:rounded-t-lg last:rounded-b-lg"
+                    >
+                      {STATUS_LABELS[s]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Transition error */}
+      {transitionError && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+          {transitionError}
+        </div>
+      )}
 
       {/* Stat cards */}
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -61,8 +133,8 @@ export const ProjectDetailPage = () => {
         <StatCard label="Health Score" value={project.health_score !== null ? `${project.health_score}/100` : '—'} />
         <StatCard label="Start Date" value={project.start_date
           ? new Date(project.start_date).toLocaleDateString() : '—'} />
-        <StatCard label="Target Completion" value={project.target_completion
-          ? new Date(project.target_completion).toLocaleDateString() : '—'} />
+        <StatCard label="Target Completion" value={project.estimated_completion
+          ? new Date(project.estimated_completion).toLocaleDateString() : '—'} />
       </div>
 
       {/* Tabs */}

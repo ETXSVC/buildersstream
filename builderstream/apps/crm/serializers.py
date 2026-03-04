@@ -19,12 +19,18 @@ from .models import (
 class ContactListSerializer(serializers.ModelSerializer):
     """Compact contact list view."""
 
+    full_name = serializers.SerializerMethodField()
+
+    def get_full_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}".strip()
+
     class Meta:
         model = Contact
         fields = [
             "id",
             "first_name",
             "last_name",
+            "full_name",
             "email",
             "phone",
             "mobile_phone",
@@ -35,7 +41,7 @@ class ContactListSerializer(serializers.ModelSerializer):
             "is_active",
             "created_at",
         ]
-        read_only_fields = ["id", "created_at", "lead_score"]
+        read_only_fields = ["id", "created_at", "lead_score", "full_name"]
 
 
 class ContactDetailSerializer(serializers.ModelSerializer):
@@ -94,6 +100,13 @@ class ContactDetailSerializer(serializers.ModelSerializer):
 class ContactCreateSerializer(serializers.ModelSerializer):
     """Create/update contact."""
 
+    # These fields are blank=True (not null) on the model — accept null from
+    # the frontend and convert to empty string before saving.
+    email = serializers.CharField(required=False, allow_blank=True, allow_null=True, default="")
+    phone = serializers.CharField(required=False, allow_blank=True, allow_null=True, default="")
+    company_name = serializers.CharField(required=False, allow_blank=True, allow_null=True, default="")
+    notes = serializers.CharField(required=False, allow_blank=True, allow_null=True, default="")
+
     class Meta:
         model = Contact
         fields = [
@@ -118,6 +131,18 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             "notes",
             "is_active",
         ]
+
+    def validate_email(self, value):
+        return value or ""
+
+    def validate_phone(self, value):
+        return value or ""
+
+    def validate_company_name(self, value):
+        return value or ""
+
+    def validate_notes(self, value):
+        return value or ""
 
 
 # ===== Company Serializers =====

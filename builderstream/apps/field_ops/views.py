@@ -302,9 +302,9 @@ class TimesheetSummaryView(APIView):
         project_id = params.get("project")
         week_str = params.get("week_start")  # YYYY-MM-DD
 
-        user = None
         project = None
 
+        # Default to the requesting user when no explicit user filter is provided
         if user_id:
             from django.contrib.auth import get_user_model
             User = get_user_model()
@@ -312,6 +312,8 @@ class TimesheetSummaryView(APIView):
                 user = User.objects.get(pk=user_id, memberships__organization=request.organization)
             except User.DoesNotExist:
                 return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            user = request.user
 
         if project_id:
             from apps.projects.models import Project
@@ -320,15 +322,16 @@ class TimesheetSummaryView(APIView):
             except Project.DoesNotExist:
                 return Response({"detail": "Project not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        week_start = None
-        week_end = None
+        from datetime import date as dt
         if week_str:
             try:
-                from datetime import date as dt
                 week_start = dt.fromisoformat(week_str)
-                week_end = week_start + timedelta(days=6)
             except ValueError:
                 return Response({"detail": "Invalid week_start date."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            today = dt.today()
+            week_start = today - timedelta(days=today.weekday())  # Monday
+        week_end = week_start + timedelta(days=6)
 
         summary = BulkApprovalService.get_timesheet_summary(
             organization=request.organization,

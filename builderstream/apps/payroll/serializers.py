@@ -49,6 +49,8 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
 
 
 class EmployeeCreateSerializer(serializers.ModelSerializer):
+    employee_id = serializers.CharField(required=False, allow_blank=True, max_length=20)
+
     class Meta:
         model = Employee
         fields = [

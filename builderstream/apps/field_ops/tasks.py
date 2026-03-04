@@ -61,7 +61,7 @@ def reminder_daily_log():
     # Find active projects that don't have a daily log for today
     projects_with_log = DailyLog.objects.filter(log_date=today).values_list("project_id", flat=True)
     active_projects = Project.objects.filter(
-        status__in=["production", "punch_list"]
+        status__in=["in_progress", "milestones", "finish_project"]
     ).exclude(id__in=projects_with_log).select_related("organization")
 
     reminded = 0

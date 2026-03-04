@@ -14,8 +14,8 @@ def calculate_all_health_scores():
     from .services import ProjectLifecycleService
 
     active_statuses = [
-        "prospect", "estimate", "proposal", "contract",
-        "production", "punch_list", "closeout",
+        "prospect", "site_survey", "proposal", "acceptance",
+        "in_progress", "milestones", "finish_project", "billing",
     ]
 
     projects = (
@@ -52,7 +52,7 @@ def generate_action_items():
             estimated_completion__lt=today,
             actual_completion__isnull=True,
         )
-        .exclude(status__in=["completed", "canceled"])
+        .exclude(status__in=["paid_complete", "canceled"])
     )
 
     for project in overdue_projects.iterator():

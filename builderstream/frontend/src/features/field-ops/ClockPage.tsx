@@ -1,9 +1,17 @@
+import { useState } from 'react';
 import { QuickClockInOut } from '@/components/mobile/QuickClockInOut';
 import { useTimesheetSummary } from '@/hooks/useFieldOps';
+import { useProjects } from '@/hooks/useProjects';
 import { PushNotificationManager } from '@/components/mobile/PushNotificationManager';
 
 export const ClockPage = () => {
   const { data: summary } = useTimesheetSummary();
+  const { data: projectsData, isLoading: projectsLoading } = useProjects();
+  const [selectedProjectId, setSelectedProjectId] = useState('');
+
+  const allProjects = projectsData?.results ?? [];
+  const projects = allProjects.filter((p) => p.status !== 'paid_complete' && p.status !== 'canceled');
+  const selectedProject = projects.find((p) => p.id === selectedProjectId);
 
   return (
     <div className="flex flex-col items-center p-6 gap-6">
@@ -12,7 +20,33 @@ export const ClockPage = () => {
         <p className="mt-1 text-sm text-slate-500 text-center">GPS-verified time tracking</p>
       </div>
 
-      <QuickClockInOut />
+      {/* Project selector */}
+      <div className="w-full max-w-sm">
+        <label htmlFor="clock-project" className="block text-sm font-medium text-slate-700 mb-1">
+          Select Project
+        </label>
+        <select
+          id="clock-project"
+          value={selectedProjectId}
+          onChange={(e) => setSelectedProjectId(e.target.value)}
+          disabled={projectsLoading}
+          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+        >
+          <option value="">
+            {projectsLoading ? 'Loading projects…' : '— Select a project —'}
+          </option>
+          {projects.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.project_number ? `${p.project_number} – ` : ''}{p.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <QuickClockInOut
+        projectId={selectedProjectId}
+        projectName={selectedProject?.name ?? 'No project selected'}
+      />
 
       {/* This week summary */}
       {summary && (

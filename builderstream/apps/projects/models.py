@@ -11,15 +11,15 @@ class Project(TenantModel):
     """Central project model — the command center."""
 
     class Status(models.TextChoices):
-        LEAD = "lead", "Lead"
         PROSPECT = "prospect", "Prospect"
-        ESTIMATE = "estimate", "Estimate"
+        SITE_SURVEY = "site_survey", "Site Survey"
         PROPOSAL = "proposal", "Proposal"
-        CONTRACT = "contract", "Contract"
-        PRODUCTION = "production", "Production"
-        PUNCH_LIST = "punch_list", "Punch List"
-        CLOSEOUT = "closeout", "Closeout"
-        COMPLETED = "completed", "Completed"
+        ACCEPTANCE = "acceptance", "Acceptance"
+        IN_PROGRESS = "in_progress", "In Progress"
+        MILESTONES = "milestones", "Milestones"
+        FINISH_PROJECT = "finish_project", "Finish Project"
+        BILLING = "billing", "Billing"
+        PAID_COMPLETE = "paid_complete", "Paid / Complete"
         CANCELED = "canceled", "Canceled"
 
     class ProjectType(models.TextChoices):
@@ -43,7 +43,7 @@ class Project(TenantModel):
     project_number = models.CharField(max_length=50, unique=True, db_index=True)
     description = models.TextField(blank=True)
     status = models.CharField(
-        max_length=30, choices=Status.choices, default=Status.LEAD
+        max_length=30, choices=Status.choices, default=Status.PROSPECT
     )
     project_type = models.CharField(
         max_length=30, choices=ProjectType.choices, blank=True

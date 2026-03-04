@@ -27,8 +27,10 @@ export interface Crew {
   id: string;
   name: string;
   trade: string;
+  foreman: string | null;
   foreman_name: string | null;
-  size: number;
+  members: string[];
+  member_count: number;
   hourly_rate: string | null;
   is_active: boolean;
 }

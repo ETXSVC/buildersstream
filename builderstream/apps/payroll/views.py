@@ -52,7 +52,23 @@ class EmployeeViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
         return EmployeeDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(organization_id=self.get_organization())
+        org_id = self.get_organization()
+        employee_id = serializer.validated_data.get("employee_id", "").strip()
+        if not employee_id:
+            last = (
+                Employee.objects.filter(organization_id=org_id)
+                .order_by("-created_at")
+                .values_list("employee_id", flat=True)
+                .first()
+            )
+            seq = 1
+            if last and last.startswith("EMP-"):
+                try:
+                    seq = int(last[4:]) + 1
+                except ValueError:
+                    seq = Employee.objects.filter(organization_id=org_id).count() + 1
+            employee_id = f"EMP-{seq:04d}"
+        serializer.save(organization_id=org_id, employee_id=employee_id)
 
     @action(detail=True, methods=["post"])
     def update_certification(self, request, pk=None):

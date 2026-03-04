@@ -7,6 +7,11 @@ from .models import Crew, Equipment, Task, TaskDependency
 class CrewSerializer(serializers.ModelSerializer):
     foreman_name = serializers.SerializerMethodField()
     member_count = serializers.SerializerMethodField()
+    # Accept null/empty hourly_rate and normalise trade values from frontend
+    hourly_rate = serializers.DecimalField(
+        max_digits=10, decimal_places=2, required=False, allow_null=True, default=0
+    )
+    trade = serializers.CharField(required=False, default="general")
 
     class Meta:
         model = Crew
@@ -16,6 +21,26 @@ class CrewSerializer(serializers.ModelSerializer):
             "created_at", "updated_at",
         ]
         read_only_fields = ["id", "organization", "created_at", "updated_at"]
+
+    # Map friendly labels the frontend may send → model choice values
+    _TRADE_MAP = {
+        "general labor": "general", "general": "general",
+        "framing": "framing", "electrical": "electrical",
+        "plumbing": "plumbing", "hvac": "hvac", "painting": "painting",
+        "flooring": "flooring", "roofing": "roofing", "concrete": "concrete",
+        "drywall": "drywall", "finish carpentry": "finish_carpentry",
+        "finish_carpentry": "finish_carpentry", "other": "other",
+    }
+
+    def validate_trade(self, value):
+        normalised = self._TRADE_MAP.get(value.lower().strip(), value.lower().strip())
+        valid = [c[0] for c in Crew.Trade.choices]
+        if normalised not in valid:
+            normalised = "general"
+        return normalised
+
+    def validate_hourly_rate(self, value):
+        return value if value is not None else 0
 
     def get_foreman_name(self, obj):
         if obj.foreman:

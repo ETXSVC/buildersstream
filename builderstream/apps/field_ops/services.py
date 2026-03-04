@@ -3,7 +3,7 @@ import logging
 from datetime import date, timedelta
 from decimal import Decimal
 
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from django.utils import timezone as django_tz
 
 logger = logging.getLogger(__name__)
@@ -344,7 +344,7 @@ class BulkApprovalService:
             .annotate(
                 total_hours=Sum("hours"),
                 overtime_hours=Sum("overtime_hours"),
-                entry_count=Sum("id", distinct=True),
+                entry_count=Count("id", distinct=True),
             )
             .order_by("user__last_name", "project__name")
         )
