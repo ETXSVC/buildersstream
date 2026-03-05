@@ -3,8 +3,9 @@ import { useParams, Link } from 'react-router-dom';
 import { useProject, useUpdateProjectStatus } from '@/hooks/useProjects';
 import type { ProjectStatus } from '@/types/projects';
 import { STATUS_LABELS, STATUS_COLORS, HEALTH_COLORS } from '@/types/projects';
+import { ProjectComments } from './ProjectComments';
 
-type Tab = 'overview' | 'milestones' | 'team';
+type Tab = 'overview' | 'milestones' | 'team' | 'comments';
 
 const VALID_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
   prospect:       ['site_survey', 'canceled'],
@@ -139,7 +140,7 @@ export const ProjectDetailPage = () => {
 
       {/* Tabs */}
       <div className="mb-6 flex border-b border-slate-200">
-        {(['overview', 'milestones', 'team'] as Tab[]).map((t) => (
+        {(['overview', 'milestones', 'team', 'comments'] as Tab[]).map((t) => (
           <button
             key={t}
             type="button"
@@ -221,6 +222,12 @@ export const ProjectDetailPage = () => {
               </div>
             ))
           )}
+        </div>
+      )}
+
+      {tab === 'comments' && (
+        <div className="max-w-2xl rounded-xl border border-slate-200 bg-slate-50 p-5">
+          <ProjectComments projectId={project.id} />
         </div>
       )}
     </div>

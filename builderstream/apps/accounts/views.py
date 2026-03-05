@@ -334,3 +334,101 @@ class InviteAcceptView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+# ---------------------------------------------------------------------------
+# 13-16. Two-Factor Authentication Views
+# ---------------------------------------------------------------------------
+
+class TwoFactorSetupView(APIView):
+    """
+    GET: Generate a new TOTP secret and QR code for the authenticated user.
+    Does NOT enable 2FA — user must confirm with /2fa/enable/.
+    """
+
+    def get(self, request):
+        from .two_factor import TOTPService
+        secret = TOTPService.generate_secret()
+        uri = TOTPService.get_provisioning_uri(request.user, secret)
+        qr = TOTPService.get_qr_code_base64(uri)
+        return Response({
+            "secret": secret,
+            "qr_code": qr,
+            "provisioning_uri": uri,
+        })
+
+
+class TwoFactorEnableView(APIView):
+    """
+    POST {secret, code}: Confirm TOTP setup and enable 2FA.
+    Returns plaintext backup codes (show once).
+    """
+
+    def post(self, request):
+        from .two_factor import TOTPService
+        secret = request.data.get("secret", "")
+        code = request.data.get("code", "")
+        if not secret or not code:
+            return Response(
+                {"detail": "secret and code are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            plaintext_codes, _ = TOTPService.enable_2fa(request.user, secret, code)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            "detail": "Two-factor authentication enabled.",
+            "backup_codes": plaintext_codes,
+        })
+
+
+class TwoFactorDisableView(APIView):
+    """
+    POST {code}: Disable 2FA after verifying current TOTP or backup code.
+    """
+
+    def post(self, request):
+        from .two_factor import TOTPService
+        if not request.user.two_factor_enabled:
+            return Response(
+                {"detail": "2FA is not enabled."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        code = request.data.get("code", "")
+        if not code:
+            return Response(
+                {"detail": "code is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            TOTPService.disable_2fa(request.user, code)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"detail": "Two-factor authentication disabled."})
+
+
+class TwoFactorBackupCodesView(APIView):
+    """
+    POST {code}: Regenerate backup codes (requires current TOTP code).
+    """
+
+    def post(self, request):
+        from .two_factor import TOTPService
+        if not request.user.two_factor_enabled:
+            return Response(
+                {"detail": "2FA is not enabled."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        code = request.data.get("code", "")
+        if not TOTPService.verify_code(request.user.two_factor_secret, code):
+            return Response(
+                {"detail": "Invalid verification code."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        plaintext, hashed = TOTPService.generate_backup_codes()
+        request.user.two_factor_backup_codes = hashed
+        request.user.save(update_fields=["two_factor_backup_codes"])
+        return Response({"backup_codes": plaintext})

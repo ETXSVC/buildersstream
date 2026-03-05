@@ -208,3 +208,95 @@ class SwitchOrganizationView(APIView):
             {"detail": "Switched organization.", "organization": OrganizationSerializer(membership.organization).data},
             status=status.HTTP_200_OK,
         )
+
+
+# ---------------------------------------------------------------------------
+# Branding
+# ---------------------------------------------------------------------------
+
+class BrandingView(APIView):
+    """
+    GET  /api/v1/tenants/branding/ — public: return branding for current org (CSS vars + logo)
+    PUT  /api/v1/tenants/branding/ — admin only: save branding settings
+    """
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsOrganizationAdmin()]
+
+    def get(self, request):
+        from apps.tenants.models import OrganizationBranding
+        org = getattr(request, "organization", None)
+        if not org:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            branding = org.branding
+        except OrganizationBranding.DoesNotExist:
+            # Return defaults
+            return Response({
+                "company_name": org.name,
+                "logo_url": None,
+                "favicon_url": None,
+                "css_variables": {
+                    "--color-primary": "#f59e0b",
+                    "--color-primary-dark": "#d97706",
+                    "--color-accent": "#1e293b",
+                    "--color-sidebar-bg": "#0f172a",
+                    "--color-sidebar-text": "#f8fafc",
+                    "--font-family": "Inter, sans-serif",
+                },
+                "custom_css": "",
+                "support_email": "",
+                "support_phone": "",
+                "portal_welcome_message": "",
+            })
+
+        return Response({
+            "company_name": branding.company_name_override or org.name,
+            "logo_url": request.build_absolute_uri(branding.logo.url) if branding.logo else None,
+            "favicon_url": request.build_absolute_uri(branding.favicon.url) if branding.favicon else None,
+            "css_variables": branding.to_css_variables(),
+            "custom_css": branding.custom_css,
+            "support_email": branding.support_email,
+            "support_phone": branding.support_phone,
+            "portal_welcome_message": branding.portal_welcome_message,
+        })
+
+    def put(self, request):
+        from apps.tenants.models import OrganizationBranding
+        org = getattr(request, "organization", None)
+        if not org:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        branding, _ = OrganizationBranding.objects.get_or_create(organization=org)
+
+        updateable_fields = [
+            "company_name_override", "primary_color", "primary_dark",
+            "accent_color", "sidebar_bg", "sidebar_text", "font_family",
+            "custom_css", "support_email", "support_phone", "portal_welcome_message",
+        ]
+        for field in updateable_fields:
+            if field in request.data:
+                setattr(branding, field, request.data[field])
+
+        # Handle logo/favicon file uploads
+        if "logo" in request.FILES:
+            branding.logo = request.FILES["logo"]
+        if "favicon" in request.FILES:
+            branding.favicon = request.FILES["favicon"]
+
+        branding.save()
+
+        # Log the change
+        from apps.core.models import AuditLog
+        AuditLog.log(
+            action=AuditLog.Action.ORG_SETTINGS_CHANGED,
+            user=request.user,
+            org=org,
+            ip_address=request.META.get("REMOTE_ADDR"),
+            details={"changed": "branding"},
+        )
+
+        return Response({"detail": "Branding saved."}, status=status.HTTP_200_OK)

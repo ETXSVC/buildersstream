@@ -4,7 +4,7 @@ import { ResponsiveLayout } from '@/layouts/ResponsiveLayout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { LoginPage } from '@/features/auth';
 import { DashboardPage } from '@/features/dashboard';
-import { ProjectsPage, ProjectDetailPage } from '@/features/projects';
+import { ProjectsPage, ProjectDetailPage, KanbanPage } from '@/features/projects';
 import { ClockPage, DailyLogPage, CameraPage, FieldOpsPage } from '@/features/field-ops';
 import { CRMPage } from '@/features/crm';
 import { FinancialsPage } from '@/features/financials';
@@ -15,6 +15,7 @@ import { AnalyticsPage } from '@/features/analytics';
 import { QualitySafetyPage } from '@/features/quality-safety';
 import { PayrollPage } from '@/features/payroll';
 import { ServicePage } from '@/features/service';
+import { BrandingPage } from '@/features/settings';
 
 export const router = createBrowserRouter(
   [
@@ -53,6 +54,7 @@ export const router = createBrowserRouter(
 
             // Projects
             { path: '/projects', element: <ProjectsPage /> },
+            { path: '/projects/kanban', element: <KanbanPage /> },
             { path: '/projects/:id', element: <ProjectDetailPage /> },
 
             // Field Ops
@@ -87,6 +89,9 @@ export const router = createBrowserRouter(
 
             // Service & Warranty
             { path: '/service', element: <ServicePage /> },
+
+            // Settings
+            { path: '/settings/branding', element: <BrandingPage /> },
           ],
         },
       ],

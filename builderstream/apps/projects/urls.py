@@ -29,3 +29,14 @@ action_item_urlpatterns = [
 activity_urlpatterns = [
     path("", views.ActivityStreamView.as_view(), name="activity-stream"),
 ]
+
+kanban_urlpatterns = [
+    path("", views.KanbanBoardView.as_view(), name="kanban-board"),
+]
+
+comment_router = DefaultRouter()
+comment_router.register("", views.ProjectCommentViewSet, basename="project-comment")
+
+comment_urlpatterns = [
+    path("", include(comment_router.urls)),
+]

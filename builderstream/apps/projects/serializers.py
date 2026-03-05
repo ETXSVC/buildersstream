@@ -6,6 +6,7 @@ from .models import (
     ActivityLog,
     DashboardLayout,
     Project,
+    ProjectComment,
     ProjectMilestone,
     ProjectStageTransition,
     ProjectTeamMember,
@@ -216,3 +217,28 @@ class DashboardLayoutSerializer(serializers.ModelSerializer):
         model = DashboardLayout
         fields = ["id", "layout", "is_default", "created_at", "updated_at"]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class ProjectCommentSerializer(serializers.ModelSerializer):
+    author_name = serializers.SerializerMethodField()
+    replies = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProjectComment
+        fields = [
+            "id", "project", "parent", "author", "author_name",
+            "body", "is_edited", "edited_at", "is_deleted",
+            "replies", "created_at", "updated_at",
+        ]
+        read_only_fields = ["id", "author", "is_edited", "edited_at", "is_deleted", "created_at", "updated_at"]
+
+    def get_author_name(self, obj):
+        if obj.author:
+            return f"{obj.author.first_name} {obj.author.last_name}".strip() or obj.author.email
+        return "Deleted User"
+
+    def get_replies(self, obj):
+        if obj.parent_id:
+            return []  # Only show 1 level deep in list view
+        qs = obj.replies.filter(is_deleted=False).order_by("created_at")
+        return ProjectCommentSerializer(qs, many=True, context=self.context).data

@@ -5,6 +5,8 @@
 import { Outlet, NavLink } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { SyncStatusBar } from '@/components/mobile/SyncStatusBar';
+import { NotificationBell } from '@/components/NotificationBell';
+import { CommandPalette } from '@/components/CommandPalette';
 
 const NAV_GROUPS = [
   {
@@ -44,6 +46,12 @@ const NAV_GROUPS = [
       { label: 'Payroll', to: '/payroll' },
     ],
   },
+  {
+    label: 'Settings',
+    items: [
+      { label: 'Branding', to: '/settings/branding' },
+    ],
+  },
 ];
 
 export const DesktopLayout = () => {
@@ -51,6 +59,7 @@ export const DesktopLayout = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
+      <CommandPalette />
       {/* Top nav */}
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-navy-900 shadow-sm">
         <div className="flex h-16 items-center justify-between px-6">
@@ -63,7 +72,20 @@ export const DesktopLayout = () => {
             </div>
             <span className="text-lg font-semibold text-white">BuilderStream</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {/* Search shortcut button */}
+            <button
+              type="button"
+              onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }))}
+              className="hidden md:flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-700/50 px-3 py-1.5 text-xs text-slate-400 hover:bg-slate-700 hover:text-white"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+              Search
+              <kbd className="rounded bg-slate-600 px-1">⌘K</kbd>
+            </button>
+            <NotificationBell />
             <span className="text-sm text-slate-300">{user?.first_name} {user?.last_name}</span>
             <button type="button" onClick={logout}
               className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700 hover:text-white">

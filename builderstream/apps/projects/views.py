@@ -14,6 +14,7 @@ from .models import (
     ActivityLog,
     DashboardLayout,
     Project,
+    ProjectComment,
     ProjectMilestone,
     ProjectTeamMember,
 )
@@ -23,6 +24,7 @@ from .serializers import (
     DashboardLayoutSerializer,
     DashboardSerializer,
     MilestoneSerializer,
+    ProjectCommentSerializer,
     ProjectCreateSerializer,
     ProjectDetailSerializer,
     ProjectListSerializer,
@@ -227,6 +229,101 @@ class ActionItemViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
 # 5. ActivityStreamView — paginated, read-only
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Kanban Board View — returns projects grouped by status
+# ---------------------------------------------------------------------------
+
+class KanbanBoardView(APIView):
+    """
+    GET /api/v1/projects/kanban/
+    Returns projects grouped by lifecycle status, formatted for a kanban board.
+    Each column contains: status, label, color, and list of project cards.
+    """
+    permission_classes = [IsAuthenticated, IsOrganizationMember]
+
+    STATUS_ORDER = [
+        "prospect", "site_survey", "proposal", "acceptance",
+        "in_progress", "milestones", "finish_project", "billing",
+        "paid_complete", "canceled",
+    ]
+
+    STATUS_LABELS = {
+        "prospect": "Prospect",
+        "site_survey": "Site Survey",
+        "proposal": "Proposal",
+        "acceptance": "Acceptance",
+        "in_progress": "In Progress",
+        "milestones": "Milestones",
+        "finish_project": "Finish Project",
+        "billing": "Billing",
+        "paid_complete": "Paid / Complete",
+        "canceled": "Canceled",
+    }
+
+    STATUS_COLORS = {
+        "prospect": "blue",
+        "site_survey": "purple",
+        "proposal": "indigo",
+        "acceptance": "cyan",
+        "in_progress": "amber",
+        "milestones": "orange",
+        "finish_project": "teal",
+        "billing": "lime",
+        "paid_complete": "green",
+        "canceled": "red",
+    }
+
+    def get(self, request):
+        org = getattr(request, "organization", None)
+        if not org:
+            return Response({"detail": "Organization required."}, status=400)
+
+        # Optional filter: hide completed/canceled columns unless requested
+        show_all = request.query_params.get("show_all", "false").lower() == "true"
+
+        projects = (
+            Project.objects.filter(organization=org)
+            .select_related("client", "project_manager")
+            .order_by("-updated_at")
+        )
+
+        # Group by status
+        grouped: dict[str, list] = {s: [] for s in self.STATUS_ORDER}
+        for project in projects:
+            if project.status in grouped:
+                grouped[project.status].append(self._card(project))
+
+        columns = []
+        for s in self.STATUS_ORDER:
+            if not show_all and s in ("paid_complete", "canceled") and not grouped[s]:
+                continue
+            columns.append({
+                "status": s,
+                "label": self.STATUS_LABELS[s],
+                "color": self.STATUS_COLORS[s],
+                "count": len(grouped[s]),
+                "projects": grouped[s],
+            })
+
+        return Response({"columns": columns})
+
+    @staticmethod
+    def _card(project):
+        return {
+            "id": str(project.id),
+            "project_number": project.project_number,
+            "name": project.name,
+            "client_name": project.client_name,
+            "project_manager_name": project.project_manager_name,
+            "health_status": project.health_status,
+            "health_score": project.health_score,
+            "estimated_value": str(project.estimated_value) if project.estimated_value else None,
+            "start_date": project.start_date.isoformat() if project.start_date else None,
+            "estimated_completion": project.estimated_completion.isoformat() if project.estimated_completion else None,
+            "updated_at": project.updated_at.isoformat(),
+        }
+
+
 class ActivityStreamView(generics.ListAPIView):
     serializer_class = ActivityLogSerializer
     permission_classes = [IsAuthenticated, IsOrganizationMember]
@@ -239,3 +336,42 @@ class ActivityStreamView(generics.ListAPIView):
         if org:
             qs = qs.filter(organization=org)
         return qs
+
+
+class ProjectCommentViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
+    """Threaded comments on a project.
+
+    List returns only top-level comments (parent=None); replies nested inside.
+    """
+
+    serializer_class = ProjectCommentSerializer
+    permission_classes = [IsAuthenticated, IsOrganizationMember]
+
+    def get_queryset(self):
+        org = getattr(self.request, "organization", None)
+        qs = (
+            ProjectComment.objects.filter(parent__isnull=True, is_deleted=False)
+            .select_related("author", "project")
+            .prefetch_related("replies__author")
+        )
+        project_id = self.request.query_params.get("project")
+        if project_id:
+            qs = qs.filter(project_id=project_id)
+        if org:
+            qs = qs.filter(organization=org)
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(
+            author=self.request.user,
+            organization=self.request.organization,
+        )
+
+    def perform_update(self, serializer):
+        serializer.save(is_edited=True, edited_at=timezone.now())
+
+    def perform_destroy(self, instance):
+        # Soft-delete to preserve thread context
+        instance.is_deleted = True
+        instance.body = "[deleted]"
+        instance.save(update_fields=["is_deleted", "body"])

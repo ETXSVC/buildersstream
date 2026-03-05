@@ -26,6 +26,7 @@ ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 
 # Application definition
 DJANGO_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -36,6 +37,7 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    "channels",
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
@@ -70,6 +72,7 @@ LOCAL_APPS = [
     "apps.service",
     "apps.analytics",
     "apps.integrations",
+    "apps.notifications",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -83,6 +86,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "apps.tenants.middleware.TenantMiddleware",
     "apps.billing.middleware.SubscriptionRequiredMiddleware",
+    "apps.core.middleware.IPWhitelistMiddleware",
+    "apps.core.middleware.AuditLogMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
@@ -220,6 +225,16 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
     "x-organization-id",
 ]
+
+# Django Channels (Redis db 2, separate from Celery db 0 and cache db 1)
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [env("REDIS_CHANNELS_URL", default="redis://localhost:6379/2")],
+        },
+    },
+}
 
 # Cache (Redis db 1, separate from Celery on db 0)
 CACHES = {

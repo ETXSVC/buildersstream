@@ -350,3 +350,40 @@ class DashboardLayout(TimeStampedModel):
 
     def __str__(self):
         return f"Dashboard: {self.user} @ {self.organization}"
+
+
+class ProjectComment(TenantModel):
+    """Threaded comments on a project (used by project team + clients)."""
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="comments",
+    )
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="replies",
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="project_comments",
+    )
+    body = models.TextField()
+    is_edited = models.BooleanField(default=False)
+    edited_at = models.DateTimeField(null=True, blank=True)
+    is_deleted = models.BooleanField(default=False)  # soft-delete preserves thread
+
+    class Meta:
+        ordering = ["created_at"]
+        indexes = [
+            models.Index(fields=["project", "created_at"], name="proj_comment_proj_created_idx"),
+            models.Index(fields=["parent", "created_at"], name="proj_cmnt_parent_created_idx"),
+        ]
+
+    def __str__(self):
+        return f"Comment by {self.author} on {self.project}"

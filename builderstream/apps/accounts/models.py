@@ -81,7 +81,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     timezone = models.CharField(
         max_length=50, default="America/Chicago", choices=US_TIMEZONES
     )
-    notification_preferences = models.JSONField(default=dict, blank=True)
+
+    # Two-Factor Authentication
+    two_factor_enabled = models.BooleanField(default=False)
+    two_factor_secret = models.CharField(max_length=64, blank=True)  # TOTP base32 secret
+    two_factor_backup_codes = models.JSONField(default=list, blank=True)  # list of hashed backup codes
+    sms_phone = models.CharField(max_length=20, blank=True)  # optional SMS 2FA phone
 
     # Timestamps
     date_joined = models.DateTimeField(default=django_tz.now)

@@ -16,7 +16,9 @@ from apps.clients.urls import portal_urlpatterns
 from apps.projects.urls import (
     action_item_urlpatterns,
     activity_urlpatterns,
+    comment_urlpatterns,
     dashboard_urlpatterns,
+    kanban_urlpatterns,
 )
 
 urlpatterns = [
@@ -41,6 +43,8 @@ urlpatterns = [
     path("api/v1/dashboard/", include((dashboard_urlpatterns, "dashboard"))),
     path("api/v1/action-items/", include((action_item_urlpatterns, "action_items"))),
     path("api/v1/activity/", include((activity_urlpatterns, "activity"))),
+    path("api/v1/kanban/", include((kanban_urlpatterns, "kanban"))),
+    path("api/v1/project-comments/", include((comment_urlpatterns, "project_comments"))),
     path("api/v1/crm/", include("apps.crm.urls", namespace="crm")),
     path("api/v1/estimating/", include("apps.estimating.urls", namespace="estimating")),
     path("api/v1/scheduling/", include("apps.scheduling.urls", namespace="scheduling")),
@@ -55,6 +59,7 @@ urlpatterns = [
     path("api/v1/analytics/", include("apps.analytics.urls", namespace="analytics")),
     path("api/v1/integrations/", include("apps.integrations.urls", namespace="integrations")),
     path("api/v1/public/", include((public_api_urlpatterns, "public_api"))),
+    path("api/v1/", include("apps.notifications.urls")),
 ]
 
 if settings.DEBUG:

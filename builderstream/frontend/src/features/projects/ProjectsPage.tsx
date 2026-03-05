@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   useProjects,
   useCreateProject,
@@ -62,13 +63,21 @@ export const ProjectsPage = () => {
             {data ? `${data.count} project${data.count !== 1 ? 's' : ''}` : ''}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowCreate(true)}
-          className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
-        >
-          + New Project
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/projects/kanban"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+          >
+            Kanban View
+          </Link>
+          <button
+            type="button"
+            onClick={() => setShowCreate(true)}
+            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
+          >
+            + New Project
+          </button>
+        </div>
       </div>
 
       {/* Filters */}

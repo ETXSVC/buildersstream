@@ -8,6 +8,7 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from . import views
+from apps.core.views import UserSessionListView, UserSessionRevokeView
 
 # Auth endpoints (/api/v1/auth/)
 auth_urlpatterns = [
@@ -29,4 +30,12 @@ auth_urlpatterns = [
 user_urlpatterns = [
     path("me/", views.ProfileView.as_view(), name="user-profile"),
     path("me/organizations/", views.UserOrganizationsView.as_view(), name="user-organizations"),
+    # 2FA
+    path("me/2fa/setup/", views.TwoFactorSetupView.as_view(), name="2fa-setup"),
+    path("me/2fa/enable/", views.TwoFactorEnableView.as_view(), name="2fa-enable"),
+    path("me/2fa/disable/", views.TwoFactorDisableView.as_view(), name="2fa-disable"),
+    path("me/2fa/backup-codes/", views.TwoFactorBackupCodesView.as_view(), name="2fa-backup-codes"),
+    # Session management
+    path("me/sessions/", UserSessionListView.as_view(), name="session-list"),
+    path("me/sessions/<uuid:pk>/", UserSessionRevokeView.as_view(), name="session-revoke"),
 ]

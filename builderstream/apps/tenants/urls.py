@@ -14,4 +14,5 @@ router.register("modules", views.ModuleViewSet)
 urlpatterns = [
     path("", include(router.urls)),
     path("switch-organization/", views.SwitchOrganizationView.as_view(), name="switch-organization"),
+    path("branding/", views.BrandingView.as_view(), name="branding"),
 ]

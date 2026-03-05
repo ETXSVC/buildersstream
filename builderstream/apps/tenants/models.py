@@ -178,3 +178,56 @@ class ActiveModule(TimeStampedModel):
         if self.module_key in self.ALWAYS_ACTIVE:
             self.is_active = True
         super().save(*args, **kwargs)
+
+
+class OrganizationBranding(TimeStampedModel):
+    """Per-organization white-label branding settings.
+
+    One-to-one with Organization.  Created on demand when admin saves branding.
+    CSS variables are injected into the frontend via the /api/v1/tenants/branding/ endpoint.
+    """
+
+    organization = models.OneToOneField(
+        "tenants.Organization",
+        on_delete=models.CASCADE,
+        related_name="branding",
+    )
+    # Visual identity
+    logo = models.ImageField(upload_to="branding/logos/", blank=True, null=True)
+    favicon = models.ImageField(upload_to="branding/favicons/", blank=True, null=True)
+    company_name_override = models.CharField(
+        max_length=200, blank=True,
+        help_text="Override org name in UI (e.g., for white-label deployments)",
+    )
+    # Colors (hex or CSS variable names)
+    primary_color = models.CharField(max_length=20, default="#f59e0b")    # amber-400
+    primary_dark = models.CharField(max_length=20, default="#d97706")     # amber-600
+    accent_color = models.CharField(max_length=20, default="#1e293b")     # slate-800
+    sidebar_bg = models.CharField(max_length=20, default="#0f172a")       # slate-900
+    sidebar_text = models.CharField(max_length=20, default="#f8fafc")     # slate-50
+    # Typography
+    font_family = models.CharField(max_length=100, default="Inter, sans-serif")
+    # Custom CSS (advanced)
+    custom_css = models.TextField(blank=True)
+    # Portal / public
+    support_email = models.EmailField(blank=True)
+    support_phone = models.CharField(max_length=30, blank=True)
+    portal_welcome_message = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "Organization Branding"
+        verbose_name_plural = "Organization Branding"
+
+    def __str__(self):
+        return f"Branding: {self.organization}"
+
+    def to_css_variables(self) -> dict:
+        """Return CSS variable dict for frontend injection."""
+        return {
+            "--color-primary": self.primary_color,
+            "--color-primary-dark": self.primary_dark,
+            "--color-accent": self.accent_color,
+            "--color-sidebar-bg": self.sidebar_bg,
+            "--color-sidebar-text": self.sidebar_text,
+            "--font-family": self.font_family,
+        }
