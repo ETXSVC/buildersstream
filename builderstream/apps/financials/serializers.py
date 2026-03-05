@@ -61,7 +61,7 @@ class BudgetSerializer(serializers.ModelSerializer):
         model = Budget
         fields = [
             "id", "project", "cost_code", "cost_code_name", "description",
-            "budget_type", "budgeted_amount", "committed_amount", "actual_amount",
+            "budget_type", "currency", "budgeted_amount", "committed_amount", "actual_amount",
             "variance_amount", "variance_percent", "notes", "created_at", "updated_at",
         ]
         read_only_fields = ["id", "variance_amount", "variance_percent", "created_at", "updated_at"]
@@ -175,7 +175,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
         model = Invoice
         fields = [
             "id", "invoice_number", "invoice_type", "status", "public_token",
-            "project", "project_name", "client", "client_name",
+            "project", "project_name", "client", "client_name", "currency",
             "subtotal", "tax_rate", "tax_amount", "retainage_percent", "retainage_amount",
             "total", "amount_paid", "balance_due",
             "scheduled_value", "work_completed_previous", "work_completed_this_period",
@@ -280,7 +280,7 @@ class ChangeOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChangeOrder
         fields = [
-            "id", "number", "title", "description", "status",
+            "id", "number", "title", "description", "status", "currency",
             "project", "project_name", "client", "client_name",
             "cost_impact", "schedule_impact_days",
             "submitted_date", "approved_date", "rejected_date", "approved_by_name",
@@ -374,3 +374,28 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
             "tax_amount", "issue_date", "expected_delivery_date",
             "delivery_location", "notes", "terms",
         ]
+
+class DunningRuleSerializer(serializers.ModelSerializer):
+    class Meta:
+        from apps.financials.models import DunningRule
+        model = DunningRule
+        fields = [
+            "id", "name", "days_past_due", "action_type",
+            "email_subject", "email_body", "is_active",
+            "created_at", "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class DunningEventSerializer(serializers.ModelSerializer):
+    invoice_number = serializers.CharField(source="invoice.invoice_number", read_only=True)
+    rule_name = serializers.CharField(source="rule.name", read_only=True)
+
+    class Meta:
+        from apps.financials.models import DunningEvent
+        model = DunningEvent
+        fields = [
+            "id", "invoice", "invoice_number", "rule", "rule_name",
+            "triggered_at", "action_taken", "success", "notes",
+        ]
+        read_only_fields = fields

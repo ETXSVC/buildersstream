@@ -244,7 +244,7 @@ class EstimateListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Estimate
         fields = [
-            "id", "estimate_number", "name", "status",
+            "id", "estimate_number", "name", "status", "currency",
             "project", "project_name", "lead", "lead_name",
             "subtotal", "tax_rate", "total",
             "created_by", "created_by_name",
@@ -313,7 +313,7 @@ class EstimateCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Estimate
         fields = [
-            "project", "lead", "name", "tax_rate",
+            "project", "lead", "name", "currency", "tax_rate",
             "notes", "valid_until",
         ]
 

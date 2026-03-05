@@ -47,9 +47,18 @@ const NAV_GROUPS = [
     ],
   },
   {
+    label: 'Team',
+    items: [
+      { label: 'Collaboration', to: '/collaboration' },
+      { label: 'Issues', to: '/issues' },
+    ],
+  },
+  {
     label: 'Settings',
     items: [
       { label: 'Branding', to: '/settings/branding' },
+      { label: 'Dunning', to: '/settings/dunning' },
+      { label: 'Custom Fields', to: '/settings/custom-fields' },
     ],
   },
 ];

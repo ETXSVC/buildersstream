@@ -17,6 +17,8 @@ router.register("change-orders", views.ChangeOrderViewSet)
 router.register("change-order-line-items", views.ChangeOrderLineItemViewSet)
 router.register("purchase-orders", views.PurchaseOrderViewSet)
 router.register("purchase-order-line-items", views.PurchaseOrderLineItemViewSet)
+router.register("dunning-rules", views.DunningRuleViewSet, basename="dunningrule")
+router.register("dunning-events", views.DunningEventViewSet, basename="dunningevent")
 
 urlpatterns = [
     path("", include(router.urls)),

@@ -154,6 +154,8 @@ class ActiveModule(TimeStampedModel):
         PAYROLL = "payroll", "Payroll"
         SERVICE_WARRANTY = "service_warranty", "Service & Warranty"
         ANALYTICS = "analytics", "Analytics & Reporting"
+        ISSUE_TRACKING = "issue_tracking", "Issue Tracking"
+        CUSTOM_FIELDS = "custom_fields", "Custom Fields"
 
     # Modules that are always active and cannot be deactivated
     ALWAYS_ACTIVE = {ModuleKey.PROJECT_CENTER, ModuleKey.ANALYTICS}

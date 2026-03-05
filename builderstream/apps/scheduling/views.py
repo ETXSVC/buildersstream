@@ -215,6 +215,29 @@ class TaskViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
 
+    @action(detail=True, methods=["patch"], url_path="dates")
+    def update_dates(self, request, pk=None):
+        """Lightweight date update for Gantt drag-and-drop."""
+        task = self.get_object()
+        start = request.data.get("start_date")
+        end = request.data.get("end_date")
+        hours = request.data.get("estimated_hours")
+
+        if start:
+            task.planned_start = start
+        if end:
+            task.planned_end = end
+        if hours is not None:
+            task.estimated_hours = hours
+
+        fields = ["planned_start", "planned_end", "estimated_hours"]
+        task.save(update_fields=[f for f in fields if getattr(task, f) is not None])
+
+        from apps.scheduling.tasks import recalculate_critical_paths
+        recalculate_critical_paths.delay(str(task.project_id))
+
+        return Response(TaskSerializer(task).data)
+
     @action(detail=True, methods=["post"], url_path="update-progress")
     def update_progress(self, request, pk=None):
         """Update task completion percentage and status."""

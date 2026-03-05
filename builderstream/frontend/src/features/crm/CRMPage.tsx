@@ -207,6 +207,7 @@ function ContactsView({ search }: { search: string }) {
   const [editContact, setEditContact] = useState<Contact | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Contact | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const { data, isLoading } = useContacts(search || undefined);
   const deleteContact = useDeleteContact();
@@ -313,9 +314,24 @@ function ContactsView({ search }: { search: string }) {
         <ConfirmDeleteModal
           title="Delete Contact"
           description={`Delete ${deleteTarget.full_name}? This cannot be undone.`}
+          error={deleteError}
           isPending={deleteContact.isPending}
-          onConfirm={() => deleteContact.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) })}
-          onCancel={() => setDeleteTarget(null)}
+          onConfirm={() => {
+            setDeleteError(null);
+            deleteContact.mutate(deleteTarget.id, {
+              onSuccess: () => { setDeleteTarget(null); setDeleteError(null); },
+              onError: (err: unknown) => {
+                const msg =
+                  (err as { response?: { data?: { detail?: string; 0?: string } } })
+                    ?.response?.data?.detail ??
+                  (err as { response?: { data?: { 0?: string } } })
+                    ?.response?.data?.[0] ??
+                  'Delete failed. The contact may be linked to other records.';
+                setDeleteError(msg);
+              },
+            });
+          }}
+          onCancel={() => { setDeleteTarget(null); setDeleteError(null); }}
         />
       )}
     </>
@@ -635,12 +651,14 @@ function ModalFooter({ onCancel, isPending, submitLabel }: { onCancel: () => voi
 function ConfirmDeleteModal({
   title,
   description,
+  error,
   isPending,
   onConfirm,
   onCancel,
 }: {
   title: string;
   description: string;
+  error?: string | null;
   isPending: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -650,6 +668,9 @@ function ConfirmDeleteModal({
       <div className="w-full max-w-sm rounded-xl bg-white shadow-xl p-6">
         <h3 className="text-base font-semibold text-slate-900">{title}</h3>
         <p className="mt-2 text-sm text-slate-600">{description}</p>
+        {error && (
+          <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>
+        )}
         <div className="mt-6 flex justify-end gap-3">
           <button
             type="button"

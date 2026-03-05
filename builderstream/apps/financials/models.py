@@ -72,6 +72,7 @@ class Budget(TenantModel):
     )
     description = models.CharField(max_length=200)
     budget_type = models.CharField(max_length=20, choices=BudgetType.choices, default=BudgetType.ORIGINAL)
+    currency = models.CharField(max_length=3, default="USD", help_text="ISO 4217 currency code")
     budgeted_amount = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
     committed_amount = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
     actual_amount = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
@@ -212,6 +213,7 @@ class Invoice(TenantModel):
     invoice_number = models.CharField(max_length=50)
     invoice_type = models.CharField(max_length=20, choices=InvoiceType.choices, default=InvoiceType.STANDARD)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+    currency = models.CharField(max_length=3, default="USD", help_text="ISO 4217 currency code")
     # Public access token (for client-facing invoice view)
     public_token = models.UUIDField(default=uuid.uuid4, unique=True, db_index=True)
     # Amounts
@@ -239,6 +241,11 @@ class Invoice(TenantModel):
     # Stripe integration
     stripe_invoice_id = models.CharField(max_length=100, blank=True)
     stripe_payment_intent_id = models.CharField(max_length=100, blank=True)
+    # Client payment portal fields
+    payment_due_date = models.DateField(null=True, blank=True)
+    payment_terms = models.CharField(max_length=100, blank=True, default="Net 30")
+    allow_partial_payment = models.BooleanField(default=False)
+    minimum_payment_amount = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     # Content
     notes = models.TextField(blank=True)
     terms = models.TextField(blank=True)
@@ -362,6 +369,7 @@ class ChangeOrder(TenantModel):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+    currency = models.CharField(max_length=3, default="USD", help_text="ISO 4217 currency code")
     # Financial impact
     cost_impact = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
     # Schedule impact
@@ -516,3 +524,49 @@ class PurchaseOrderLineItem(TimeStampedModel):
     def save(self, *args, **kwargs):
         self.line_total = self.quantity * self.unit_price
         super().save(*args, **kwargs)
+
+# -- Dunning Workflows ---------------------------------------------------------
+
+class DunningRule(TenantModel):
+    """Rule defining when and how to follow up on overdue invoices."""
+
+    class ActionType(models.TextChoices):
+        EMAIL_REMINDER = "email_reminder", "Send Email Reminder"
+        SUSPEND_PORTAL = "suspend_portal", "Suspend Client Portal Access"
+        FLAG_ESCALATION = "flag_escalation", "Flag for Manual Escalation"
+
+    name = models.CharField(max_length=200)
+    days_past_due = models.PositiveIntegerField(
+        help_text="Number of days past invoice due date to trigger this rule"
+    )
+    action_type = models.CharField(max_length=30, choices=ActionType.choices)
+    email_subject = models.CharField(max_length=255, blank=True)
+    email_body = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["organization", "is_active"], name="fin_dunning_org_active_idx"),
+            models.Index(fields=["organization", "days_past_due"], name="fin_dunning_org_days_idx"),
+        ]
+        ordering = ["days_past_due"]
+
+    def __str__(self):
+        return f"{self.name} ({self.days_past_due}d past due)"
+
+
+class DunningEvent(TimeStampedModel):
+    """Record of a dunning action taken against an invoice."""
+
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="dunning_events")
+    rule = models.ForeignKey(DunningRule, on_delete=models.SET_NULL, null=True, related_name="events")
+    triggered_at = models.DateTimeField(auto_now_add=True)
+    action_taken = models.CharField(max_length=30)
+    success = models.BooleanField(default=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-triggered_at"]
+
+    def __str__(self):
+        return f"Dunning event for {self.invoice.invoice_number} at {self.triggered_at}"

@@ -60,6 +60,9 @@ urlpatterns = [
     path("api/v1/integrations/", include("apps.integrations.urls", namespace="integrations")),
     path("api/v1/public/", include((public_api_urlpatterns, "public_api"))),
     path("api/v1/", include("apps.notifications.urls")),
+    path("api/v1/collaboration/", include("apps.collaboration.urls", namespace="collaboration")),
+    path("api/v1/issue-tracking/", include("apps.issue_tracking.urls", namespace="issue_tracking")),
+    path("api/v1/custom-fields/", include("apps.custom_fields.urls", namespace="custom_fields")),
 ]
 
 if settings.DEBUG:

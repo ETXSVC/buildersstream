@@ -1,7 +1,9 @@
 """CRM views - 7 ViewSets with custom actions + analytics."""
 from collections import defaultdict
 
+from django.db import models as db_models
 from django.db.models import Avg, Count, F, Q
+from django.db.models.deletion import ProtectedError
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -58,6 +60,19 @@ class ContactViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
         elif self.action in ["create", "update", "partial_update"]:
             return ContactCreateSerializer
         return ContactDetailSerializer
+
+    def perform_destroy(self, instance):
+        try:
+            instance.delete()
+        except ProtectedError as e:
+            related = ", ".join(
+                type(obj).__name__ for obj in list(e.protected_objects)[:5]
+            )
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError(
+                f"Cannot delete this contact — it is referenced by: {related}. "
+                "Remove those records first."
+            )
 
     @action(detail=True, methods=["post"], url_path="merge")
     def merge_contact(self, request, pk=None):

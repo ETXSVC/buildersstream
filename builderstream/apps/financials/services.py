@@ -569,3 +569,175 @@ class QuickBooksSyncService:
         """Pull vendor list from QuickBooks (stub)."""
         logger.info("QuickBooks sync stub: pull_vendor_list — QB integration not yet configured")
         return []
+
+
+class CurrencyService:
+    """Exchange rate fetching and amount conversion with Redis caching."""
+
+    CACHE_TTL = 3600  # 1 hour
+    SUPPORTED = {
+        "USD", "EUR", "GBP", "CAD", "AUD", "MXN", "JPY", "CHF",
+        "SEK", "NOK", "DKK", "NZD", "SGD", "HKD", "BRL", "INR",
+    }
+
+    @staticmethod
+    def _cache_key(from_ccy: str, to_ccy: str, date_str: str) -> str:
+        return f"fx:{from_ccy}:{to_ccy}:{date_str}"
+
+    @classmethod
+    def get_exchange_rate(cls, from_currency: str, to_currency: str, rate_date=None):
+        """Return exchange rate with 1-hour Redis cache.
+
+        Falls back to 1.0 if the Open Exchange Rates API key is not configured
+        so that the platform remains functional without external dependencies.
+        """
+        from decimal import Decimal
+        from django.core.cache import cache
+        from django.conf import settings
+        import urllib.request, json as json_mod
+        from django.utils import timezone as tz
+
+        if from_currency == to_currency:
+            return Decimal("1.0")
+
+        date_str = (rate_date or tz.now().date()).isoformat()
+        cache_key = cls._cache_key(from_currency, to_currency, date_str)
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Decimal(str(cached))
+
+        api_key = getattr(settings, "OPEN_EXCHANGE_RATES_API_KEY", "")
+        if not api_key:
+            logger.warning(
+                "OPEN_EXCHANGE_RATES_API_KEY not set — using 1:1 rate for %s→%s",
+                from_currency, to_currency,
+            )
+            return Decimal("1.0")
+
+        try:
+            url = f"https://openexchangerates.org/api/historical/{date_str}.json?app_id={api_key}&base=USD&symbols={from_currency},{to_currency}"
+            with urllib.request.urlopen(url, timeout=5) as resp:
+                payload = json_mod.loads(resp.read())
+            rates = payload.get("rates", {})
+            from_rate = Decimal(str(rates.get(from_currency, 1)))
+            to_rate = Decimal(str(rates.get(to_currency, 1)))
+            rate = to_rate / from_rate
+            cache.set(cache_key, str(rate), CurrencyService.CACHE_TTL)
+            return rate
+        except Exception as exc:
+            logger.error("Currency fetch failed (%s→%s): %s", from_currency, to_currency, exc)
+            return Decimal("1.0")
+
+    @classmethod
+    def convert(cls, amount, from_currency: str, to_currency: str, rate_date=None):
+        from decimal import Decimal
+        amount = Decimal(str(amount))
+        rate = cls.get_exchange_rate(from_currency, to_currency, rate_date)
+        return (amount * rate).quantize(Decimal("0.01"))
+
+    @classmethod
+    def format_amount(cls, amount, currency: str = "USD") -> str:
+        try:
+            from babel.numbers import format_currency
+            return format_currency(amount, currency, locale="en_US")
+        except Exception:
+            return f"{currency} {amount:,.2f}"
+
+# -- DunningService -----------------------------------------------------------
+
+class DunningService:
+    """Process overdue invoices and trigger configured dunning rules."""
+
+    @staticmethod
+    def process_overdue_invoices():
+        """Daily task: find overdue invoices, trigger matching rules not yet fired."""
+        import logging
+        from django.utils import timezone
+        from .models import Invoice, DunningRule, DunningEvent
+
+        logger = logging.getLogger(__name__)
+        now = timezone.now().date()
+
+        # Only SENT / VIEWED / PARTIAL invoices with a past due_date
+        overdue_invoices = Invoice.objects.unscoped().filter(
+            status__in=["sent", "viewed", "partial"],
+            due_date__lt=now,
+        ).select_related("project", "client", "organization")
+
+        for invoice in overdue_invoices:
+            days_past_due = (now - invoice.due_date).days
+            rules = DunningRule.objects.for_organization(invoice.organization).filter(
+                is_active=True,
+                days_past_due__lte=days_past_due,
+            ).order_by("days_past_due")
+
+            for rule in rules:
+                # Check if this rule has already been triggered for this invoice
+                already_triggered = DunningEvent.objects.filter(
+                    invoice=invoice,
+                    rule=rule,
+                ).exists()
+                if already_triggered:
+                    continue
+
+                success = DunningService._execute_rule(invoice, rule)
+                DunningEvent.objects.create(
+                    invoice=invoice,
+                    rule=rule,
+                    action_taken=rule.action_type,
+                    success=success,
+                )
+                logger.info(
+                    "Dunning rule %s triggered for invoice %s (days_past_due=%d)",
+                    rule.name, invoice.invoice_number, days_past_due,
+                )
+
+    @staticmethod
+    def _execute_rule(invoice, rule):
+        """Execute the dunning action. Returns True on success."""
+        import logging
+        logger = logging.getLogger(__name__)
+
+        try:
+            if rule.action_type == "email_reminder":
+                DunningService._send_email_reminder(invoice, rule)
+            elif rule.action_type == "suspend_portal":
+                DunningService._suspend_portal_access(invoice)
+            elif rule.action_type == "flag_escalation":
+                logger.warning(
+                    "ESCALATION REQUIRED: Invoice %s is %s days past due � org %s",
+                    invoice.invoice_number,
+                    (timezone.now().date() - invoice.due_date).days,
+                    invoice.organization.name,
+                )
+            return True
+        except Exception:
+            logger.exception("Dunning rule %s failed for invoice %s", rule.pk, invoice.pk)
+            return False
+
+    @staticmethod
+    def _send_email_reminder(invoice, rule):
+        """Send email reminder. Stubs email sending � full integration requires email service."""
+        import logging
+        logger = logging.getLogger(__name__)
+
+        client_name = invoice.client.first_name + " " + invoice.client.last_name if invoice.client else "Client"
+        body = rule.email_body.replace("{{invoice_number}}", invoice.invoice_number)
+        body = body.replace("{{balance_due}}", str(invoice.balance_due))
+        body = body.replace("{{client_name}}", client_name)
+        body = body.replace("{{due_date}}", str(invoice.due_date))
+
+        logger.info(
+            "[DUNNING EMAIL] To: %s | Subject: %s | Invoice: %s | Balance: %s",
+            invoice.sent_to_email or (invoice.client.email if invoice.client else "?"),
+            rule.email_subject,
+            invoice.invoice_number,
+            invoice.balance_due,
+        )
+        # Full implementation: call EmailService.send(to=email, subject=..., body=...)
+
+    @staticmethod
+    def _suspend_portal_access(invoice):
+        """Flag the invoice so portal access is blocked."""
+        invoice.status = "overdue"
+        invoice.save(update_fields=["status"])

@@ -73,6 +73,9 @@ LOCAL_APPS = [
     "apps.analytics",
     "apps.integrations",
     "apps.notifications",
+    "apps.collaboration",
+    "apps.issue_tracking",
+    "apps.custom_fields",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -389,6 +392,20 @@ CELERY_BEAT_SCHEDULE = {
     "fetch-weather-forecasts": {
         "task": "integrations.fetch_weather_forecasts",
         "schedule": 10800,  # every 3 hours
+    },
+    # Issue Tracking tasks
+    "check-sla-breaches": {
+        "task": "issue_tracking.check_sla_breaches",
+        "schedule": 900,  # every 15 minutes
+    },
+    "sla-warning-notifications": {
+        "task": "issue_tracking.send_sla_warning_notifications",
+        "schedule": 1800,  # every 30 minutes
+    },
+    # Financials: dunning
+    "run-dunning-workflow": {
+        "task": "financials.run_dunning_workflow",
+        "schedule": crontab(hour=8, minute=0),  # daily 8am
     },
 }
 

@@ -13,10 +13,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.mixins import TenantViewSetMixin
-from apps.core.permissions import IsOrganizationMember, role_required
+from apps.core.permissions import IsOrganizationAdmin, IsOrganizationMember, role_required
 from apps.tenants.context import get_current_organization
 
 from .models import (
+    DunningRule,
+    DunningEvent,
     Budget,
     ChangeOrder,
     ChangeOrderLineItem,
@@ -695,3 +697,35 @@ class InvoicePaymentView(APIView):
             return Response(
                 {"detail": "Payment service temporarily unavailable."}, status=503
             )
+
+class DunningRuleViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
+    """Dunning rule management (admin only)."""
+
+    queryset = DunningRule.objects.all()
+    permission_classes = [IsOrganizationAdmin]
+    filterset_fields = ["is_active", "action_type"]
+    ordering = ["days_past_due"]
+
+    def get_serializer_class(self):
+        from .serializers import DunningRuleSerializer
+        return DunningRuleSerializer
+
+
+class DunningEventViewSet(TenantViewSetMixin, viewsets.ReadOnlyModelViewSet):
+    """Read-only dunning event log."""
+
+    queryset = DunningEvent.objects.none()
+    permission_classes = [IsOrganizationAdmin]
+    ordering = ["-triggered_at"]
+
+    def get_queryset(self):
+        org = getattr(self.request, "organization", None)
+        if org:
+            return DunningEvent.objects.filter(
+                invoice__organization=org
+            ).select_related("invoice", "rule")
+        return DunningEvent.objects.none()
+
+    def get_serializer_class(self):
+        from .serializers import DunningEventSerializer
+        return DunningEventSerializer

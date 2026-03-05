@@ -1,0 +1,177 @@
+import { useEffect, useRef, useState, useCallback } from 'react';
+import Gantt from 'frappe-gantt';
+import { useGanttData } from '@/hooks/useScheduling';
+import { useProjects } from '@/hooks/useProjects';
+import { patchTaskDates } from '@/api/scheduling';
+import { useQueryClient } from '@tanstack/react-query';
+
+type ViewMode = 'Day' | 'Week' | 'Month';
+
+export const GanttView = () => {
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [viewMode, setViewMode] = useState<ViewMode>('Week');
+  const ganttRef = useRef<HTMLDivElement>(null);
+  const ganttInstanceRef = useRef<Gantt | null>(null);
+  const queryClient = useQueryClient();
+
+  const { data: projects } = useProjects();
+  const projectList = projects?.results ?? [];
+
+  const { data: ganttData, isLoading, error } = useGanttData(selectedProjectId || undefined);
+
+  const handleDateChange = useCallback(
+    async (task: { id: string; _start: Date; _end: Date }) => {
+      const pad = (d: Date) => d.toISOString().split('T')[0];
+      try {
+        await patchTaskDates(task.id, {
+          start_date: pad(task._start),
+          end_date: pad(task._end),
+        });
+        queryClient.invalidateQueries({ queryKey: ['gantt', selectedProjectId] });
+      } catch {
+        // optimistic update already shown; ignore error silently
+      }
+    },
+    [selectedProjectId, queryClient]
+  );
+
+  useEffect(() => {
+    if (!ganttRef.current || !ganttData?.tasks?.length) return;
+
+    // Build frappe-gantt tasks
+    const tasks = ganttData.tasks
+      .filter((t) => t.planned_start && t.planned_end)
+      .map((t) => ({
+        id: t.id,
+        name: t.title,
+        start: t.planned_start!,
+        end: t.planned_end!,
+        progress: t.completion_percentage ?? 0,
+        dependencies: ganttData.dependencies
+          .filter((d) => d.successor === t.id)
+          .map((d) => d.predecessor)
+          .join(','),
+        custom_class: t.is_critical_path ? 'gantt-critical' : '',
+      }));
+
+    if (!tasks.length) return;
+
+    // Destroy previous instance
+    if (ganttRef.current) ganttRef.current.innerHTML = '';
+
+    ganttInstanceRef.current = new Gantt(ganttRef.current, tasks, {
+      view_mode: viewMode,
+      date_format: 'YYYY-MM-DD',
+      popup_trigger: 'click',
+      on_date_change: (task: any, start: Date, end: Date) => {
+        handleDateChange({ id: task.id, _start: start, _end: end });
+      },
+      on_progress_change: () => {},
+      on_click: () => {},
+    });
+
+    return () => {
+      if (ganttRef.current) ganttRef.current.innerHTML = '';
+      ganttInstanceRef.current = null;
+    };
+  }, [ganttData, viewMode, handleDateChange]);
+
+  // Update view mode without re-fetching
+  useEffect(() => {
+    if (ganttInstanceRef.current) {
+      ganttInstanceRef.current.change_view_mode(viewMode);
+    }
+  }, [viewMode]);
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-3">
+        <select
+          value={selectedProjectId}
+          onChange={(e) => setSelectedProjectId(e.target.value)}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+        >
+          <option value="">— Select a project —</option>
+          {projectList.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+
+        <div className="flex rounded-lg border border-slate-200 bg-white overflow-hidden text-sm">
+          {(['Day', 'Week', 'Month'] as ViewMode[]).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setViewMode(m)}
+              className={[
+                'px-3 py-1.5 font-medium transition-colors',
+                viewMode === m
+                  ? 'bg-amber-500 text-white'
+                  : 'text-slate-600 hover:bg-slate-50',
+              ].join(' ')}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+
+        {ganttData && (
+          <span className="ml-auto text-xs text-slate-500">
+            {ganttData.stats.completed_tasks}/{ganttData.stats.total_tasks} tasks complete
+            &nbsp;·&nbsp;
+            {ganttData.stats.percent_complete}% done
+            &nbsp;·&nbsp;
+            {ganttData.stats.critical_path_tasks} on critical path
+          </span>
+        )}
+      </div>
+
+      {/* States */}
+      {!selectedProjectId && (
+        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-16 text-center text-slate-400 text-sm">
+          Select a project to view its Gantt chart
+        </div>
+      )}
+
+      {selectedProjectId && isLoading && (
+        <div className="flex items-center justify-center py-16 text-slate-400 text-sm">
+          Loading…
+        </div>
+      )}
+
+      {selectedProjectId && !isLoading && error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          Failed to load Gantt data.
+        </div>
+      )}
+
+      {selectedProjectId && !isLoading && !error && ganttData && !ganttData.tasks.filter((t) => t.planned_start && t.planned_end).length && (
+        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-16 text-center text-slate-400 text-sm">
+          No tasks with scheduled dates found for this project.
+        </div>
+      )}
+
+      {/* Gantt container */}
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white p-4">
+        <div ref={ganttRef} className="gantt-container" />
+      </div>
+
+      {/* Legend */}
+      {ganttData?.tasks?.length ? (
+        <div className="flex items-center gap-4 text-xs text-slate-500">
+          <span className="flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded-sm bg-amber-400" />
+            Normal task
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded-sm bg-red-500" />
+            Critical path
+          </span>
+        </div>
+      ) : null}
+    </div>
+  );
+};

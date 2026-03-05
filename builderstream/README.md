@@ -4,15 +4,31 @@ Construction management SaaS platform built with Django 5.x, Django REST Framewo
 
 ## Implementation Status
 
-**Completed Sections:**
-- ✅ **Section 1:** Django 5.x scaffold with multi-app structure
-- ✅ **Section 2:** Multi-tenant foundation (organizations, memberships, modules)
-- ✅ **Section 3:** Authentication & user management (email-only JWT, registration)
-- ✅ **Section 4:** Billing integration (Stripe subscriptions, webhooks, usage metering)
-- ✅ **Section 5:** Project Command Center (lifecycle state machine, health scoring, dashboard with Redis caching, action items, activity stream)
-- 🔧 **Section 6:** CRM & Lead Management (7 models, lead scoring, pipeline automation - in progress)
+✅ **All core sections and platform sprints complete.** The platform is feature-complete.
 
-**Next Steps:** Complete Section 6 → Estimating → Scheduling → Job Costing → Client Portal → Document Management → Field Operations → Quality & Safety → Payroll → Service & Warranty → Analytics
+| Module | Status | Notes |
+|--------|--------|-------|
+| Scaffold (Sections 1–4) | ✅ | Django 5.x, multi-tenant, JWT auth, Stripe billing |
+| Project Command Center | ✅ | State machine, health scoring, Gantt, activity stream |
+| CRM & Lead Management | ✅ | 7 models, lead scoring, pipeline automations |
+| Estimating & Takeoffs | ✅ | 9 models, PDF/Excel export, e-signature |
+| Client Portal | ✅ | Magic-link JWT, selections, approvals |
+| Document & Photo Control | ✅ | S3 presigned URLs, versioning, RFIs, submittals |
+| Scheduling & Resources | ✅ | CPM algorithm, Gantt, crews, equipment |
+| Financial Management | ✅ | Job costing, invoicing, change orders, POs, dunning |
+| Field Operations | ✅ | GPS clock-in/out, daily logs, geofencing, expenses |
+| Quality & Safety | ✅ | Inspections, deficiencies, incidents, OSHA |
+| Payroll | ✅ | Certified payroll, pay periods, workforce analytics |
+| Service & Warranty | ✅ | Tickets, dispatch board, SLAs |
+| Analytics | ✅ | KPI engine, report builder, Excel/PDF export |
+| Integrations | ✅ | QuickBooks hooks, webhooks, public API keys, weather |
+| Mobile / PWA | ✅ | Service worker, offline sync, geofencing |
+
+**Platform Sprints:**
+- ✅ **Sprint 1:** ASGI/Channels, 2FA TOTP, Audit logs, WebSocket notifications
+- ✅ **Sprint 2:** Kanban board, white-label branding, notification bell
+- ✅ **Sprint 3:** Threaded comments, universal search, command palette (⌘K)
+- ✅ **Sprint 4:** Issue Tracking (SLA/escalation), Dunning Workflows, Client Payment Portal (`/pay/:token`), Custom Fields Engine
 
 ## Architecture
 
@@ -239,17 +255,20 @@ All API endpoints are mounted under `/api/v1/`:
 | **Dashboard** | `/api/v1/dashboard/` | **Org dashboard, action items, activity** | **✅ Complete** |
 | **Action Items** | `/api/v1/action-items/` | **Tasks, deadlines, alerts** | **✅ Complete** |
 | **Activity** | `/api/v1/activity/` | **Org-wide activity stream** | **✅ Complete** |
-| **CRM** | `/api/v1/crm/` | **7 models: contacts, companies, pipeline, leads, interactions, automation, templates** | **🔧 In Progress** |
-| Estimating | `/api/v1/estimating/` | Cost codes, estimates, line items | 🚧 Planned |
-| Scheduling | `/api/v1/scheduling/` | Crews, schedule tasks | 🚧 Planned |
-| Financials | `/api/v1/financials/` | Budgets, invoices, change orders | 🚧 Planned |
-| Clients | `/api/v1/clients/` | Portal access, selections | 🚧 Planned |
-| Documents | `/api/v1/documents/` | Folders, files, RFIs, submittals | 🚧 Planned |
-| Field Ops | `/api/v1/field-ops/` | Daily logs, time entries, expenses | 🚧 Planned |
-| Quality & Safety | `/api/v1/quality-safety/` | Inspections, incidents, checklists | 🚧 Planned |
-| Payroll | `/api/v1/payroll/` | Pay periods, records, certified payroll | 🚧 Planned |
-| Service | `/api/v1/service/` | Tickets, warranties | 🚧 Planned |
-| Analytics | `/api/v1/analytics/` | Dashboards, reports, KPIs | 🚧 Planned |
+| CRM | `/api/v1/crm/` | 7 models: contacts, pipeline, leads, automations | ✅ Complete |
+| Estimating | `/api/v1/estimating/` | 9 models, PDF/Excel export, e-signature | ✅ Complete |
+| Scheduling | `/api/v1/scheduling/` | CPM, Gantt, crews, equipment | ✅ Complete |
+| Financials | `/api/v1/financials/` | Job costing, invoicing, change orders, POs, dunning | ✅ Complete |
+| Clients | `/api/v1/clients/` | Magic-link portal, selections, approvals | ✅ Complete |
+| Documents | `/api/v1/documents/` | S3 presigned URLs, versioning, RFIs, submittals | ✅ Complete |
+| Field Ops | `/api/v1/field-ops/` | GPS clock-in/out, daily logs, expenses | ✅ Complete |
+| Quality & Safety | `/api/v1/quality-safety/` | Inspections, incidents, OSHA | ✅ Complete |
+| Payroll | `/api/v1/payroll/` | Certified payroll, workforce analytics | ✅ Complete |
+| Service | `/api/v1/service/` | Tickets, dispatch board, warranties | ✅ Complete |
+| Analytics | `/api/v1/analytics/` | KPI engine, report builder, exports | ✅ Complete |
+| Issue Tracking | `/api/v1/issue-tracking/` | SLA timers, escalation rules, canned responses | ✅ Complete |
+| Custom Fields | `/api/v1/custom-fields/` | Org-scoped field definitions for any module | ✅ Complete |
+| Public Invoice | `/api/v1/financials/public/invoices/{token}/` | Unauthenticated invoice view + Stripe payment | ✅ Complete |
 
 Interactive API documentation is available at `/api/docs/`.
 

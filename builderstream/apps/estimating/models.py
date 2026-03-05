@@ -175,6 +175,7 @@ class Estimate(TenantModel):
     status = models.CharField(
         max_length=30, choices=Status.choices, default=Status.DRAFT
     )
+    currency = models.CharField(max_length=3, default="USD", help_text="ISO 4217 currency code")
     subtotal = models.DecimalField(
         max_digits=14, decimal_places=2, default=Decimal("0.00")
     )
@@ -336,7 +337,11 @@ class Proposal(TenantModel):
         related_name="proposals",
     )
     client = models.ForeignKey(
-        "crm.Contact", on_delete=models.PROTECT, related_name="proposals"
+        "crm.Contact",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="proposals",
     )
     proposal_number = models.CharField(max_length=50, unique=True, db_index=True)
     public_token = models.UUIDField(default=uuid.uuid4, unique=True, db_index=True)

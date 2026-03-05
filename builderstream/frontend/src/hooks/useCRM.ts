@@ -44,6 +44,7 @@ export function useDeleteContact() {
   return useMutation({
     mutationFn: (id: string) => deleteContact(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['crm', 'contacts'] }),
+    onError: () => qc.invalidateQueries({ queryKey: ['crm', 'contacts'] }),
   });
 }
 

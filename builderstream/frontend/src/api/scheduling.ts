@@ -84,3 +84,11 @@ export async function updateEquipment(id: string, payload: Record<string, unknow
 export async function deleteEquipment(id: string): Promise<void> {
   await apiClient.delete(`/api/v1/scheduling/equipment/${id}/`);
 }
+
+export async function patchTaskDates(
+  id: string,
+  payload: { start_date?: string; end_date?: string; estimated_hours?: number }
+): Promise<Task> {
+  const { data } = await apiClient.patch<Task>(`/api/v1/scheduling/tasks/${id}/dates/`, payload);
+  return data;
+}

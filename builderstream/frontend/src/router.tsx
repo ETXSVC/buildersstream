@@ -15,10 +15,19 @@ import { AnalyticsPage } from '@/features/analytics';
 import { QualitySafetyPage } from '@/features/quality-safety';
 import { PayrollPage } from '@/features/payroll';
 import { ServicePage } from '@/features/service';
-import { BrandingPage } from '@/features/settings';
+import { BrandingPage, DunningPage, CustomFieldsPage } from '@/features/settings';
+import { CollaborationPage } from '@/features/collaboration';
+import { IssuesPage } from '@/features/issues';
+import { PayInvoicePage } from '@/features/financials/PayInvoicePage';
 
 export const router = createBrowserRouter(
   [
+    {
+      // Public routes — no authentication required
+      children: [
+        { path: '/pay/:token', element: <PayInvoicePage /> },
+      ],
+    },
     {
       // Unauthenticated routes
       element: <AuthLayout />,
@@ -90,8 +99,16 @@ export const router = createBrowserRouter(
             // Service & Warranty
             { path: '/service', element: <ServicePage /> },
 
+            // Collaboration / Team Chat
+            { path: '/collaboration', element: <CollaborationPage /> },
+
+            // Issue Tracking
+            { path: '/issues', element: <IssuesPage /> },
+
             // Settings
             { path: '/settings/branding', element: <BrandingPage /> },
+            { path: '/settings/dunning', element: <DunningPage /> },
+            { path: '/settings/custom-fields', element: <CustomFieldsPage /> },
           ],
         },
       ],

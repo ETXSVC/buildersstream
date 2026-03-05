@@ -16,3 +16,21 @@
     overflow: hidden;
   }
 }
+
+/* ── Frappe Gantt overrides ─────────────────────────────────────── */
+.gantt-container .bar-wrapper .bar {
+  fill: #f59e0b; /* amber-400 */
+}
+.gantt-container .bar-wrapper.gantt-critical .bar {
+  fill: #ef4444; /* red-500 */
+}
+.gantt-container .bar-progress {
+  fill: #d97706; /* amber-600 */
+}
+.gantt-container .bar-wrapper.gantt-critical .bar-progress {
+  fill: #dc2626; /* red-600 */
+}
+.gantt-container .bar-label {
+  font-family: inherit;
+  font-size: 11px;
+}

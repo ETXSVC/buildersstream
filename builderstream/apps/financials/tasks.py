@@ -131,3 +131,12 @@ def send_invoice_email(invoice_id, recipient_email, public_url):
         InvoiceExportService.send_invoice_by_email(invoice, recipient_email, public_url)
     except Exception:
         logger.exception("send_invoice_email: failed for invoice %s", invoice_id)
+
+@shared_task(name="financials.run_dunning_workflow")
+def run_dunning_workflow():
+    """Daily: process overdue invoices against configured dunning rules."""
+    from .services import DunningService
+    try:
+        DunningService.process_overdue_invoices()
+    except Exception:
+        logger.exception("run_dunning_workflow: failed")

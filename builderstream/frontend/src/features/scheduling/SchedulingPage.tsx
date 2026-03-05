@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { GanttView } from './GanttView';
 import {
   useTasks, useCrews, useEquipment,
   useCreateTask, useUpdateTask, useDeleteTask,
@@ -10,7 +11,7 @@ import { useOrgMembers } from '@/hooks/useScheduling';
 import { useEmployees } from '@/hooks/usePayroll';
 import { TASK_STATUS_COLORS, TASK_STATUS_LABELS, type Task, type Crew, type Equipment } from '@/types/scheduling';
 
-type Tab = 'tasks' | 'crews' | 'equipment';
+type Tab = 'tasks' | 'crews' | 'equipment' | 'gantt';
 
 export const SchedulingPage = () => {
   const [tab, setTab] = useState<Tab>('tasks');
@@ -27,7 +28,7 @@ export const SchedulingPage = () => {
 
       {/* Tabs */}
       <div className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
-        {(['tasks', 'crews', 'equipment'] as Tab[]).map((t) => (
+        {(['tasks', 'gantt', 'crews', 'equipment'] as Tab[]).map((t) => (
           <button
             key={t}
             type="button"
@@ -42,17 +43,20 @@ export const SchedulingPage = () => {
         ))}
       </div>
 
-      <div className="mb-4">
-        <input
-          type="search"
-          placeholder={`Search ${tab}…`}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-xs rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
-        />
-      </div>
+      {tab !== 'gantt' && (
+        <div className="mb-4">
+          <input
+            type="search"
+            placeholder={`Search ${tab}…`}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full max-w-xs rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+          />
+        </div>
+      )}
 
       {tab === 'tasks' && <TasksTable search={search} />}
+      {tab === 'gantt' && <GanttView />}
       {tab === 'crews' && <CrewsTable search={search} />}
       {tab === 'equipment' && <EquipmentTable search={search} />}
     </div>
