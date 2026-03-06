@@ -7,11 +7,29 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'frappe-gantt/dist/frappe-gantt.css': path.resolve(__dirname, 'node_modules/frappe-gantt/dist/frappe-gantt.css'),
     },
   },
   server: {
     host: true,
     port: 5173,
+    hmr: {
+      clientPort: 5173,
+    },
+    proxy: {
+      '/api': {
+        target: 'http://web:8000',
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: 'ws://web:8000',
+        ws: true,
+      },
+      '/admin': {
+        target: 'http://web:8000',
+        changeOrigin: true,
+      },
+    },
     watch: {
       usePolling: true,
       interval: 500,
