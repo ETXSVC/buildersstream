@@ -1,4 +1,8 @@
 import axios from 'axios';
+// ESM circular imports are safe when accessed inside function bodies (not top-level).
+// client.ts → useAuthStore → apiClient is fine: both modules are fully evaluated
+// before any interceptor runs.
+import { useAuthStore } from '@/stores/auth';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -19,8 +23,6 @@ export const rawClient = axios.create({
 
 // --- Request interceptor: attach org header from Zustand store ---
 apiClient.interceptors.request.use((config) => {
-  // Lazy import to avoid circular dependencies at module load time.
-  const { useAuthStore } = require('@/stores/auth');
   const orgId = useAuthStore.getState().currentOrganizationId;
   if (orgId) {
     config.headers['X-Organization-ID'] = orgId;

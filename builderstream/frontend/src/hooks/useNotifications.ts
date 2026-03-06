@@ -74,7 +74,15 @@ export function useNotifications() {
     connect();
     return () => {
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
-      wsRef.current?.close();
+      // Only close if the socket has moved past CONNECTING (readyState 0).
+      // Closing a CONNECTING socket in StrictMode dev double-mount produces a
+      // harmless "closed before connection established" warning — guard it here.
+      const ws = wsRef.current;
+      if (ws && ws.readyState !== WebSocket.CONNECTING) {
+        ws.close();
+      } else if (ws) {
+        ws.onopen = () => ws.close();
+      }
     };
   }, [connect]);
 
