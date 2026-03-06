@@ -54,22 +54,36 @@ class TenantMiddleware:
         return response
 
     def _try_jwt_auth(self, request):
-        """Attempt JWT authentication for Bearer-token API requests.
+        """Attempt JWT authentication for API requests.
 
         Django middleware runs before DRF view authentication, so request.user
         is AnonymousUser for JWT clients. We authenticate here so TenantMiddleware
         can resolve the org context before the view executes.
+
+        Tries in order:
+        1. Authorization: Bearer header (Swagger, curl, API tools)
+        2. bs_access HttpOnly cookie (browser clients)
         """
+        # 1. Bearer header
         auth_header = request.headers.get("Authorization", "")
-        if not auth_header.startswith("Bearer "):
-            return None
+        if auth_header.startswith("Bearer "):
+            try:
+                from rest_framework_simplejwt.authentication import JWTAuthentication
+                result = JWTAuthentication().authenticate(request)
+                if result:
+                    return result[0]
+            except Exception:
+                pass
+
+        # 2. Cookie fallback — used by browser clients after cookie-auth migration
         try:
-            from rest_framework_simplejwt.authentication import JWTAuthentication
-            result = JWTAuthentication().authenticate(request)
+            from apps.accounts.authentication import JWTCookieAuthentication
+            result = JWTCookieAuthentication().authenticate(request)
             if result:
-                return result[0]  # (user, validated_token)
+                return result[0]
         except Exception:
             pass
+
         return None
 
     def _resolve_organization(self, request, user=None):
