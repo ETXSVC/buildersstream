@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.core.permissions import IsOrganizationAdmin, IsOrganizationMember
-from apps.core.viewsets import TenantViewSetMixin
+from apps.core.mixins import TenantViewSetMixin
 
 from apps.custom_fields.models import CustomFieldDefinition
 from apps.custom_fields.serializers import (
