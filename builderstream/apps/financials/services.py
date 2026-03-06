@@ -705,7 +705,7 @@ class DunningService:
                 DunningService._suspend_portal_access(invoice)
             elif rule.action_type == "flag_escalation":
                 logger.warning(
-                    "ESCALATION REQUIRED: Invoice %s is %s days past due — org %s",
+                    "ESCALATION REQUIRED: Invoice %s is %s days past due  -  org %s",
                     invoice.invoice_number,
                     (timezone.now().date() - invoice.due_date).days,
                     invoice.organization.name,
@@ -717,7 +717,7 @@ class DunningService:
 
     @staticmethod
     def _send_email_reminder(invoice, rule):
-        """Send email reminder. Stubs email sending — full integration requires email service."""
+        """Send email reminder. Stubs email sending  -  full integration requires email service."""
         import logging
         logger = logging.getLogger(__name__)
 
