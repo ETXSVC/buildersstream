@@ -44,6 +44,9 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Skip non-http(s) schemes (e.g. chrome-extension://) — Cache API rejects them
+  if (!url.protocol.startsWith('http')) return;
+
   // Skip non-GET for caching; queue write requests when offline
   if (request.method !== 'GET') {
     event.respondWith(handleMutation(request));
