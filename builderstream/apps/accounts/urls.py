@@ -5,8 +5,6 @@ Exports two url pattern lists:
 - user_urlpatterns: mounted at /api/v1/users/ (profile, organizations)
 """
 from django.urls import path
-from rest_framework_simplejwt.views import TokenRefreshView
-
 from . import views
 from apps.core.views import UserSessionListView, UserSessionRevokeView
 
@@ -14,7 +12,8 @@ from apps.core.views import UserSessionListView, UserSessionRevokeView
 auth_urlpatterns = [
     path("register/", views.RegisterView.as_view(), name="register"),
     path("login/", views.LoginView.as_view(), name="login"),
-    path("token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
+    path("logout/", views.LogoutView.as_view(), name="logout"),
+    path("token/refresh/", views.TokenRefreshWithCookieView.as_view(), name="token-refresh"),
     path("verify-email/", views.VerifyEmailView.as_view(), name="verify-email"),
     path("resend-verification/", views.ResendVerificationView.as_view(), name="resend-verification"),
     path("forgot-password/", views.ForgotPasswordView.as_view(), name="forgot-password"),
@@ -29,6 +28,7 @@ auth_urlpatterns = [
 # User endpoints (/api/v1/users/)
 user_urlpatterns = [
     path("me/", views.ProfileView.as_view(), name="user-profile"),
+    path("me/profile/", views.MeProfileView.as_view(), name="user-me-profile"),
     path("me/organizations/", views.UserOrganizationsView.as_view(), name="user-organizations"),
     # 2FA
     path("me/2fa/setup/", views.TwoFactorSetupView.as_view(), name="2fa-setup"),

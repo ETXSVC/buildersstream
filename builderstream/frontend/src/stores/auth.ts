@@ -1,25 +1,22 @@
 import { create } from 'zustand';
 import { authApi } from '@/api/auth';
+import { apiClient } from '@/api/client';
 import type { User, OrganizationMembership, LoginResponse } from '@/types/auth';
 
 interface AuthState {
   user: User | null;
-  accessToken: string | null;
-  refreshToken: string | null;
   organizations: OrganizationMembership[];
   currentOrganizationId: string | null;
   isAuthenticated: boolean;
 
   login: (email: string, password: string) => Promise<LoginResponse>;
-  logout: () => void;
+  logout: () => Promise<void>;
   switchOrganization: (orgId: string) => void;
-  hydrate: () => void;
+  hydrate: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  accessToken: null,
-  refreshToken: null,
   organizations: [],
   currentOrganizationId: null,
   isAuthenticated: false,
@@ -32,18 +29,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       data.organizations[0]?.organization_id ||
       null;
 
-    localStorage.setItem('bs_access_token', data.access);
-    localStorage.setItem('bs_refresh_token', data.refresh);
-    localStorage.setItem('bs_user', JSON.stringify(data.user));
-    localStorage.setItem('bs_organizations', JSON.stringify(data.organizations));
-    if (currentOrgId) {
-      localStorage.setItem('bs_current_org', currentOrgId);
-    }
-
+    // Tokens are stored in HttpOnly cookies by the backend — never in JS storage.
     set({
       user: data.user,
-      accessToken: data.access,
-      refreshToken: data.refresh,
       organizations: data.organizations,
       currentOrganizationId: currentOrgId,
       isAuthenticated: true,
@@ -52,17 +40,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     return data;
   },
 
-  logout: () => {
-    localStorage.removeItem('bs_access_token');
-    localStorage.removeItem('bs_refresh_token');
-    localStorage.removeItem('bs_user');
-    localStorage.removeItem('bs_organizations');
-    localStorage.removeItem('bs_current_org');
-
+  logout: async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Cookie clearing is server-side; ignore network errors
+    }
     set({
       user: null,
-      accessToken: null,
-      refreshToken: null,
       organizations: [],
       currentOrganizationId: null,
       isAuthenticated: false,
@@ -70,40 +55,31 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   switchOrganization: (orgId) => {
-    localStorage.setItem('bs_current_org', orgId);
     set({ currentOrganizationId: orgId });
   },
 
-  hydrate: () => {
-    const accessToken = localStorage.getItem('bs_access_token');
-    const refreshToken = localStorage.getItem('bs_refresh_token');
-    const userJson = localStorage.getItem('bs_user');
-    const orgsJson = localStorage.getItem('bs_organizations');
-    const currentOrgId = localStorage.getItem('bs_current_org');
+  hydrate: async () => {
+    // 'bs_access' cookie is sent automatically via withCredentials.
+    // 401 → stay unauthenticated; 200 → restore session from backend.
+    try {
+      const { data } = await apiClient.get<{
+        user: User;
+        organizations: OrganizationMembership[];
+      }>('/api/v1/users/me/profile/');
 
-    if (accessToken && refreshToken && userJson) {
-      try {
-        const user = JSON.parse(userJson) as User;
-        const organizations = orgsJson
-          ? (JSON.parse(orgsJson) as OrganizationMembership[])
-          : [];
+      const currentOrgId =
+        data.user.last_active_organization ||
+        data.organizations[0]?.organization_id ||
+        null;
 
-        set({
-          user,
-          accessToken,
-          refreshToken,
-          organizations,
-          currentOrganizationId: currentOrgId,
-          isAuthenticated: true,
-        });
-      } catch {
-        // Corrupted localStorage — clear everything
-        localStorage.removeItem('bs_access_token');
-        localStorage.removeItem('bs_refresh_token');
-        localStorage.removeItem('bs_user');
-        localStorage.removeItem('bs_organizations');
-        localStorage.removeItem('bs_current_org');
-      }
+      set({
+        user: data.user,
+        organizations: data.organizations,
+        currentOrganizationId: currentOrgId,
+        isAuthenticated: true,
+      });
+    } catch {
+      set({ isAuthenticated: false });
     }
   },
 }));

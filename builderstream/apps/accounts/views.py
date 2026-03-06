@@ -8,8 +8,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
+from django.conf import settings as django_settings
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.tenants.models import OrganizationMembership
 
@@ -40,7 +41,7 @@ class RegistrationRateThrottle(AnonRateThrottle):
 # ---------------------------------------------------------------------------
 
 class RegisterView(APIView):
-    """POST: Create user + org + membership, send verification email, return JWT."""
+    """POST: Create user + org + membership, send verification email, return JWT cookies."""
 
     permission_classes = [AllowAny]
     throttle_classes = [RegistrationRateThrottle]
@@ -51,10 +52,8 @@ class RegisterView(APIView):
         user = serializer.save()
 
         refresh = RefreshToken.for_user(user)
-        return Response(
+        response = Response(
             {
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
                 "user": {
                     "id": str(user.id),
                     "email": user.email,
@@ -66,16 +65,101 @@ class RegisterView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+        _set_auth_cookies(response, str(refresh.access_token), str(refresh))
+        return response
 
 
 # ---------------------------------------------------------------------------
 # 2. LoginView
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Cookie helpers
+# ---------------------------------------------------------------------------
+
+_SECURE = not getattr(django_settings, "DEBUG", True)
+_ACCESS_MAX_AGE = 30 * 60          # 30 minutes (matches SIMPLE_JWT setting)
+_REFRESH_MAX_AGE = 7 * 24 * 60 * 60  # 7 days
+
+
+def _set_auth_cookies(response, access: str, refresh: str) -> None:
+    """Set HttpOnly JWT cookies on response."""
+    response.set_cookie(
+        "bs_access",
+        access,
+        max_age=_ACCESS_MAX_AGE,
+        httponly=True,
+        samesite="Lax",
+        secure=_SECURE,
+        path="/",
+    )
+    response.set_cookie(
+        "bs_refresh",
+        refresh,
+        max_age=_REFRESH_MAX_AGE,
+        httponly=True,
+        samesite="Lax",
+        secure=_SECURE,
+        path="/api/v1/auth/token/refresh/",
+    )
+
+
+def _clear_auth_cookies(response) -> None:
+    response.delete_cookie("bs_access", path="/")
+    response.delete_cookie("bs_refresh", path="/api/v1/auth/token/refresh/")
+
+
 class LoginView(TokenObtainPairView):
-    """POST: Authenticate and return JWT + user profile + organizations."""
+    """POST: Authenticate; tokens stored in HttpOnly cookies, body returns user+orgs."""
 
     serializer_class = CustomTokenObtainPairSerializer
+
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            access = response.data.pop("access", None)
+            refresh = response.data.pop("refresh", None)
+            if access and refresh:
+                _set_auth_cookies(response, access, refresh)
+        return response
+
+
+# ---------------------------------------------------------------------------
+# 2b. TokenRefreshWithCookieView
+# ---------------------------------------------------------------------------
+
+class TokenRefreshWithCookieView(TokenRefreshView):
+    """POST: Refresh access token; reads refresh token from cookie, sets new cookies."""
+
+    def post(self, request, *args, **kwargs):
+        # If refresh token not in body, read from cookie
+        if "refresh" not in request.data:
+            refresh_cookie = request.COOKIES.get("bs_refresh")
+            if refresh_cookie:
+                request.data["refresh"] = refresh_cookie
+
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            access = response.data.pop("access", None)
+            refresh = response.data.pop("refresh", None)
+            if access:
+                _set_auth_cookies(response, access, refresh or request.data.get("refresh", ""))
+        return response
+
+
+# ---------------------------------------------------------------------------
+# 2c. LogoutView
+# ---------------------------------------------------------------------------
+
+class LogoutView(APIView):
+    """POST: Clear auth cookies and blacklist refresh token."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        response = Response({"detail": "Logged out."})
+        _clear_auth_cookies(response)
+        return response
 
 
 # ---------------------------------------------------------------------------
@@ -146,6 +230,28 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+# ---------------------------------------------------------------------------
+# 5b. MeProfileView — combined user + organizations for session hydration
+# ---------------------------------------------------------------------------
+
+class MeProfileView(APIView):
+    """GET: Return current user + their organization memberships in one call.
+
+    Used by the frontend auth store hydrate() to restore session from cookie
+    without any localStorage reads.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_data = UserProfileSerializer(request.user, context={"request": request}).data
+        memberships = OrganizationMembership.objects.filter(
+            user=request.user, is_active=True
+        ).select_related("organization")
+        orgs_data = OrganizationMembershipSummarySerializer(memberships, many=True).data
+        return Response({"user": user_data, "organizations": orgs_data})
 
 
 # ---------------------------------------------------------------------------

@@ -166,7 +166,8 @@ SITE_ID = 1
 # Django REST Framework
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        # Cookie-first: reads 'bs_access' HttpOnly cookie, falls back to Bearer header
+        "apps.accounts.authentication.JWTCookieAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (

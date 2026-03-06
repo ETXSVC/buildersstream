@@ -15,7 +15,7 @@ interface ChatState {
   setMessages: (channelId: string, msgs: Message[]) => void;
   prependMessages: (channelId: string, msgs: Message[]) => void;
   decrementUnread: (channelId: string) => void;
-  connectWs: (channelId: string, token: string) => void;
+  connectWs: (channelId: string) => void;
   disconnectWs: (channelId: string) => void;
   sendRaw: (channelId: string, payload: object) => void;
 }
@@ -84,13 +84,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
       ),
     })),
 
-  connectWs: (channelId, token) => {
+  connectWs: (channelId) => {
     const { wsMap } = get();
     if (wsMap[channelId]) return; // already connected
 
     const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
     const host = window.location.host;
-    const url = `${proto}://${host}/ws/collaboration/channels/${channelId}/?token=${token}`;
+    // Auth is via the bs_access HttpOnly cookie sent automatically on WS upgrade.
+    const url = `${proto}://${host}/ws/collaboration/channels/${channelId}/`;
     const ws = new WebSocket(url);
 
     ws.onmessage = (ev) => {

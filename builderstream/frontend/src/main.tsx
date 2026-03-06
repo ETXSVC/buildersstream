@@ -5,7 +5,7 @@ import { useAuthStore } from './stores/auth';
 import './index.css';
 import 'frappe-gantt/dist/frappe-gantt.css';
 
-// Hydrate auth state from localStorage before first render
+// Hydrate auth state from the bs_access cookie via /api/v1/users/me/profile/
 useAuthStore.getState().hydrate();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

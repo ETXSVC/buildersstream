@@ -1,13 +1,13 @@
 """
 ChatConsumer — WebSocket handler for a single channel room.
 
-ws/collaboration/channels/{channel_id}/?token=<jwt>
+ws/collaboration/channels/{channel_id}/
+Auth: JWTCookieAuthMiddleware sets scope['user'] from the 'bs_access' HttpOnly cookie.
 """
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework_simplejwt.exceptions import TokenError
+from django.contrib.auth.models import AnonymousUser
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -15,8 +15,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.channel_id = self.scope["url_route"]["kwargs"]["channel_id"]
         self.group_name = f"chat_{self.channel_id}"
 
-        user = await self._authenticate()
-        if user is None:
+        user = self.scope.get("user")
+        if user is None or isinstance(user, AnonymousUser):
             await self.close(code=4001)
             return
 
@@ -132,19 +132,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
     # ── DB helpers ──────────────────────────────────────────────────── #
-
-    async def _authenticate(self):
-        from apps.accounts.models import User
-        qs = self.scope.get("query_string", b"").decode()
-        params = dict(p.split("=") for p in qs.split("&") if "=" in p)
-        token_str = params.get("token", "")
-        if not token_str:
-            return None
-        try:
-            token = AccessToken(token_str)
-            return await database_sync_to_async(User.objects.get)(pk=token["user_id"])
-        except (TokenError, Exception):
-            return None
 
     @database_sync_to_async
     def _check_membership(self, user, channel_id):

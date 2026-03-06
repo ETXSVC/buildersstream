@@ -2,7 +2,7 @@
 WebSocket consumer for real-time notifications.
 
 Connection URL: ws://host/ws/notifications/
-Auth: JWT token passed as query param ?token=<access_token>
+Auth: JWTCookieAuthMiddleware sets scope['user'] from the 'bs_access' HttpOnly cookie.
 
 Each user is placed in their own channel group: "user_{user_id}"
 Messages are broadcast via NotificationService.send_to_user().
@@ -12,13 +12,11 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
-from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework_simplejwt.exceptions import TokenError
 
 
 class NotificationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        user = await self._authenticate()
+        user = self.scope.get("user")
         if user is None or isinstance(user, AnonymousUser):
             await self.close(code=4001)
             return
@@ -66,22 +64,6 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     # ------------------------------------------------------------------ #
     # Helpers
     # ------------------------------------------------------------------ #
-
-    async def _authenticate(self):
-        """Resolve user from JWT token in query string."""
-        from apps.accounts.models import User
-
-        query_string = self.scope.get("query_string", b"").decode()
-        params = dict(p.split("=") for p in query_string.split("&") if "=" in p)
-        token_str = params.get("token", "")
-        if not token_str:
-            return None
-        try:
-            token = AccessToken(token_str)
-            user_id = token["user_id"]
-            return await database_sync_to_async(User.objects.get)(pk=user_id)
-        except (TokenError, Exception):
-            return None
 
     @database_sync_to_async
     def _get_unread_count(self, user):

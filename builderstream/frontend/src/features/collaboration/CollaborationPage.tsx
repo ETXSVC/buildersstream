@@ -4,22 +4,21 @@ import { ChatSidebar } from './ChatSidebar';
 import { MessageFeed } from './MessageFeed';
 import { MessageComposer } from './MessageComposer';
 import { useChatStore } from '@/stores/chat';
-import { useAuthStore } from '@/stores/auth';
 import type { Message } from '@/api/collaboration';
 
 export function CollaborationPage() {
   const { activeChannelId, channels, connectWs, disconnectWs } = useChatStore();
-  const { accessToken } = useAuthStore();
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
 
   const activeChannel = channels.find((c) => c.id === activeChannelId);
 
-  // Connect WebSocket when active channel changes
+  // Connect WebSocket when active channel changes.
+  // Auth is via the bs_access HttpOnly cookie — no token param needed.
   useEffect(() => {
-    if (!activeChannelId || !accessToken) return;
-    connectWs(activeChannelId, accessToken);
+    if (!activeChannelId) return;
+    connectWs(activeChannelId);
     return () => disconnectWs(activeChannelId);
-  }, [activeChannelId, accessToken, connectWs, disconnectWs]);
+  }, [activeChannelId, connectWs, disconnectWs]);
 
   // Clear editing when channel changes
   useEffect(() => {

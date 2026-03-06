@@ -21,7 +21,7 @@ interface WsMessage {
 }
 
 export function useNotifications() {
-  const accessToken = useAuthStore((s) => s.accessToken);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [connected, setConnected] = useState(false);
@@ -29,8 +29,9 @@ export function useNotifications() {
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const connect = useCallback(() => {
-    if (!accessToken) return;
-    const wsUrl = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/notifications/?token=${accessToken}`;
+    if (!isAuthenticated) return;
+    // Auth is via the bs_access HttpOnly cookie sent automatically on WS upgrade.
+    const wsUrl = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/notifications/`;
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
@@ -58,14 +59,16 @@ export function useNotifications() {
       }
     };
 
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       setConnected(false);
-      // Reconnect after 5s
+      // 4001 = auth rejected (expired/invalid token) — don't retry
+      if (event.code === 4001) return;
+      // Reconnect after 5s for any other close reason
       reconnectTimer.current = setTimeout(connect, 5000);
     };
 
     ws.onerror = () => ws.close();
-  }, [accessToken]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     connect();
