@@ -166,13 +166,15 @@ class DocumentAcknowledgmentSerializer(serializers.ModelSerializer):
 class RFIListSerializer(serializers.ModelSerializer):
     requested_by_name = serializers.SerializerMethodField()
     assigned_to_name = serializers.SerializerMethodField()
+    project_name = serializers.SerializerMethodField()
+    is_overdue = serializers.SerializerMethodField()
 
     class Meta:
         model = RFI
         fields = [
-            "id", "project", "rfi_number", "subject", "status", "priority",
+            "id", "project", "project_name", "rfi_number", "subject", "status", "priority",
             "requested_by", "requested_by_name", "assigned_to", "assigned_to_name",
-            "due_date", "answered_at", "created_at",
+            "due_date", "answered_at", "is_overdue", "created_at",
         ]
         read_only_fields = ["id", "rfi_number", "created_at"]
 
@@ -185,6 +187,15 @@ class RFIListSerializer(serializers.ModelSerializer):
         if obj.assigned_to:
             return obj.assigned_to.get_full_name() or obj.assigned_to.email
         return None
+
+    def get_project_name(self, obj):
+        return obj.project.name if obj.project_id else None
+
+    def get_is_overdue(self, obj):
+        from django.utils import timezone as tz
+        if obj.due_date and obj.status not in ("ANSWERED", "CLOSED"):
+            return obj.due_date < tz.now().date()
+        return False
 
 
 class RFIDetailSerializer(serializers.ModelSerializer):

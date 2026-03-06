@@ -116,8 +116,8 @@ function RFIModal({ record, onClose }: { record?: RFI; onClose: () => void }) {
 
   const [form, setForm] = useState({
     project: record?.project ?? '',
-    title: record?.title ?? '',
-    status: (record?.status ?? 'open') as RFIStatus,
+    subject: record?.subject ?? '',
+    status: (record?.status ?? 'OPEN') as RFIStatus,
     question: record?.question ?? '',
     answer: record?.answer ?? '',
     due_date: record?.due_date ?? '',
@@ -126,8 +126,8 @@ function RFIModal({ record, onClose }: { record?: RFI; onClose: () => void }) {
   useEffect(() => {
     setForm({
       project: record?.project ?? '',
-      title: record?.title ?? '',
-      status: (record?.status ?? 'open') as RFIStatus,
+      subject: record?.subject ?? '',
+      status: (record?.status ?? 'OPEN') as RFIStatus,
       question: record?.question ?? '',
       answer: record?.answer ?? '',
       due_date: record?.due_date ?? '',
@@ -139,11 +139,11 @@ function RFIModal({ record, onClose }: { record?: RFI; onClose: () => void }) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const payload: Record<string, unknown> = {
-      title: form.title,
-      status: form.status,
+      project: form.project,
+      subject: form.subject,
       question: form.question,
     };
-    if (form.project) payload.project = form.project;
+    if (form.status) payload.status = form.status;
     if (form.answer) payload.answer = form.answer;
     if (form.due_date) payload.due_date = form.due_date;
 
@@ -157,9 +157,10 @@ function RFIModal({ record, onClose }: { record?: RFI; onClose: () => void }) {
   return (
     <Modal title={isEdit ? 'Edit RFI' : 'New RFI'} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Project">
+        <Field label="Project *">
           <select
             title="Project"
+            required
             value={form.project}
             onChange={(e) => setForm({ ...form, project: e.target.value })}
             className={selectCls}
@@ -170,12 +171,12 @@ function RFIModal({ record, onClose }: { record?: RFI; onClose: () => void }) {
             ))}
           </select>
         </Field>
-        <Field label="Title *">
+        <Field label="Subject *">
           <input
-            title="Title"
+            title="Subject"
             required
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            value={form.subject}
+            onChange={(e) => setForm({ ...form, subject: e.target.value })}
             placeholder="Brief RFI subject"
             className={inputCls}
           />
@@ -187,9 +188,10 @@ function RFIModal({ record, onClose }: { record?: RFI; onClose: () => void }) {
             onChange={(e) => setForm({ ...form, status: e.target.value as RFIStatus })}
             className={selectCls}
           >
-            <option value="open">Open</option>
-            <option value="answered">Answered</option>
-            <option value="closed">Closed</option>
+            <option value="DRAFT">Draft</option>
+            <option value="OPEN">Open</option>
+            <option value="ANSWERED">Answered</option>
+            <option value="CLOSED">Closed</option>
           </select>
         </Field>
         <Field label="Question *">
@@ -203,7 +205,7 @@ function RFIModal({ record, onClose }: { record?: RFI; onClose: () => void }) {
             className={inputCls}
           />
         </Field>
-        {(isEdit || form.status !== 'open') && (
+        {(isEdit || form.status !== 'OPEN') && (
           <Field label="Answer">
             <textarea
               title="Answer"
@@ -462,14 +464,14 @@ function RFIsTable({ search, onEdit }: { search: string; onEdit: (rfi: RFI) => v
           {data?.results.map((rfi) => (
             <tr key={rfi.id} className={`group hover:bg-slate-50 transition-colors ${rfi.is_overdue ? 'bg-red-50/40' : ''}`}>
               <td className="px-4 py-3 font-medium text-slate-900">RFI-{String(rfi.rfi_number).padStart(3, '0')}</td>
-              <td className="px-4 py-3 text-slate-500 text-xs">{rfi.project_name}</td>
+              <td className="px-4 py-3 text-slate-500 text-xs">{rfi.project_name ?? '—'}</td>
               <td className="px-4 py-3 text-slate-900">
-                {rfi.title}
+                {rfi.subject}
                 {rfi.is_overdue && (
                   <span className="ml-2 rounded-full bg-red-100 px-1.5 py-0.5 text-xs text-red-600">Overdue</span>
                 )}
               </td>
-              <td className="px-4 py-3 text-slate-600">{rfi.submitted_by_name ?? '—'}</td>
+              <td className="px-4 py-3 text-slate-600">{rfi.requested_by_name ?? '—'}</td>
               <td className="px-4 py-3 text-slate-600">
                 {rfi.due_date ? new Date(rfi.due_date).toLocaleDateString() : '—'}
               </td>

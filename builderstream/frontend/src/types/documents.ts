@@ -1,4 +1,4 @@
-export type RFIStatus = 'open' | 'answered' | 'closed';
+export type RFIStatus = 'DRAFT' | 'OPEN' | 'ANSWERED' | 'CLOSED';
 export type SubmittalStatus = 'draft' | 'submitted' | 'under_review' | 'approved' | 'approved_as_noted' | 'rejected' | 'resubmit';
 export type DocumentStatus = 'active' | 'superseded' | 'archived';
 
@@ -31,17 +31,17 @@ export interface Document {
 export interface RFI {
   id: string;
   project: string;
-  project_name: string;
+  project_name: string | null;
   rfi_number: number;
-  title: string;
+  subject: string;
   status: RFIStatus;
   question: string;
   answer: string | null;
-  submitted_by_name: string | null;
+  requested_by_name: string | null;
   assigned_to_name: string | null;
-  date_submitted: string;
+  created_at: string;
   due_date: string | null;
-  date_answered: string | null;
+  answered_at: string | null;
   is_overdue: boolean;
 }
 
@@ -83,9 +83,10 @@ export interface ListResponse<T> {
 }
 
 export const RFI_STATUS_COLORS: Record<RFIStatus, string> = {
-  open: 'bg-amber-100 text-amber-700',
-  answered: 'bg-blue-100 text-blue-700',
-  closed: 'bg-green-100 text-green-700',
+  DRAFT: 'bg-slate-100 text-slate-600',
+  OPEN: 'bg-amber-100 text-amber-700',
+  ANSWERED: 'bg-blue-100 text-blue-700',
+  CLOSED: 'bg-green-100 text-green-700',
 };
 
 export const SUBMITTAL_STATUS_COLORS: Record<SubmittalStatus, string> = {

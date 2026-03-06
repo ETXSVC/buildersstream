@@ -118,4 +118,10 @@ export const router = createBrowserRouter(
       element: <Navigate to="/" replace />,
     },
   ],
+  {
+    future: {
+      v7_relativeSplatPath: true,
+      v7_startTransition: true,
+    },
+  },
 );
