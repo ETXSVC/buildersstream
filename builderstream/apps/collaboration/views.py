@@ -33,7 +33,8 @@ class ChannelViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
             membership = Membership.objects.filter(
                 organization=org, user=user
             ).first()
-            if membership and membership.role < 6:  # less than ADMIN
+            admin_roles = {"owner", "admin"}
+            if membership and membership.role not in admin_roles:
                 qs = qs.filter(members=user)
         return qs
 

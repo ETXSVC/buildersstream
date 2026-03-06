@@ -14,6 +14,7 @@ app_name = "service"
 
 router = DefaultRouter()
 router.register("tickets", ServiceTicketViewSet)
+router.register("service-requests", ServiceTicketViewSet, basename="service-request")  # frontend alias
 router.register("warranties", WarrantyViewSet)
 router.register("warranty-claims", WarrantyClaimViewSet)
 router.register("agreements", ServiceAgreementViewSet)
