@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { fmtDate } from '@/utils/date';
 import { GanttView } from './GanttView';
 import {
   useTasks, useCrews, useEquipment,
@@ -149,10 +150,10 @@ function TasksTable({ search }: { search: string }) {
                 </td>
                 <td className="px-4 py-3 text-slate-500 text-xs">{task.project_name}</td>
                 <td className="px-4 py-3 text-slate-600">
-                  {task.start_date ? new Date(task.start_date).toLocaleDateString() : '—'}
+                  {fmtDate(task.start_date)}
                 </td>
                 <td className="px-4 py-3 text-slate-600">
-                  {task.end_date ? new Date(task.end_date).toLocaleDateString() : '—'}
+                  {fmtDate(task.end_date)}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">

@@ -2,6 +2,7 @@
  * Desktop Field Ops management view — time entries, daily logs, expenses.
  */
 import { useState } from 'react';
+import { fmtDate } from '@/utils/date';
 import { Link } from 'react-router-dom';
 import {
   useOpenTimeEntry,
@@ -215,7 +216,7 @@ function DailyLogsTable() {
           {data?.results.map((log) => (
             <tr key={log.id} className="group hover:bg-slate-50 transition-colors">
               <td className="px-4 py-3 font-medium text-slate-900">{log.project_name}</td>
-              <td className="px-4 py-3 text-slate-600">{new Date(log.log_date).toLocaleDateString()}</td>
+              <td className="px-4 py-3 text-slate-600">{fmtDate(log.log_date)}</td>
               <td className="px-4 py-3 text-slate-500 text-xs">{log.created_by_name}</td>
               <td className="px-4 py-3 text-center text-slate-700">{log.manpower_count}</td>
               <td className="px-4 py-3 text-slate-600 max-w-xs truncate">{log.work_performed || '—'}</td>
@@ -277,7 +278,7 @@ function ExpensesTable() {
             <tr key={exp.id} className="group hover:bg-slate-50 transition-colors">
               <td className="px-4 py-3 font-medium text-slate-900">{exp.employee_name}</td>
               <td className="px-4 py-3 text-slate-500 text-xs">{exp.project_name ?? '—'}</td>
-              <td className="px-4 py-3 text-slate-600">{new Date(exp.incurred_date).toLocaleDateString()}</td>
+              <td className="px-4 py-3 text-slate-600">{fmtDate(exp.incurred_date)}</td>
               <td className="px-4 py-3 text-slate-600">{EXPENSE_CATEGORIES[exp.category] ?? exp.category}</td>
               <td className="px-4 py-3 text-slate-600 max-w-xs truncate">{exp.description}</td>
               <td className="px-4 py-3 font-semibold text-slate-900">

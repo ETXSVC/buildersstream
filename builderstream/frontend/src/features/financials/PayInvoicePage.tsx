@@ -358,7 +358,7 @@ export function PayInvoicePage() {
             {/* Due date */}
             {invoice.due_date && (
               <p className="mt-3 text-xs text-slate-400">
-                Due {new Date(invoice.due_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                Due {(() => { const [y,m,d] = invoice.due_date!.split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}); })()}
               </p>
             )}
           </div>

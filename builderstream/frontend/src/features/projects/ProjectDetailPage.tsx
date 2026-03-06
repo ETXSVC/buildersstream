@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { fmtDate } from '@/utils/date';
 import { useParams, Link } from 'react-router-dom';
 import { useProject, useUpdateProjectStatus } from '@/hooks/useProjects';
 import type { ProjectStatus } from '@/types/projects';
@@ -132,10 +133,8 @@ export const ProjectDetailPage = () => {
           ? `$${Number(project.estimated_value).toLocaleString()}`
           : '—'} />
         <StatCard label="Health Score" value={project.health_score !== null ? `${project.health_score}/100` : '—'} />
-        <StatCard label="Start Date" value={project.start_date
-          ? new Date(project.start_date).toLocaleDateString() : '—'} />
-        <StatCard label="Target Completion" value={project.estimated_completion
-          ? new Date(project.estimated_completion).toLocaleDateString() : '—'} />
+        <StatCard label="Start Date" value={fmtDate(project.start_date)} />
+        <StatCard label="Target Completion" value={fmtDate(project.estimated_completion)} />
       </div>
 
       {/* Tabs */}
@@ -195,7 +194,7 @@ export const ProjectDetailPage = () => {
                   <span className="text-sm font-medium text-slate-900">{m.name}</span>
                 </div>
                 <div className="flex items-center gap-4 text-xs text-slate-500">
-                  {m.due_date && <span>Due {new Date(m.due_date).toLocaleDateString()}</span>}
+                  {m.due_date && <span>Due {fmtDate(m.due_date)}</span>}
                   {m.is_overdue && <span className="text-red-500 font-medium">Overdue</span>}
                 </div>
               </div>

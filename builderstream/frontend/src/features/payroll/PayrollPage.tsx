@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { fmtDate } from '@/utils/date';
 import {
   usePayRuns, useCreatePayRun, useProcessPayRun, useApprovePayRun, useMarkPayRunPaid, useVoidPayRun,
   useCertifiedPayrolls, useSubmitCertifiedPayroll,
@@ -115,8 +116,8 @@ function PayRunsTable({ onMarkPaid }: { onMarkPaid: (run: PayRun) => void }) {
             return (
               <tr key={run.id} className="group hover:bg-slate-50 transition-colors">
                 <td className="px-4 py-3 font-medium text-slate-900">
-                  {new Date(run.pay_period_start).toLocaleDateString()} –{' '}
-                  {new Date(run.pay_period_end).toLocaleDateString()}
+                  {fmtDate(run.pay_period_start)} –{' '}
+                  {fmtDate(run.pay_period_end)}
                 </td>
                 <td className="px-4 py-3 text-center text-slate-700">{run.employee_count}</td>
                 <td className="px-4 py-3 text-slate-700">{regHours.toFixed(1)} h</td>
@@ -141,7 +142,7 @@ function PayRunsTable({ onMarkPaid }: { onMarkPaid: (run: PayRun) => void }) {
                     onApprove={() => approve.mutate(run.id)}
                     onMarkPaid={() => onMarkPaid(run)}
                     onVoid={() => {
-                      if (confirm(`Void pay run for ${new Date(run.pay_period_start).toLocaleDateString()} – ${new Date(run.pay_period_end).toLocaleDateString()}? This cannot be undone.`)) {
+                      if (confirm(`Void pay run for ${fmtDate(run.pay_period_start)} – ${fmtDate(run.pay_period_end)}? This cannot be undone.`)) {
                         void_.mutate(run.id);
                       }
                     }}
@@ -277,7 +278,7 @@ function MarkPaidModal({ run, onClose }: { run: PayRun; onClose: () => void }) {
         <p className="text-sm text-slate-600">
           Confirm payment for period{' '}
           <span className="font-medium text-slate-900">
-            {new Date(run.pay_period_start).toLocaleDateString()} – {new Date(run.pay_period_end).toLocaleDateString()}
+            {fmtDate(run.pay_period_start)} – {fmtDate(run.pay_period_end)}
           </span>
           {'. '}
           Net pay: <span className="font-semibold text-slate-900">{fmt(run.total_net_pay)}</span>
@@ -326,7 +327,7 @@ function CertifiedPayrollTable() {
           {data?.results.map((cp) => (
             <tr key={cp.id} className="group hover:bg-slate-50 transition-colors">
               <td className="px-4 py-3 text-slate-900">{cp.project_name ?? '—'}</td>
-              <td className="px-4 py-3 text-slate-700">{new Date(cp.pay_period_end).toLocaleDateString()}</td>
+              <td className="px-4 py-3 text-slate-700">{fmtDate(cp.pay_period_end)}</td>
               <td className="px-4 py-3 text-center text-slate-500">{cp.week_number}</td>
               <td className="px-4 py-3 text-slate-600 text-xs">{cp.contractor_name}</td>
               <td className="px-4 py-3 text-center text-slate-700">{cp.worker_count}</td>
@@ -334,7 +335,7 @@ function CertifiedPayrollTable() {
               <td className="px-4 py-3">
                 {cp.submitted ? (
                   <span className="text-xs font-medium text-green-600">
-                    ✓ {cp.submitted_date ? new Date(cp.submitted_date).toLocaleDateString() : 'Submitted'}
+                    ✓ {cp.submitted_date ? fmtDate(cp.submitted_date) : 'Submitted'}
                   </span>
                 ) : (
                   <span className="text-xs text-slate-400">Pending</span>
@@ -464,7 +465,7 @@ function EmployeesTable({ onEdit }: { onEdit: (emp: Employee) => void }) {
                   ${parseFloat(emp.base_hourly_rate).toFixed(2)}/hr
                 </td>
                 <td className="px-4 py-3 text-slate-500">
-                  {new Date(emp.hire_date).toLocaleDateString()}
+                  {fmtDate(emp.hire_date)}
                 </td>
                 <td className="px-4 py-3">
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${emp.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>

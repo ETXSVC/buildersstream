@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { fmtDate } from '@/utils/date';
 import {
   useInspections, useDeficiencies, useSafetyIncidents,
   useCreateInspection, useUpdateInspection, useDeleteInspection,
@@ -114,7 +115,7 @@ function InspectionsTable({ onEdit }: { onEdit: (i: Inspection) => void }) {
               <td className="px-4 py-3 text-slate-700 capitalize">{ins.inspection_type.replace('_', ' ')}</td>
               <td className="px-4 py-3 text-slate-600 text-xs">{ins.inspector_name ?? '—'}</td>
               <td className="px-4 py-3 text-slate-600">
-                {ins.scheduled_date ? new Date(ins.scheduled_date).toLocaleDateString() : '—'}
+                {fmtDate(ins.scheduled_date)}
               </td>
               <td className="px-4 py-3 text-center">
                 {ins.score != null ? (
@@ -189,8 +190,8 @@ function DeficienciesTable() {
               <td className="px-4 py-3 text-slate-600 text-xs">{def.assigned_to_name ?? '—'}</td>
               <td className="px-4 py-3 text-slate-600">
                 {def.due_date ? (
-                  <span className={new Date(def.due_date) < new Date() && def.status !== 'resolved' ? 'text-red-600 font-medium' : ''}>
-                    {new Date(def.due_date).toLocaleDateString()}
+                  <span className={new Date(def.due_date + 'T00:00:00') < new Date() && def.status !== 'resolved' ? 'text-red-600 font-medium' : ''}>
+                    {fmtDate(def.due_date)}
                   </span>
                 ) : '—'}
               </td>
@@ -246,7 +247,7 @@ function IncidentsTable({ onEdit }: { onEdit: (i: SafetyIncident) => void }) {
               </td>
               <td className="px-4 py-3 text-slate-600 text-xs">{inc.reported_by_name ?? '—'}</td>
               <td className="px-4 py-3 text-slate-600">
-                {new Date(inc.incident_date).toLocaleDateString()}
+                {fmtDate(inc.incident_date)}
               </td>
               <td className="px-4 py-3 text-center">
                 {inc.injuries_count > 0 ? (

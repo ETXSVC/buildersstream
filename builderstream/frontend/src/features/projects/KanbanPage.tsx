@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { fmtDate } from '@/utils/date';
 import { Link } from 'react-router-dom';
 import { useKanbanBoard, useKanbanMove } from '@/hooks/useKanban';
 import type { KanbanProject, KanbanColumn } from '@/api/kanban';
@@ -210,7 +211,7 @@ function KanbanCard({ project, onDragStart }: KanbanCardProps) {
 
       {project.estimated_completion && (
         <p className="mt-1 text-xs text-slate-400">
-          Due {new Date(project.estimated_completion).toLocaleDateString()}
+          Due {fmtDate(project.estimated_completion)}
         </p>
       )}
     </div>

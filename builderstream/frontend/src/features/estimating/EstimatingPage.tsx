@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { fmtDate } from '@/utils/date';
 import {
   useEstimates, useProposals,
   useCreateEstimate, useUpdateEstimate, useDeleteEstimate,
@@ -162,7 +163,7 @@ function EstimatesTable({
               <td className="px-4 py-3 text-slate-900">${parseFloat(est.subtotal).toLocaleString()}</td>
               <td className="px-4 py-3 font-semibold text-slate-900">${parseFloat(est.total).toLocaleString()}</td>
               <td className="px-4 py-3 text-slate-600">
-                {est.valid_until ? new Date(est.valid_until).toLocaleDateString() : '—'}
+                {fmtDate(est.valid_until)}
               </td>
               <td className="px-4 py-3">
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ESTIMATE_STATUS_COLORS[est.status]}`}>

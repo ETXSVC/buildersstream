@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { fmtDate } from '@/utils/date';
 import {
   useServiceRequests, useWarranties, useWarrantyClaims,
   useCreateServiceRequest, useUpdateServiceRequest, useDeleteServiceRequest,
@@ -124,7 +125,7 @@ function ServiceRequestsTable({ onEdit }: { onEdit: (r: ServiceRequest) => void 
               </td>
               <td className="px-4 py-3 text-slate-600 text-xs">{req.assigned_to_name ?? '—'}</td>
               <td className="px-4 py-3 text-slate-600">
-                {req.scheduled_date ? new Date(req.scheduled_date).toLocaleDateString() : '—'}
+                {fmtDate(req.scheduled_date)}
               </td>
               <td className="px-4 py-3 text-center text-slate-600">
                 {req.estimated_hours != null ? `${req.estimated_hours}h` : '—'}
@@ -189,10 +190,10 @@ function WarrantiesTable({ onEdit }: { onEdit: (w: Warranty) => void }) {
                 <td className="px-4 py-3 text-slate-600 text-xs">{w.project_name ?? '—'}</td>
                 <td className="px-4 py-3 text-slate-700 capitalize text-xs">{w.warranty_type.replace('_', ' ')}</td>
                 <td className="px-4 py-3 text-slate-600 text-xs">{w.provider ?? '—'}</td>
-                <td className="px-4 py-3 text-slate-600">{new Date(w.start_date).toLocaleDateString()}</td>
+                <td className="px-4 py-3 text-slate-600">{fmtDate(w.start_date)}</td>
                 <td className="px-4 py-3">
                   <span className={isExpiringSoon ? 'text-amber-600 font-medium' : 'text-slate-600'}>
-                    {new Date(w.expiry_date).toLocaleDateString()}
+                    {fmtDate(w.expiry_date)}
                     {isExpiringSoon && <span className="ml-1 text-xs">(soon)</span>}
                   </span>
                 </td>
@@ -254,7 +255,7 @@ function WarrantyClaimsTable() {
               </td>
               <td className="px-4 py-3 text-slate-600 text-xs">{claim.project_name ?? '—'}</td>
               <td className="px-4 py-3 text-slate-600">
-                {new Date(claim.claim_date).toLocaleDateString()}
+                {fmtDate(claim.claim_date)}
               </td>
               <td className="px-4 py-3 text-slate-700 max-w-xs">
                 <p className="truncate text-xs">{claim.description}</p>
@@ -269,7 +270,7 @@ function WarrantyClaimsTable() {
                 </span>
               </td>
               <td className="px-4 py-3 text-slate-600 text-xs">
-                {claim.resolved_date ? new Date(claim.resolved_date).toLocaleDateString() : '—'}
+                {fmtDate(claim.resolved_date)}
               </td>
             </tr>
           ))}

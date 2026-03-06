@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { fmtDate } from '@/utils/date';
 import {
   useContacts,
   useLeads,
@@ -147,7 +148,7 @@ function LeadsView({ search }: { search: string }) {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-slate-600 text-xs">
-                  {lead.next_follow_up ? new Date(lead.next_follow_up).toLocaleDateString() : '—'}
+                  {fmtDate(lead.next_follow_up)}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">

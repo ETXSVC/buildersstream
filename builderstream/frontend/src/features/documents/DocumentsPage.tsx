@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { fmtDate } from '@/utils/date';
 import {
   useDocuments, useRFIs, useSubmittals, usePhotos,
   useCreateRFI, useUpdateRFI, useDeleteRFI,
@@ -473,7 +474,7 @@ function RFIsTable({ search, onEdit }: { search: string; onEdit: (rfi: RFI) => v
               </td>
               <td className="px-4 py-3 text-slate-600">{rfi.requested_by_name ?? '—'}</td>
               <td className="px-4 py-3 text-slate-600">
-                {rfi.due_date ? new Date(rfi.due_date).toLocaleDateString() : '—'}
+                {fmtDate(rfi.due_date)}
               </td>
               <td className="px-4 py-3">
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${RFI_STATUS_COLORS[rfi.status]}`}>
@@ -535,10 +536,10 @@ function SubmittalsTable({ search, onEdit }: { search: string; onEdit: (sub: Sub
               <td className="px-4 py-3 text-slate-900">{sub.title}</td>
               <td className="px-4 py-3 font-mono text-xs text-slate-500">{sub.spec_section ?? '—'}</td>
               <td className="px-4 py-3 text-slate-600">
-                {sub.submitted_date ? new Date(sub.submitted_date).toLocaleDateString() : '—'}
+                {fmtDate(sub.submitted_date)}
               </td>
               <td className="px-4 py-3 text-slate-600">
-                {sub.required_by ? new Date(sub.required_by).toLocaleDateString() : '—'}
+                {fmtDate(sub.required_by)}
               </td>
               <td className="px-4 py-3">
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${SUBMITTAL_STATUS_COLORS[sub.status]}`}>

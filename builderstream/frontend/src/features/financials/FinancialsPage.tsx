@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { fmtDate } from '@/utils/date';
 import {
   useInvoices, useBudgets, useChangeOrders, usePurchaseOrders, useExpenses,
   useCreateExpense, useUpdateExpense, useDeleteExpense,
@@ -188,7 +189,7 @@ function InvoicesTable({ search }: { search: string }) {
                   {fmt(inv.balance_due)}
                 </td>
                 <td className="px-4 py-3 text-slate-600">
-                  {inv.due_date ? new Date(inv.due_date).toLocaleDateString() : '—'}
+                  {fmtDate(inv.due_date)}
                 </td>
                 <td className="px-4 py-3">
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${INVOICE_STATUS_COLORS[inv.status]}`}>
@@ -248,7 +249,7 @@ function ExpensesTable({ search }: { search: string }) {
                 <td className="px-4 py-3 text-slate-600">{exp.vendor ?? '—'}</td>
                 <td className="px-4 py-3 font-medium text-slate-900">{fmt(exp.amount)}</td>
                 <td className="px-4 py-3 text-slate-600">
-                  {new Date(exp.expense_date).toLocaleDateString()}
+                  {fmtDate(exp.expense_date)}
                 </td>
                 <td className="px-4 py-3">
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
@@ -424,7 +425,7 @@ function PurchaseOrdersTable({ search }: { search: string }) {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-slate-500">
-                  {po.expected_delivery ? new Date(po.expected_delivery).toLocaleDateString() : '—'}
+                  {fmtDate(po.expected_delivery)}
                 </td>
                 <td className="px-4 py-3">
                   <RowActions

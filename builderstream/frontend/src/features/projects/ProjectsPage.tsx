@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { fmtDate } from '@/utils/date';
 import { Link } from 'react-router-dom';
 import {
   useProjects,
@@ -215,7 +216,7 @@ export const ProjectsPage = () => {
                   <span />
                 )}
                 {project.estimated_completion && (
-                  <span>Due {new Date(project.estimated_completion).toLocaleDateString()}</span>
+                  <span>Due {fmtDate(project.estimated_completion)}</span>
                 )}
               </div>
 
