@@ -5,6 +5,7 @@ export const useAuth = () => {
   return {
     user: store.user,
     isAuthenticated: store.isAuthenticated,
+    hydrating: store.hydrating,
     organizations: store.organizations,
     currentOrganizationId: store.currentOrganizationId,
     login: store.login,

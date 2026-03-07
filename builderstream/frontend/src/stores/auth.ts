@@ -8,6 +8,7 @@ interface AuthState {
   organizations: OrganizationMembership[];
   currentOrganizationId: string | null;
   isAuthenticated: boolean;
+  hydrating: boolean;
 
   login: (email: string, password: string) => Promise<LoginResponse>;
   logout: () => Promise<void>;
@@ -20,6 +21,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   organizations: [],
   currentOrganizationId: null,
   isAuthenticated: false,
+  hydrating: true,
 
   login: async (email, password) => {
     const { data } = await authApi.login({ email, password });
@@ -77,9 +79,10 @@ export const useAuthStore = create<AuthState>((set) => ({
         organizations: data.organizations,
         currentOrganizationId: currentOrgId,
         isAuthenticated: true,
+        hydrating: false,
       });
     } catch {
-      set({ isAuthenticated: false });
+      set({ isAuthenticated: false, hydrating: false });
     }
   },
 }));
