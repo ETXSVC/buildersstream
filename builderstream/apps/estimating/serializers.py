@@ -39,7 +39,7 @@ class CostCodeDetailSerializer(serializers.ModelSerializer):
         model = CostCode
         fields = [
             "id", "code", "name", "division", "category",
-            "is_labor", "is_active", "cost_items_count",
+            "is_labor", "is_active", "notes", "cost_items_count",
             "created_at", "updated_at",
         ]
         read_only_fields = fields
@@ -53,7 +53,7 @@ class CostCodeCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CostCode
-        fields = ["code", "name", "division", "category", "is_labor", "is_active"]
+        fields = ["code", "name", "division", "category", "is_labor", "is_active", "notes"]
 
 
 # ============================================================================

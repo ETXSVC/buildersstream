@@ -20,6 +20,7 @@ class CostCode(TenantModel):
     category = models.CharField(max_length=100, blank=True)
     is_labor = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    notes = models.TextField(blank=True)
 
     class Meta:
         db_table = "estimating_cost_codes"

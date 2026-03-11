@@ -309,17 +309,29 @@ class KanbanBoardView(APIView):
 
     @staticmethod
     def _card(project):
+        client = project.client
+        pm = project.project_manager
+        if client:
+            client_name = f"{client.first_name} {client.last_name}".strip() or None
+        else:
+            client_name = None
+        if pm:
+            pm_name = pm.get_full_name() or pm.email
+        else:
+            pm_name = None
+        from apps.projects.services import ProjectLifecycleService  # noqa: PLC0415
         return {
             "id": str(project.id),
             "project_number": project.project_number,
             "name": project.name,
-            "client_name": project.client_name,
-            "project_manager_name": project.project_manager_name,
+            "client_name": client_name,
+            "project_manager_name": pm_name,
             "health_status": project.health_status,
             "health_score": project.health_score,
             "estimated_value": str(project.estimated_value) if project.estimated_value else None,
             "start_date": project.start_date.isoformat() if project.start_date else None,
             "estimated_completion": project.estimated_completion.isoformat() if project.estimated_completion else None,
+            "allowed_transitions": ProjectLifecycleService.VALID_TRANSITIONS.get(project.status, []),
             "updated_at": project.updated_at.isoformat(),
         }
 

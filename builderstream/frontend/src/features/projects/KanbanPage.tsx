@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { fmtDate } from '@/utils/date';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useKanbanBoard, useKanbanMove } from '@/hooks/useKanban';
 import type { KanbanProject, KanbanColumn } from '@/api/kanban';
 
@@ -29,18 +29,28 @@ export const KanbanPage = () => {
   const move = useKanbanMove();
 
   const dragProject = useRef<string | null>(null);
+  const dragAllowed = useRef<string[]>([]);
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [moveError, setMoveError] = useState('');
 
-  const handleDragStart = (projectId: string) => {
+  const handleDragStart = (projectId: string, allowedTransitions: string[]) => {
     dragProject.current = projectId;
+    dragAllowed.current = allowedTransitions;
   };
 
   const handleDrop = (targetStatus: string) => {
     setDragOver(null);
     const id = dragProject.current;
     if (!id) return;
+    if (!dragAllowed.current.includes(targetStatus)) {
+      const validSteps = dragAllowed.current.join(', ') || 'none';
+      dragProject.current = null;
+      dragAllowed.current = [];
+      setMoveError(`Cannot move directly to "${targetStatus}". Valid next steps: ${validSteps}.`);
+      return;
+    }
     dragProject.current = null;
+    dragAllowed.current = [];
     setMoveError('');
     move.mutate(
       { id, new_status: targetStatus },
@@ -125,7 +135,7 @@ interface KanbanColumnProps {
   onDragOver: (e: React.DragEvent) => void;
   onDragLeave: () => void;
   onDrop: () => void;
-  onCardDragStart: (id: string) => void;
+  onCardDragStart: (id: string, allowedTransitions: string[]) => void;
 }
 
 function KanbanColumn({ column, isDragOver, onDragOver, onDragLeave, onDrop, onCardDragStart }: KanbanColumnProps) {
@@ -162,7 +172,7 @@ function KanbanColumn({ column, isDragOver, onDragOver, onDragLeave, onDrop, onC
           <KanbanCard
             key={project.id}
             project={project}
-            onDragStart={() => onCardDragStart(project.id)}
+            onDragStart={() => onCardDragStart(project.id, project.allowed_transitions)}
           />
         ))}
       </div>
@@ -178,10 +188,13 @@ interface KanbanCardProps {
 }
 
 function KanbanCard({ project, onDragStart }: KanbanCardProps) {
+  const navigate = useNavigate();
+
   return (
     <div
       draggable
       onDragStart={onDragStart}
+      onDoubleClick={() => navigate(`/projects/${project.id}`)}
       className="cursor-grab rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:shadow-md active:cursor-grabbing"
     >
       <div className="mb-1 flex items-start justify-between gap-1">

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { authApi } from '@/api/auth';
-import { apiClient } from '@/api/client';
+import { rawClient } from '@/api/client';
 import type { User, OrganizationMembership, LoginResponse } from '@/types/auth';
 
 interface AuthState {
@@ -62,9 +62,11 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   hydrate: async () => {
     // 'bs_access' cookie is sent automatically via withCredentials.
-    // 401 → stay unauthenticated; 200 → restore session from backend.
+    // Use rawClient (no interceptors) so a 401 here simply falls through to
+    // the catch block — never triggering the refresh-and-redirect flow while
+    // the user is unauthenticated (e.g. on first page load or after logout).
     try {
-      const { data } = await apiClient.get<{
+      const { data } = await rawClient.get<{
         user: User;
         organizations: OrganizationMembership[];
       }>('/api/v1/users/me/profile/');

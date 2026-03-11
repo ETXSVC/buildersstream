@@ -4,6 +4,7 @@
  */
 import { Outlet, NavLink } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useBranding } from '@/hooks/useBranding';
 import { SyncStatusBar } from '@/components/mobile/SyncStatusBar';
 import { NotificationBell } from '@/components/NotificationBell';
 import { CommandPalette } from '@/components/CommandPalette';
@@ -65,21 +66,28 @@ const NAV_GROUPS = [
 
 export const DesktopLayout = () => {
   const { user, logout } = useAuth();
+  const { data: branding } = useBranding();
+  const siteName = branding?.company_name || 'BuilderStream';
+  const logoUrl = branding?.logo_url ?? null;
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       <CommandPalette />
       {/* Top nav */}
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-navy-900 shadow-sm">
+      <header className="bs-sidebar sticky top-0 z-40 border-b border-slate-700 shadow-sm">
         <div className="flex h-16 items-center justify-between px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500">
-              <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round"
-                  d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21" />
-              </svg>
-            </div>
-            <span className="text-lg font-semibold text-white">BuilderStream</span>
+            {logoUrl ? (
+              <img src={logoUrl} alt={siteName} className="h-8 w-8 rounded-lg object-contain" />
+            ) : (
+              <div className="bs-primary-icon flex h-8 w-8 items-center justify-center rounded-lg">
+                <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                    d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21" />
+                </svg>
+              </div>
+            )}
+            <span className="text-lg font-semibold">{siteName}</span>
           </div>
           <div className="flex items-center gap-3">
             {/* Search shortcut button */}
@@ -124,7 +132,7 @@ export const DesktopLayout = () => {
                         [
                           'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                           isActive
-                            ? 'bg-amber-50 text-amber-700'
+                            ? 'bs-sidebar-link-active'
                             : 'text-slate-600 hover:bg-slate-50',
                         ].join(' ')
                       }

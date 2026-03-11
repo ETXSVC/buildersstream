@@ -6,8 +6,7 @@
  *  - Background sync queue for POST/PATCH requests made offline
  */
 
-const CACHE_NAME = 'builderstream-v1';
-const API_CACHE_NAME = 'builderstream-api-v1';
+const CACHE_NAME = 'builderstream-v4';
 const SYNC_QUEUE_NAME = 'builderstream-sync-queue';
 
 // App shell assets to pre-cache on install
@@ -31,7 +30,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) => k !== CACHE_NAME && k !== API_CACHE_NAME)
+          .filter((k) => k !== CACHE_NAME)
           .map((k) => caches.delete(k))
       )
     )
@@ -47,15 +46,21 @@ self.addEventListener('fetch', (event) => {
   // Skip non-http(s) schemes (e.g. chrome-extension://) — Cache API rejects them
   if (!url.protocol.startsWith('http')) return;
 
-  // Skip non-GET for caching; queue write requests when offline
-  if (request.method !== 'GET') {
-    event.respondWith(handleMutation(request));
-    return;
+  // Skip cross-origin requests — let the browser handle them natively.
+  // Cross-origin API calls (e.g. http://localhost:8000) need HttpOnly cookies
+  // that the SW fetch() cannot forward reliably.
+  if (url.origin !== self.location.origin) return;
+
+  // All /api/ requests — GET and mutations — bypass the SW entirely.
+  // Auth cookies (HttpOnly, Set-Cookie) must be handled by the browser natively.
+  // React Query handles client-side API caching; offline mutations queued separately.
+  if (url.pathname.startsWith('/api/')) {
+    return; // do NOT call event.respondWith() — browser handles it
   }
 
-  // API requests: stale-while-revalidate
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(staleWhileRevalidate(request, API_CACHE_NAME));
+  // Non-API mutations (e.g. form posts to non-API routes): queue when offline
+  if (request.method !== 'GET') {
+    event.respondWith(handleMutation(request));
     return;
   }
 
@@ -76,18 +81,6 @@ async function cacheFirst(request) {
   } catch {
     return new Response('Offline', { status: 503 });
   }
-}
-
-async function staleWhileRevalidate(request, cacheName) {
-  const cache = await caches.open(cacheName);
-  const cached = await cache.match(request);
-
-  const fetchPromise = fetch(request).then((response) => {
-    if (response.ok) cache.put(request, response.clone());
-    return response;
-  });
-
-  return cached || fetchPromise;
 }
 
 async function handleMutation(request) {

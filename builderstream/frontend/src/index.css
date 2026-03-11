@@ -8,6 +8,35 @@
   }
 }
 
+/* ── Branding CSS variable defaults ─────────────────────────────── */
+:root {
+  --color-primary: #f59e0b;
+  --color-primary-dark: #d97706;
+  --color-accent: #1e293b;
+  --color-sidebar-bg: #0f172a;
+  --color-sidebar-text: #f8fafc;
+  --font-family: Inter, sans-serif;
+}
+
+/* Applied by useApplyBranding — elements that respond to org branding */
+.bs-sidebar {
+  background-color: var(--color-sidebar-bg);
+  color: var(--color-sidebar-text);
+}
+
+.bs-sidebar-link-active {
+  background-color: rgba(var(--color-primary-rgb, 245 158 11), 0.15);
+  color: var(--color-primary);
+}
+
+.bs-sidebar-link-active:hover {
+  background-color: rgba(var(--color-primary-rgb, 245 158 11), 0.22);
+}
+
+.bs-primary-icon {
+  background-color: var(--color-primary);
+}
+
 @layer utilities {
   .line-clamp-2 {
     display: -webkit-box;

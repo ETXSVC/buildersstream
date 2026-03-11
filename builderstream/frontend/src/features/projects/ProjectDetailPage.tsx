@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { fmtDate } from '@/utils/date';
 import { useParams, Link } from 'react-router-dom';
-import { useProject, useUpdateProjectStatus } from '@/hooks/useProjects';
+import { useProject, useUpdateProjectStatus, useUpdateProject } from '@/hooks/useProjects';
 import type { ProjectStatus } from '@/types/projects';
 import { STATUS_LABELS, STATUS_COLORS, HEALTH_COLORS } from '@/types/projects';
 import { ProjectComments } from './ProjectComments';
@@ -27,7 +27,10 @@ export const ProjectDetailPage = () => {
   const [tab, setTab] = useState<Tab>('overview');
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const [transitionError, setTransitionError] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [editError, setEditError] = useState('');
   const updateStatus = useUpdateProjectStatus();
+  const updateProject = useUpdateProject();
 
   if (isLoading) {
     return (
@@ -86,8 +89,15 @@ export const ProjectDetailPage = () => {
           <p className="mt-1 text-sm text-slate-500">{project.project_number}</p>
         </div>
 
-        {/* Status badge + transition dropdown */}
+        {/* Edit button + Status badge + transition dropdown */}
         <div className="relative flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => { setEditing((e) => !e); setEditError(''); }}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+          >
+            {editing ? 'Cancel' : 'Edit Project'}
+          </button>
           <span className={`rounded-full px-3 py-1 text-sm font-medium ${STATUS_COLORS[project.status]}`}>
             {STATUS_LABELS[project.status]}
           </span>
@@ -125,6 +135,164 @@ export const ProjectDetailPage = () => {
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
           {transitionError}
         </div>
+      )}
+
+      {/* Inline edit form */}
+      {editing && (
+        <form
+          className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const fd = new FormData(e.currentTarget);
+            const payload: Record<string, string | null> = {
+              name: (fd.get('name') as string).trim(),
+              // Text fields: blank=True but NOT null=True — must send '' not null
+              description: (fd.get('description') as string).trim(),
+              address: (fd.get('address') as string).trim(),
+              city: (fd.get('city') as string).trim(),
+              state: (fd.get('state') as string).trim(),
+              // Nullable fields: null=True blank=True — null OK for empty
+              estimated_value: (fd.get('estimated_value') as string).trim() || null,
+              start_date: (fd.get('start_date') as string) || null,
+              estimated_completion: (fd.get('estimated_completion') as string) || null,
+              actual_completion: (fd.get('actual_completion') as string) || null,
+            };
+            setEditError('');
+            updateProject.mutate(
+              { id: project.id, payload },
+              {
+                onSuccess: () => setEditing(false),
+                onError: (err: unknown) => {
+                  const data = (err as { response?: { data?: Record<string, unknown> } })?.response?.data;
+                  let msg = 'Failed to save changes.';
+                  if (data) {
+                    if (typeof data.detail === 'string') {
+                      msg = data.detail;
+                    } else {
+                      const fieldErrors = Object.entries(data)
+                        .map(([field, errors]) => {
+                          const label = field.replace(/_/g, ' ');
+                          const errText = Array.isArray(errors) ? errors.join(' ') : String(errors);
+                          return `${label}: ${errText}`;
+                        })
+                        .join('  •  ');
+                      if (fieldErrors) msg = fieldErrors;
+                    }
+                  }
+                  setEditError(msg);
+                },
+              },
+            );
+          }}
+        >
+          <h3 className="mb-4 text-sm font-semibold text-amber-800">Edit Project</h3>
+
+          {editError && (
+            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+              {editError}
+            </div>
+          )}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-xs font-medium text-slate-600">Project Name *</label>
+              <input
+                name="name"
+                required
+                defaultValue={project.name}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-xs font-medium text-slate-600">Description</label>
+              <textarea
+                name="description"
+                rows={3}
+                defaultValue={project.description ?? ''}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600">Estimated Value ($)</label>
+              <input
+                name="estimated_value"
+                type="number"
+                min="0"
+                step="0.01"
+                defaultValue={project.estimated_value ?? ''}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600">Start Date</label>
+              <input
+                name="start_date"
+                type="date"
+                defaultValue={project.start_date ?? ''}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600">Target Completion</label>
+              <input
+                name="estimated_completion"
+                type="date"
+                defaultValue={project.estimated_completion ?? ''}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600">Actual Completion</label>
+              <input
+                name="actual_completion"
+                type="date"
+                defaultValue={project.actual_completion ?? ''}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-xs font-medium text-slate-600">Address</label>
+              <input
+                name="address"
+                defaultValue={project.address ?? ''}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600">City</label>
+              <input
+                name="city"
+                defaultValue={project.city ?? ''}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600">State</label>
+              <input
+                name="state"
+                defaultValue={project.state ?? ''}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 flex gap-2">
+            <button
+              type="submit"
+              disabled={updateProject.isPending}
+              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:opacity-50"
+            >
+              {updateProject.isPending ? 'Saving…' : 'Save Changes'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setEditing(false); setEditError(''); }}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       )}
 
       {/* Stat cards */}

@@ -12,6 +12,7 @@ export interface KanbanProject {
   start_date: string | null;
   estimated_completion: string | null;
   updated_at: string;
+  allowed_transitions: string[];
 }
 
 export interface KanbanColumn {

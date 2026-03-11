@@ -257,6 +257,8 @@ class LeadListSerializer(serializers.ModelSerializer):
     stage_name = serializers.CharField(source="pipeline_stage.name", read_only=True)
     stage_color = serializers.CharField(source="pipeline_stage.color", read_only=True)
     assigned_to_name = serializers.CharField(source="assigned_to.get_full_name", read_only=True)
+    # Return date-only string so <input type="date"> can display existing values
+    next_follow_up = serializers.DateField(allow_null=True, read_only=True)
 
     class Meta:
         model = Lead
@@ -269,7 +271,9 @@ class LeadListSerializer(serializers.ModelSerializer):
             "stage_color",
             "project_type",
             "estimated_value",
+            "estimated_start",
             "urgency",
+            "description",
             "assigned_to",
             "assigned_to_name",
             "last_contacted_at",
@@ -327,6 +331,11 @@ class LeadDetailSerializer(serializers.ModelSerializer):
 
 class LeadCreateSerializer(serializers.ModelSerializer):
     """Create/update lead."""
+
+    # next_follow_up is a DateTimeField on the model but the UI sends a
+    # date-only string (YYYY-MM-DD). Override with DateField so DRF accepts
+    # it; Django's DateTimeField converts datetime.date → midnight datetime.
+    next_follow_up = serializers.DateField(allow_null=True, required=False)
 
     class Meta:
         model = Lead

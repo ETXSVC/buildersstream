@@ -31,7 +31,12 @@ export function useNotifications() {
   const connect = useCallback(() => {
     if (!isAuthenticated) return;
     // Auth is via the bs_access HttpOnly cookie sent automatically on WS upgrade.
-    const wsUrl = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/notifications/`;
+    // If VITE_API_URL is set (e.g. http://localhost:8000 in dev), derive WS host
+    // from it so we bypass the Vite proxy (which targets the internal Docker hostname).
+    const apiBase = import.meta.env.VITE_API_URL as string | undefined;
+    const wsHost = apiBase ? apiBase.replace(/^https?:\/\//, '') : location.host;
+    const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const wsUrl = `${wsProto}://${wsHost}/ws/notifications/`;
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;

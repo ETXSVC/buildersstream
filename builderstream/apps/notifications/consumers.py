@@ -18,6 +18,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         user = self.scope.get("user")
         if user is None or isinstance(user, AnonymousUser):
+            await self.accept()
             await self.close(code=4001)
             return
 

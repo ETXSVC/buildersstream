@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useBranding } from '@/hooks/useBranding';
 import { SyncStatusBar } from '@/components/mobile/SyncStatusBar';
 
 const NAV_GROUPS = [
@@ -48,26 +49,34 @@ const NAV_GROUPS = [
 
 export const TabletLayout = () => {
   const { user, logout } = useAuth();
+  const { data: branding } = useBranding();
+  const siteName = branding?.company_name || 'BuilderStream';
+  const logoUrl = branding?.logo_url ?? null;
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       {/* Top bar */}
-      <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-slate-200 bg-white px-4 shadow-sm">
+      <header className="bs-sidebar sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-slate-700 px-4 shadow-sm">
         <button
           type="button"
           onClick={() => setSidebarOpen((o) => !o)}
           aria-label="Toggle sidebar"
-          className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100"
+          className="rounded-md p-1.5 opacity-70 hover:opacity-100"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <span className="flex-1 text-sm font-semibold text-slate-900">BuilderStream</span>
-        <span className="text-sm text-slate-500">{user?.first_name}</span>
+        <div className="flex flex-1 items-center gap-2">
+            {logoUrl ? (
+              <img src={logoUrl} alt={siteName} className="h-6 w-6 rounded object-contain" />
+            ) : null}
+            <span className="text-sm font-semibold">{siteName}</span>
+          </div>
+        <span className="text-sm opacity-70">{user?.first_name}</span>
         <button type="button" onClick={logout}
-          className="rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100">
+          className="rounded-md px-3 py-1.5 text-sm opacity-70 hover:opacity-100">
           Sign out
         </button>
       </header>
@@ -94,7 +103,7 @@ export const TabletLayout = () => {
                           [
                             'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                             isActive
-                              ? 'bg-amber-50 text-amber-700'
+                              ? 'bs-sidebar-link-active'
                               : 'text-slate-600 hover:bg-slate-50',
                           ].join(' ')
                         }

@@ -5,22 +5,30 @@ import { Outlet } from 'react-router-dom';
 import { MobileNavigation } from '@/components/mobile/MobileNavigation';
 import { SyncStatusBar } from '@/components/mobile/SyncStatusBar';
 import { useAuth } from '@/hooks/useAuth';
+import { useBranding } from '@/hooks/useBranding';
 
 export const MobileLayout = () => {
   const { logout } = useAuth();
+  const { data: branding } = useBranding();
+  const siteName = branding?.company_name || 'BuilderStream';
+  const logoUrl = branding?.logo_url ?? null;
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       {/* Minimal top bar */}
-      <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm">
+      <header className="bs-sidebar sticky top-0 z-40 flex h-14 items-center justify-between border-b border-slate-700 px-4 shadow-sm">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-amber-500">
-            <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21" />
-            </svg>
-          </div>
-          <span className="text-sm font-semibold text-slate-900">BuilderStream</span>
+          {logoUrl ? (
+            <img src={logoUrl} alt={siteName} className="h-7 w-7 rounded-md object-contain" />
+          ) : (
+            <div className="bs-primary-icon flex h-7 w-7 items-center justify-center rounded-md">
+              <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round"
+                  d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21" />
+              </svg>
+            </div>
+          )}
+          <span className="text-sm font-semibold">{siteName}</span>
         </div>
         <button
           type="button"

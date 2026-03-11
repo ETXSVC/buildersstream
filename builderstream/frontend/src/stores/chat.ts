@@ -89,7 +89,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
     if (wsMap[channelId]) return; // already connected
 
     const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const host = window.location.host;
+    // If VITE_API_URL is set (e.g. http://localhost:8000 in dev), derive WS host
+    // from it so we bypass the Vite proxy (which targets the internal Docker hostname).
+    const apiBase = import.meta.env.VITE_API_URL as string | undefined;
+    const host = apiBase ? apiBase.replace(/^https?:\/\//, '') : window.location.host;
     // Auth is via the bs_access HttpOnly cookie sent automatically on WS upgrade.
     const url = `${proto}://${host}/ws/collaboration/channels/${channelId}/`;
     const ws = new WebSocket(url);

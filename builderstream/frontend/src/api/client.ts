@@ -67,7 +67,8 @@ apiClient.interceptors.response.use(
     try {
       // The bs_refresh cookie is sent automatically (withCredentials).
       // Backend sets a new bs_access cookie in the response.
-      await rawClient.post('/api/v1/auth/token/refresh/');
+      // Send {} so DRF gets a valid JSON body (empty body causes ParseError).
+      await rawClient.post('/api/v1/auth/token/refresh/', {});
       processQueue(null);
       return apiClient(originalRequest);
     } catch (refreshError) {

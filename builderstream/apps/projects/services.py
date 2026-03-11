@@ -78,13 +78,21 @@ class ProjectLifecycleService:
                 f"Allowed: {allowed}"
             )
 
+        REQUIREMENT_LABELS = {
+            "client_assigned": "Client must be assigned",
+            "estimated_value_set": "Estimated value must be set",
+            "start_date_set": "Start date must be set",
+            "team_assigned": "At least one team member must be assigned",
+            "actual_completion_set": "Actual completion date must be set",
+        }
         requirements = ProjectLifecycleService.STAGE_REQUIREMENTS.get(new_status, [])
         requirements_met = {}
         for req in requirements:
             met = ProjectLifecycleService._check_requirement(project, req)
             requirements_met[req] = met
             if not met:
-                raise ValueError(f"Stage-gate requirement not met: {req}")
+                label = REQUIREMENT_LABELS.get(req, req)
+                raise ValueError(f"Cannot advance to {new_status.replace('_', ' ').title()}: {label}.")
 
         project.status = new_status
         project.save(update_fields=["status", "updated_at"])

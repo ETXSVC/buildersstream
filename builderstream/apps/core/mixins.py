@@ -16,6 +16,8 @@ class TenantViewSetMixin:
             return org_id
         # Fall back to user's active organization
         user = self.request.user
+        if not user or not user.is_authenticated:
+            return None
         if hasattr(user, "last_active_organization"):
             return user.last_active_organization_id
         membership = user.memberships.filter(is_active=True).first()

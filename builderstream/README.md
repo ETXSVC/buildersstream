@@ -387,3 +387,36 @@ docker compose exec web pytest --cov=apps --cov-report=term-missing
 ## Environment Variables
 
 See `.env.example` for all required configuration variables.
+
+## Demo Credentials
+
+| User | Email | Password |
+|------|-------|----------|
+| Admin (superuser + org owner) | admin@builderstream.com | demo1234! |
+| Project Manager | pm@builderstream.com | demo1234! |
+| Estimator | estimator@builderstream.com | demo1234! |
+| Field Worker | field@builderstream.com | demo1234! |
+| Accountant | accountant@builderstream.com | demo1234! |
+| Read Only | readonly@builderstream.com | demo1234! |
+
+**Org:** Demo Construction Co. (slug: `demo-construction`)
+
+## Known Issues & Fixes
+
+### Service Worker — API Requests Must Bypass SW
+The PWA service worker must **not** intercept `/api/` requests (GET or mutations). Intercepting auth endpoints prevents `Set-Cookie` response headers from being processed by the browser natively, causing the login POST to hang and creating stale-auth redirect loops in Chrome and Edge. All `/api/` traffic bypasses the SW entirely; React Query handles client-side caching.
+
+**Cache version:** `builderstream-v4` — bump this whenever the SW fetch strategy changes to force re-installation.
+
+If login hangs or causes a redirect loop after a service worker update:
+1. DevTools → Application → Service Workers → **Unregister**
+2. DevTools → Application → Cache Storage → delete all `builderstream-*` entries
+3. Hard reload (`Ctrl+Shift+R`)
+
+### Project Edit Form — Blank Text Fields
+Django model fields with `blank=True` but not `null=True` reject `null` values from DRF. The project PATCH payload sends `''` (empty string) for text fields (`description`, `address`, `city`, `state`) and `null` only for genuinely nullable fields (`estimated_value`, `start_date`, `estimated_completion`, `actual_completion`).
+
+### White-Label Branding
+`useApplyBranding()` (called once in `ResponsiveLayout`) applies CSS custom properties to `:root` and injects a `<style>` tag for custom CSS. All three layout components (`DesktopLayout`, `TabletLayout`, `MobileLayout`) call `useBranding()` to render `company_name` and `logo_url` in the header. Saving on the Branding settings page invalidates the React Query `['branding']` cache — the header updates live without a page reload.
+
+CSS variable defaults are defined in `frontend/src/index.css` under `:root`. Semantic classes (`.bs-sidebar`, `.bs-sidebar-link-active`, `.bs-primary-icon`) reference these variables so branding changes propagate without inline styles.

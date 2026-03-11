@@ -168,7 +168,6 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         # Cookie-first: reads 'bs_access' HttpOnly cookie, falls back to Bearer header
         "apps.accounts.authentication.JWTCookieAuthentication",
-        "rest_framework.authentication.SessionAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
@@ -215,6 +214,10 @@ SPECTACULAR_SETTINGS = {
 CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS",
     default=["http://localhost:5173"],
+)
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=["http://localhost:5173", "http://localhost:8000"],
 )
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [

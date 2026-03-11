@@ -7,7 +7,17 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.production")
 
 # Initialize Django ASGI application early to populate AppRegistry before
 # importing channels consumers that reference models.
-django_asgi_app = get_asgi_application()
+_base_asgi_app = get_asgi_application()
+
+# Wrap with static files handler in development so Daphne serves /static/ files.
+import django  # noqa: E402
+from django.conf import settings  # noqa: E402
+
+if settings.DEBUG:
+    from django.contrib.staticfiles.handlers import ASGIStaticFilesHandler
+    django_asgi_app = ASGIStaticFilesHandler(_base_asgi_app)
+else:
+    django_asgi_app = _base_asgi_app
 
 from channels.routing import ProtocolTypeRouter, URLRouter  # noqa: E402
 from channels.security.websocket import AllowedHostsOriginValidator  # noqa: E402
