@@ -401,6 +401,60 @@ See `.env.example` for all required configuration variables.
 
 **Org:** Demo Construction Co. (slug: `demo-construction`)
 
+## Development on a Remote VPS
+
+You can run the full stack on a remote Ubuntu VPS (e.g. Contabo) and connect to it from your local machine via VS Code Remote-SSH.
+
+### Setup
+
+```bash
+# 1. Install Docker on the VPS
+curl -fsSL https://get.docker.com | sh
+usermod -aG docker $USER && newgrp docker
+
+# 2. Clone and configure
+git clone https://github.com/ETXSVC/buildersstream.git /opt/builderstream
+cd /opt/builderstream/builderstream
+cp .env.example .env   # then fill in your values
+
+# 3. Open firewall ports
+ufw allow OpenSSH && ufw allow 5173 && ufw allow 8000 && ufw enable
+
+# 4. Start
+docker compose up -d
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py create_demo_org
+```
+
+### Access
+
+```
+http://<vps-ip>:5173/           # React frontend (Vite dev server — HTTP only, not HTTPS)
+http://<vps-ip>:8000/api/docs/  # Django API docs
+http://<vps-ip>:8000/admin/     # Django admin
+```
+
+> **Important:** Vite's dev server does not use TLS. Always use `http://` — using `https://` will show a browser security error.
+
+### VS Code Remote-SSH
+
+1. Install the **Remote - SSH** extension
+2. `Ctrl+Shift+P` → **Remote-SSH: Connect to Host** → `root@<vps-ip>`
+3. Open `/opt/builderstream` — edit files directly on the VPS with full IntelliSense
+4. Use the integrated terminal to run `docker compose logs -f`
+
+### Production Deployment (Recommended)
+
+For production or a more managed dev environment, use **Coolify** (free, self-hosted PaaS):
+
+```bash
+# Installs on Ubuntu in ~2 minutes
+curl -fsSL https://cdn.coollabs.io/coolify/install.sh | bash
+# Then open http://<vps-ip>:8000 to configure
+```
+
+Coolify detects `docker-compose.yml` automatically and handles SSL certificates, nginx, and auto-deploy on `git push`.
+
 ## Known Issues & Fixes
 
 ### Service Worker — API Requests Must Bypass SW
