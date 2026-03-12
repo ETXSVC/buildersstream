@@ -44,6 +44,20 @@ Construction management SaaS platform built with Django 5.x, Django REST Framewo
 
 ## Project Structure
 
+### Repository Root
+
+```
+buildersstream/
+├── builderstream/   # Django app (source of truth)
+├── Documentation/   # Spec files and implementation plans
+├── Logos/           # Brand assets
+├── website/         # Marketing website
+├── README.md        # This file
+└── FEATURES.md      # Full feature specification
+```
+
+### Django App (`builderstream/`)
+
 ```
 builderstream/
 ├── config/          # Django settings, URLs, Celery, WSGI/ASGI
@@ -63,8 +77,10 @@ builderstream/
 │   ├── quality_safety/ # Inspections, safety, OSHA compliance
 │   ├── payroll/     # Payroll processing, certified payroll
 │   ├── service/     # Service tickets, warranty, maintenance
-│   └── analytics/   # Reporting engine, dashboards, KPIs
-├── frontend/        # React SPA
+│   ├── analytics/   # Reporting engine, dashboards, KPIs
+│   ├── issue_tracking/ # Issue tracker, SLA timers, escalation
+│   └── custom_fields/  # Org-scoped custom field engine
+├── frontend/        # React 18 + TypeScript SPA (Vite)
 ├── templates/       # Django templates (admin, emails)
 ├── requirements/    # Pip requirements (base, dev, production)
 └── docker-compose.yml

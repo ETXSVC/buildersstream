@@ -26,11 +26,7 @@ Project-specific instructions for BuilderStream Django SaaS platform.
 **Active Django apps (18):**
 core, tenants, accounts, billing, projects, crm, estimating, scheduling, financials, clients, documents, field_ops, quality_safety, payroll, service, analytics, issue_tracking, custom_fields
 
-**Pending migration (run when Docker is available):**
-```bash
-docker compose exec web python manage.py migrate
-```
-This applies: financials.0005_dunning_and_payment_portal, issue_tracking.0001_initial, custom_fields.0001_initial
+**All migrations applied.** Run `docker compose exec web python manage.py migrate` after pulling new changes.
 
 ## Architecture Patterns
 
@@ -496,16 +492,20 @@ def authenticated_client(user, org):
 - **Docker build context**: `.dockerignore` must exclude `frontend/node_modules/` — without it the build fails
 - **Stripe errors in dev**: Expected with dummy API key — signals catch and log, don't block
 - `.env` must use Docker service names: `DB_HOST=db`, `redis://redis:6379`
+- **Remote VPS / ALLOWED_HOSTS**: `config/settings/development.py` hardcodes `ALLOWED_HOSTS` — this overrides `.env`. Set `ALLOWED_HOSTS = ["*"]` in `development.py` for VPS dev. The Vite proxy sends `Host: web:8000`; Django rejects it with 400 if `web` is not allowed.
+- **VITE_API_URL must be unset**: Do not set `VITE_API_URL=http://localhost:8000` in `docker-compose.yml`. Leaving it empty makes the frontend use relative paths proxied by Vite, which works from any IP. Setting it breaks remote access.
+- **Vite HMR host**: Do not set `hmr.host: 'localhost'` in `vite.config.ts`. Without it, Vite auto-uses `window.location.hostname` for the HMR WebSocket — works locally and remotely.
+- **FRONTEND_URL for email links**: Set `FRONTEND_URL=http://<vps-ip>:5173` in `.env` so password reset and verification emails link to the correct host.
 
 ## Next Steps
 
 The platform is feature-complete. All 18 sections and 4 sprints are done.
 
-**Potential next work (no outstanding roadmap items):**
-- Add tests for apps.issue_tracking, apps.custom_fields
-- Seed demo org with issue tracking and custom field examples
-- Production deployment (AWS ECS / Railway / Render)
+**Potential next work:**
+- Production deployment — Coolify (self-hosted, auto-SSL) or AWS ECS / Railway / Render
+- Add tests for `apps.issue_tracking`, `apps.custom_fields`
 - Stripe webhook handler for invoice payment success (mark invoice paid)
 - End-to-end E2E tests (Playwright)
+- Seed demo org with issue tracking and custom field examples
 
 Each new feature follows the established pattern: models → services → serializers → views → URLs → signals/tasks → tests → frontend.
