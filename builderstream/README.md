@@ -436,6 +436,21 @@ http://<vps-ip>:8000/admin/     # Django admin
 
 > **Important:** Vite's dev server does not use TLS. Always use `http://` — using `https://` will show a browser security error.
 
+### Remote Access Config
+
+Three settings must be correct for the app to work from a remote IP:
+
+1. **`ALLOWED_HOSTS`** — `config/settings/development.py` sets `ALLOWED_HOSTS = ["*"]`. The Vite proxy rewrites the `Host` header to `web:8000`; if `web` is not allowed, Django returns 400 for every proxied request.
+
+2. **`VITE_API_URL`** — must be **unset** in `docker-compose.yml`. The frontend uses relative paths (`/api/...`) proxied by Vite to `http://web:8000`. Setting it to `http://localhost:8000` causes the browser to call Django directly, failing from any remote machine.
+
+3. **Vite HMR** — `vite.config.ts` must not set `hmr.host: 'localhost'`. Without it, Vite auto-uses the page hostname for the HMR WebSocket, working from any IP.
+
+Add to `.env` on the VPS so email links resolve correctly:
+```bash
+FRONTEND_URL=http://<vps-ip>:5173
+```
+
 ### VS Code Remote-SSH
 
 1. Install the **Remote - SSH** extension
