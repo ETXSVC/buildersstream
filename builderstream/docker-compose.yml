@@ -82,8 +82,8 @@ services:
       - ./frontend:/app
     ports:
       - "5173:5173"
-    # No VITE_API_URL — leave empty so baseURL defaults to '' (relative URLs).
-    # Vite's proxy handles /api/ → http://web:8000, works from any host/IP.
+    environment:
+      - CHOKIDAR_USEPOLLING=true
 
 volumes:
   postgres_data:
