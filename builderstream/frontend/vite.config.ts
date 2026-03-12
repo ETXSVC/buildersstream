@@ -13,12 +13,8 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
-    hmr: {
-      host: 'localhost',
-      port: 5173,
-      clientPort: 5173,
-      protocol: 'ws',
-    },
+    // No explicit hmr.host — Vite auto-detects from window.location.hostname.
+    // Works for both localhost and remote VPS access without any config change.
     proxy: {
       '/api': {
         target: 'http://web:8000',

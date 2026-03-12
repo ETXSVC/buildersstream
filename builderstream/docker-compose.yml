@@ -82,8 +82,8 @@ services:
       - ./frontend:/app
     ports:
       - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost:8000
+    # No VITE_API_URL — leave empty so baseURL defaults to '' (relative URLs).
+    # Vite's proxy handles /api/ → http://web:8000, works from any host/IP.
 
 volumes:
   postgres_data:
