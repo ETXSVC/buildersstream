@@ -22,16 +22,16 @@ def process_time_based_automations():
         days_inactive = rule.trigger_config.get("days_inactive", 7)
         cutoff = timezone.now() - timedelta(days=days_inactive)
 
-        leads = Lead.objects.filter(
+        leads = list(Lead.objects.filter(
             organization=rule.organization,
             last_contacted_at__lt=cutoff,
             pipeline_stage__is_won_stage=False,
             pipeline_stage__is_lost_stage=False,
-        )
+        ))
 
-        if leads.exists():
+        if leads:
             AutomationEngine.process_automation_rule(rule, leads)
-            processed += leads.count()
+            processed += len(leads)
 
     logger.info("Processed %d time-based automations", processed)
     return processed
