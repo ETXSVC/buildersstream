@@ -155,6 +155,9 @@ class Equipment(TenantModel):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     equipment_type = models.CharField(max_length=100)
+    make = models.CharField(max_length=100, blank=True)
+    model = models.CharField(max_length=100, blank=True)
+    year = models.PositiveSmallIntegerField(null=True, blank=True)
     serial_number = models.CharField(max_length=100, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.AVAILABLE)
     current_project = models.ForeignKey(
@@ -181,6 +184,10 @@ class Equipment(TenantModel):
         indexes = [
             models.Index(fields=["status"], name="sched_equipment_status_idx"),
         ]
+
+    @property
+    def is_available(self):
+        return self.status == self.Status.AVAILABLE
 
     def __str__(self):
         return self.name

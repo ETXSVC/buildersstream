@@ -40,16 +40,16 @@ export const GanttView = () => {
 
     // Build frappe-gantt tasks
     const tasks = ganttData.tasks
-      .filter((t) => t.planned_start && t.planned_end)
+      .filter((t) => t.start_date && t.end_date)
       .map((t) => ({
         id: t.id,
-        name: t.title,
-        start: t.planned_start!,
-        end: t.planned_end!,
+        name: t.name,
+        start: t.start_date!,
+        end: t.end_date!,
         progress: t.completion_percentage ?? 0,
         dependencies: ganttData.dependencies
-          .filter((d) => d.successor === t.id)
-          .map((d) => d.predecessor)
+          .filter((d) => d.successor_id === t.id)
+          .map((d) => d.predecessor_id)
           .join(','),
         custom_class: t.is_critical_path ? 'gantt-critical' : '',
       }));
@@ -122,7 +122,7 @@ export const GanttView = () => {
           <span className="ml-auto text-xs text-slate-500">
             {ganttData.stats.completed_tasks}/{ganttData.stats.total_tasks} tasks complete
             &nbsp;·&nbsp;
-            {ganttData.stats.percent_complete}% done
+            {ganttData.stats.average_completion_percentage}% done
             &nbsp;·&nbsp;
             {ganttData.stats.critical_path_tasks} on critical path
           </span>
@@ -148,7 +148,7 @@ export const GanttView = () => {
         </div>
       )}
 
-      {selectedProjectId && !isLoading && !error && ganttData && !ganttData.tasks.filter((t) => t.planned_start && t.planned_end).length && (
+      {selectedProjectId && !isLoading && !error && ganttData && !ganttData.tasks.filter((t) => t.start_date && t.end_date).length && (
         <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-16 text-center text-slate-400 text-sm">
           No tasks with scheduled dates found for this project.
         </div>

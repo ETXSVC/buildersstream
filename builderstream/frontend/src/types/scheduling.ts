@@ -13,7 +13,7 @@ export interface Task {
   duration_days: number | null;
   estimated_hours: number | null;
   actual_hours: number | null;
-  percent_complete: number;
+  completion_percentage: number;
   is_critical_path: boolean;
   float_days: number | null;
   assigned_crew: string | null;
@@ -21,6 +21,7 @@ export interface Task {
   parent_task: string | null;
   sort_order: number;
   wbs_code: string | null;
+  color: string | null;
 }
 
 export interface Crew {
@@ -39,24 +40,53 @@ export interface Equipment {
   id: string;
   name: string;
   equipment_type: string;
-  make: string | null;
-  model: string | null;
+  make: string;
+  model: string;
   year: number | null;
+  serial_number: string;
+  status: 'available' | 'in_use' | 'maintenance' | 'retired';
   is_available: boolean;
   daily_rate: string | null;
+  daily_rental_rate: string | null;
   purchase_price: string | null;
+  purchase_cost: string | null;
   current_book_value: string | null;
 }
 
+export interface GanttTask {
+  id: string;
+  name: string;
+  wbs_code: string;
+  task_type: TaskType;
+  status: TaskStatus;
+  start_date: string | null;
+  end_date: string | null;
+  completion_percentage: number;
+  is_critical_path: boolean;
+  float_days: number;
+  assigned_crew: { id: string; name: string; trade: string } | null;
+  estimated_hours: number | null;
+  color: string | null;
+  sort_order: number;
+}
+
 export interface GanttData {
-  tasks: Task[];
-  milestones: Task[];
-  dependencies: { id: string; predecessor: string; successor: string; dependency_type: string }[];
+  project_id: string;
+  project_name: string;
+  tasks: GanttTask[];
+  milestones: GanttTask[];
+  dependencies: { id: string; predecessor_id: string; successor_id: string; dependency_type: string; lag_days: number }[];
+  crew_allocation: Record<string, Record<string, number>>;
+  critical_path_task_ids: string[];
   stats: {
     total_tasks: number;
     completed_tasks: number;
+    in_progress_tasks: number;
+    on_hold_tasks: number;
     critical_path_tasks: number;
-    percent_complete: number;
+    average_completion_percentage: number;
+    total_estimated_hours: number;
+    total_actual_hours: number;
   };
 }
 

@@ -160,10 +160,10 @@ function TasksTable({ search }: { search: string }) {
                     <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100">
                       <div
                         className="h-full rounded-full bg-amber-500 [width:var(--p)]"
-                        style={{ '--p': `${task.percent_complete}%` } as React.CSSProperties}
+                        style={{ '--p': `${task.completion_percentage}%` } as React.CSSProperties}
                       />
                     </div>
-                    <span className="text-xs text-slate-500">{task.percent_complete}%</span>
+                    <span className="text-xs text-slate-500">{task.completion_percentage}%</span>
                   </div>
                 </td>
                 <td className="px-4 py-3 text-slate-600 text-xs">{task.assigned_crew_name ?? '—'}</td>
@@ -331,7 +331,7 @@ function TaskModal({ task, onClose }: { task?: Task; onClose: () => void }) {
     start_date: task?.start_date ?? '',
     end_date: task?.end_date ?? '',
     estimated_hours: task?.estimated_hours ? String(task.estimated_hours) : '',
-    percent_complete: task?.percent_complete ? String(task.percent_complete) : '0',
+    completion_percentage: task?.completion_percentage ? String(task.completion_percentage) : '0',
     assigned_crew: task?.assigned_crew ?? '',
   });
 
@@ -344,7 +344,7 @@ function TaskModal({ task, onClose }: { task?: Task; onClose: () => void }) {
       start_date: task?.start_date ?? '',
       end_date: task?.end_date ?? '',
       estimated_hours: task?.estimated_hours ? String(task.estimated_hours) : '',
-      percent_complete: task?.percent_complete ? String(task.percent_complete) : '0',
+      completion_percentage: String(task?.completion_percentage ?? 0),
       assigned_crew: task?.assigned_crew ?? '',
     });
   }, [task]);
@@ -358,7 +358,7 @@ function TaskModal({ task, onClose }: { task?: Task; onClose: () => void }) {
       start_date: form.start_date || null,
       end_date: form.end_date || null,
       estimated_hours: form.estimated_hours ? parseFloat(form.estimated_hours) : null,
-      percent_complete: parseInt(form.percent_complete) || 0,
+      completion_percentage: parseInt(form.completion_percentage) || 0,
     };
     if (!isEdit && form.project) payload.project = form.project;
     if (form.assigned_crew) payload.assigned_crew = form.assigned_crew;
@@ -463,8 +463,8 @@ function TaskModal({ task, onClose }: { task?: Task; onClose: () => void }) {
               title="Percent Complete"
               min="0"
               max="100"
-              value={form.percent_complete}
-              onChange={(e) => setForm((f) => ({ ...f, percent_complete: e.target.value }))}
+              value={form.completion_percentage}
+              onChange={(e) => setForm((f) => ({ ...f, completion_percentage: e.target.value }))}
               className={inputCls}
             />
           </Field>
@@ -710,9 +710,9 @@ function EquipmentModal({ equipment, onClose }: { equipment?: Equipment; onClose
       make: form.make || '',
       model: form.model || '',
       year: form.year ? parseInt(form.year) : null,
-      daily_rate: form.daily_rate || null,
-      purchase_price: form.purchase_price || null,
-      is_available: form.is_available,
+      daily_rental_rate: form.daily_rate || 0,
+      purchase_cost: form.purchase_price || null,
+      status: form.is_available ? 'available' : 'in_use',
     };
     if (isEdit) {
       update.mutate({ id: equipment.id, payload }, { onSuccess: onClose });

@@ -67,16 +67,17 @@ class TaskDependencySerializer(serializers.ModelSerializer):
 class TaskListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for task lists."""
     assigned_crew_name = serializers.CharField(source="assigned_crew.name", read_only=True)
+    project_name = serializers.CharField(source="project.name", read_only=True)
     subtask_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
         fields = [
-            "id", "name", "wbs_code", "task_type", "status",
+            "id", "project", "project_name", "name", "wbs_code", "task_type", "status",
             "parent_task", "start_date", "end_date", "duration_days",
             "completion_percentage", "is_critical_path", "float_days",
             "assigned_crew", "assigned_crew_name", "sort_order",
-            "subtask_count", "color",
+            "subtask_count", "color", "estimated_hours",
         ]
         read_only_fields = ["id", "is_critical_path", "float_days"]
 
@@ -117,18 +118,28 @@ class TaskSerializer(serializers.ModelSerializer):
 class EquipmentSerializer(serializers.ModelSerializer):
     current_project_name = serializers.CharField(source="current_project.name", read_only=True)
     calculated_book_value = serializers.SerializerMethodField()
+    is_available = serializers.BooleanField(read_only=True)
+    # Frontend-friendly aliases
+    daily_rate = serializers.DecimalField(
+        source="daily_rental_rate", max_digits=10, decimal_places=2, required=False, default=0
+    )
+    purchase_price = serializers.DecimalField(
+        source="purchase_cost", max_digits=12, decimal_places=2, required=False, allow_null=True
+    )
 
     class Meta:
         model = Equipment
         fields = [
             "id", "organization", "name", "description", "equipment_type",
-            "serial_number", "status", "current_project", "current_project_name",
-            "purchase_date", "purchase_cost", "depreciation_method",
+            "make", "model", "year",
+            "serial_number", "status", "is_available",
+            "current_project", "current_project_name",
+            "purchase_date", "purchase_price", "purchase_cost", "depreciation_method",
             "useful_life_years", "salvage_value", "current_book_value",
-            "calculated_book_value", "daily_rental_rate", "next_maintenance",
+            "calculated_book_value", "daily_rate", "daily_rental_rate", "next_maintenance",
             "created_at", "updated_at",
         ]
-        read_only_fields = ["id", "organization", "current_book_value", "created_at", "updated_at"]
+        read_only_fields = ["id", "organization", "current_book_value", "is_available", "created_at", "updated_at"]
 
     def get_calculated_book_value(self, obj):
         return obj.calculate_book_value()

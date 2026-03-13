@@ -224,14 +224,21 @@ class TaskViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
         hours = request.data.get("estimated_hours")
 
         if start:
-            task.planned_start = start
+            task.start_date = start
         if end:
-            task.planned_end = end
+            task.end_date = end
         if hours is not None:
             task.estimated_hours = hours
 
-        fields = ["planned_start", "planned_end", "estimated_hours"]
-        task.save(update_fields=[f for f in fields if getattr(task, f) is not None])
+        update_fields = []
+        if start:
+            update_fields.append("start_date")
+        if end:
+            update_fields.append("end_date")
+        if hours is not None:
+            update_fields.append("estimated_hours")
+        if update_fields:
+            task.save(update_fields=update_fields)
 
         from apps.scheduling.tasks import recalculate_critical_paths
         recalculate_critical_paths.delay(str(task.project_id))
