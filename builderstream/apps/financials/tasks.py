@@ -22,7 +22,7 @@ def check_overdue_invoices():
     return total_updated
 
 
-@shared_task(name="financials.calculate_budget_variances")
+@shared_task(name="financials.calculate_budget_variances", soft_time_limit=300, time_limit=360)
 def calculate_budget_variances():
     """Sync expense actuals to budget lines for all active projects. Runs hourly."""
     from apps.projects.models import Project
@@ -33,7 +33,7 @@ def calculate_budget_variances():
     ).exclude(status__in=["completed", "canceled"])
 
     count = 0
-    for project in projects:
+    for project in projects.iterator():
         try:
             JobCostingService.update_budget_actuals(project)
             count += 1
