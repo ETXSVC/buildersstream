@@ -41,6 +41,7 @@ Construction management SaaS platform built with Django 5.x, Django REST Framewo
 - **Storage**: AWS S3 via django-storages
 - **Billing**: Stripe subscriptions
 - **API Docs**: drf-spectacular (OpenAPI/Swagger)
+- **Admin UI**: django-jazzmin (Bootstrap 5, dark sidebar, custom icons per model)
 
 ## Project Structure
 
@@ -500,6 +501,36 @@ If login hangs or causes a redirect loop after a service worker update:
 
 ### Project Edit Form — Blank Text Fields
 Django model fields with `blank=True` but not `null=True` reject `null` values from DRF. The project PATCH payload sends `''` (empty string) for text fields (`description`, `address`, `city`, `state`) and `null` only for genuinely nullable fields (`estimated_value`, `start_date`, `estimated_completion`, `actual_completion`).
+
+### Signal Memory Leak Pattern
+
+Django signals that detect status changes must **never** use module-level dicts as a status cache. The pattern `_status_cache = {}` accumulates entries forever if a save raises an exception after `pre_save` fires but before `post_save` runs (the `pop()` never executes). Always store the old value on the instance instead:
+
+```python
+# WRONG — module-level dict leaks on save failure
+_cache = {}
+
+@receiver(pre_save, sender=MyModel)
+def cache_status(sender, instance, **kwargs):
+    if instance.pk:
+        _cache[instance.pk] = instance.status
+
+@receiver(post_save, sender=MyModel)
+def on_saved(sender, instance, created, **kwargs):
+    old = _cache.pop(instance.pk, None)  # never runs if save raised
+
+# CORRECT — instance attribute, GC'd with the object
+@receiver(pre_save, sender=MyModel)
+def cache_status(sender, instance, **kwargs):
+    if instance.pk:
+        instance._old_status = instance.status
+
+@receiver(post_save, sender=MyModel)
+def on_saved(sender, instance, created, **kwargs):
+    old = getattr(instance, "_old_status", None)
+```
+
+This fix has been applied to `apps/service/signals.py`, `apps/payroll/signals.py`, and `apps/field_ops/signals.py`.
 
 ### White-Label Branding
 `useApplyBranding()` (called once in `ResponsiveLayout`) applies CSS custom properties to `:root` and injects a `<style>` tag for custom CSS. All three layout components (`DesktopLayout`, `TabletLayout`, `MobileLayout`) call `useBranding()` to render `company_name` and `logo_url` in the header. Saving on the Branding settings page invalidates the React Query `['branding']` cache — the header updates live without a page reload.

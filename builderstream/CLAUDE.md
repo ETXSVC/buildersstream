@@ -222,6 +222,8 @@ LeadConversionService.convert_to_project(lead, user):
 
 ## Dashboard UI (Frontend)
 
+**Admin UI:** django-jazzmin — Bootstrap 5 theme, dark sidebar, custom icons per model. `jazzmin` must appear first in `INSTALLED_APPS` (before `django.contrib.admin`). Configured via `JAZZMIN_SETTINGS` and `JAZZMIN_UI_TWEAKS` in `config/settings/base.py`. After pulling changes, rebuild the web container to install the package: `sudo docker compose up -d --build web`.
+
 **Stack:** React 18 + TypeScript + Vite + TailwindCSS + React Query + Zustand
 
 **Architecture:**
@@ -492,6 +494,7 @@ def authenticated_client(user, org):
 - **Docker build context**: `.dockerignore` must exclude `frontend/node_modules/` — without it the build fails
 - **Stripe errors in dev**: Expected with dummy API key — signals catch and log, don't block
 - `.env` must use Docker service names: `DB_HOST=db`, `redis://redis:6379`
+- **Signal memory leak pattern**: Never use module-level dicts as a status cache in signal handlers (e.g., `_cache = {}`). If a save raises an exception after `pre_save` fires but before `post_save` runs, the `pop()` never executes and entries accumulate forever in long-running workers. Store old values on the instance (`instance._old_status = instance.status`) and read with `getattr(instance, "_old_status", None)`. This was fixed in `apps/service/signals.py`, `apps/payroll/signals.py`, and `apps/field_ops/signals.py`.
 - **Remote VPS / ALLOWED_HOSTS**: `config/settings/development.py` hardcodes `ALLOWED_HOSTS` — this overrides `.env`. Set `ALLOWED_HOSTS = ["*"]` in `development.py` for VPS dev. The Vite proxy sends `Host: web:8000`; Django rejects it with 400 if `web` is not allowed.
 - **VITE_API_URL must be unset**: Do not set `VITE_API_URL=http://localhost:8000` in `docker-compose.yml`. Leaving it empty makes the frontend use relative paths proxied by Vite, which works from any IP. Setting it breaks remote access.
 - **Vite HMR host**: Do not set `hmr.host: 'localhost'` in `vite.config.ts`. Without it, Vite auto-uses `window.location.hostname` for the HMR WebSocket — works locally and remotely.
