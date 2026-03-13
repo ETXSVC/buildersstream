@@ -6,16 +6,14 @@ from django.dispatch import receiver
 
 logger = logging.getLogger(__name__)
 
-_old_daily_log_status = {}
-
 
 @receiver(pre_save, sender="field_ops.DailyLog")
 def cache_daily_log_status(sender, instance, **kwargs):
-    """Cache old status before save for change detection."""
+    """Cache old status on the instance for change detection."""
     if instance.pk:
         try:
             old = sender.objects.get(pk=instance.pk)
-            _old_daily_log_status[instance.pk] = old.status
+            instance._old_status = old.status
         except sender.DoesNotExist:
             pass
 
@@ -36,7 +34,7 @@ def on_daily_log_saved(sender, instance, created, **kwargs):
                 metadata={"log_id": str(instance.pk), "date": str(instance.log_date)},
             )
         else:
-            old_status = _old_daily_log_status.pop(instance.pk, None)
+            old_status = getattr(instance, "_old_status", None)
             if old_status and old_status != instance.status:
                 ActivityLog.objects.create(
                     organization=instance.organization,

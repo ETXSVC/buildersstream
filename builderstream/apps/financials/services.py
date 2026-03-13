@@ -310,17 +310,18 @@ class PurchaseOrderService:
 
         received_quantities: dict of {line_item_id: quantity_received}
         """
-        for line_item in purchase_order.line_items.all():
+        lines = list(purchase_order.line_items.all())
+        if not lines:
+            return
+
+        for line_item in lines:
             qty = received_quantities.get(str(line_item.pk))
             if qty is not None:
                 line_item.received_quantity = Decimal(str(qty))
                 line_item.save(update_fields=["received_quantity", "updated_at"])
 
-        # Update PO status based on receipt completeness
+        # Refresh from DB to get updated received_quantity values
         lines = list(purchase_order.line_items.all())
-        if not lines:
-            return
-
         all_received = all(line.received_quantity >= line.quantity for line in lines)
         any_received = any(line.received_quantity > 0 for line in lines)
 

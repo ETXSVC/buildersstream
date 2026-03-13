@@ -91,7 +91,7 @@ def reminder_daily_log():
             except Exception:
                 logger.exception("Failed to send daily log reminder for project %s", project.pk)
 
-    logger.info("reminder_daily_log: sent %d reminders for %d projects", reminded, active_projects.count())
+    logger.info("reminder_daily_log: sent %d reminders", reminded)
     return reminded
 
 
