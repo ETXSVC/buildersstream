@@ -6,14 +6,12 @@ from django.dispatch import receiver
 
 logger = logging.getLogger(__name__)
 
-_payroll_run_status_cache = {}
-
 
 @receiver(pre_save, sender="payroll.PayrollRun")
 def cache_payroll_run_status(sender, instance, **kwargs):
-    """Cache previous status before save for change detection."""
+    """Cache previous status on the instance for change detection."""
     if instance.pk:
-        _payroll_run_status_cache[instance.pk] = instance.status
+        instance._old_status = instance.status
 
 
 @receiver(post_save, sender="payroll.PayrollRun")
@@ -27,7 +25,7 @@ def on_payroll_run_saved(sender, instance, created, **kwargs):
         )
         return
 
-    old_status = _payroll_run_status_cache.pop(instance.pk, None)
+    old_status = getattr(instance, "_old_status", None)
     if old_status and old_status != instance.status:
         logger.info(
             "PayrollRun %s status changed: %s → %s",

@@ -26,6 +26,7 @@ ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 
 # Application definition
 DJANGO_APPS = [
+    "jazzmin",
     "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -133,6 +134,96 @@ DATABASES = {
 
 # Custom User Model
 AUTH_USER_MODEL = "accounts.User"
+
+# Django Jazzmin — Admin UI
+JAZZMIN_SETTINGS = {
+    "site_title": "BuilderStream Admin",
+    "site_header": "BuilderStream",
+    "site_brand": "BuilderStream",
+    "site_logo": None,
+    "login_logo": None,
+    "welcome_sign": "BuilderStream Administration",
+    "copyright": "BuilderStream",
+    "search_model": ["accounts.User", "tenants.Organization"],
+    "topmenu_links": [
+        {"name": "Site", "url": "/", "new_window": True},
+        {"app": "tenants"},
+        {"app": "accounts"},
+    ],
+    "usermenu_links": [
+        {"name": "Support", "url": "https://github.com/ETXSVC/buildersstream/issues", "new_window": True},
+    ],
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "hide_apps": [],
+    "hide_models": [],
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "accounts.user": "fas fa-user",
+        "tenants.organization": "fas fa-building",
+        "billing.subscriptionplan": "fas fa-dollar-sign",
+        "billing.invoice": "fas fa-file-invoice-dollar",
+        "projects.project": "fas fa-project-diagram",
+        "crm.lead": "fas fa-funnel-dollar",
+        "crm.contact": "fas fa-address-book",
+        "scheduling.schedule": "fas fa-calendar-alt",
+        "financials.invoice": "fas fa-receipt",
+        "field_ops.dailylog": "fas fa-clipboard-list",
+        "quality_safety.inspection": "fas fa-check-circle",
+        "payroll.payrollrun": "fas fa-money-check-alt",
+        "service.serviceticket": "fas fa-ticket-alt",
+        "issue_tracking.issue": "fas fa-bug",
+        "custom_fields.customfield": "fas fa-sliders-h",
+        "analytics.report": "fas fa-chart-bar",
+        "notifications.notification": "fas fa-bell",
+        "documents.document": "fas fa-file-alt",
+    },
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    "related_modal_active": True,
+    "custom_css": None,
+    "custom_js": None,
+    "use_google_fonts_cdn": False,
+    "show_ui_builder": False,
+    "changeform_format": "horizontal_tabs",
+    "changeform_format_overrides": {
+        "auth.user": "collapsible",
+        "auth.group": "vertical_tabs",
+    },
+    "language_chooser": False,
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-dark",
+    "accent": "accent-primary",
+    "navbar": "navbar-dark",
+    "no_navbar_border": False,
+    "navbar_fixed": True,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-dark-primary",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "default",
+    "dark_mode_theme": None,
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success",
+    },
+}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
