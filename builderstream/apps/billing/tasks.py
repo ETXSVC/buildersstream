@@ -25,7 +25,7 @@ def check_expiring_trials():
     ).select_related("owner")
 
     count = 0
-    for org in expiring:
+    for org in expiring.iterator():
         try:
             days_left = (org.trial_ends_at - timezone.now()).days
             send_mail(
@@ -63,7 +63,7 @@ def expire_trials():
     ).select_related("owner")
 
     count = 0
-    for org in expired:
+    for org in expired.iterator():
         Organization.objects.filter(pk=org.pk).update(
             subscription_status="canceled",
         )
@@ -112,7 +112,7 @@ def sync_all_subscriptions():
 
     synced = 0
     errors = 0
-    for org in orgs:
+    for org in orgs.iterator():
         try:
             StripeService.sync_subscription_status(org)
             synced += 1

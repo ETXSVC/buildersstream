@@ -13,7 +13,7 @@ def calculate_kpis():
     from .services import KPIService
 
     total = 0
-    for org in Organization.objects.filter(subscription_status__in=["active", "trialing"]):
+    for org in Organization.objects.filter(subscription_status__in=["active", "trialing"]).iterator():
         try:
             kpis = KPIService.calculate_all_kpis(org)
             total += len(kpis)
@@ -33,7 +33,7 @@ def run_scheduled_reports():
     scheduled = Report.objects.filter(is_active=True).exclude(schedule="").exclude(recipients=[])
 
     executed = 0
-    for report in scheduled:
+    for report in scheduled.iterator():
         try:
             with tenant_context(report.organization):
                 ReportService.run_report(report)
@@ -51,7 +51,7 @@ def generate_weekly_summary():
     from apps.tenants.models import Organization
     from .services import KPIService
 
-    for org in Organization.objects.filter(subscription_status__in=["active", "trialing"]):
+    for org in Organization.objects.filter(subscription_status__in=["active", "trialing"]).iterator():
         try:
             KPIService.calculate_all_kpis(org)
             logger.info("Weekly KPI snapshot generated for org %s", org.slug)

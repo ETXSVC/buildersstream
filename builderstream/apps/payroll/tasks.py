@@ -16,11 +16,9 @@ def check_certification_expirations():
     from apps.tenants.models import Organization
     from .services import WorkforceService
 
-    org_ids = list(Organization.objects.filter(is_active=True).values_list("id", flat=True))
     total = 0
-    for org_id in org_ids:
+    for org in Organization.objects.filter(is_active=True).iterator():
         try:
-            org = Organization.objects.get(pk=org_id)
             expiring = WorkforceService.get_expiring_certifications(org, days_ahead=30)
             for item in expiring:
                 logger.warning(
@@ -32,7 +30,7 @@ def check_certification_expirations():
                 )
                 total += 1
         except Exception:
-            logger.exception("Error checking certification expirations for org %s", org_id)
+            logger.exception("Error checking certification expirations for org %s", org.pk)
 
     logger.info("check_certification_expirations: %d expiring certifications found", total)
     return total
@@ -52,7 +50,7 @@ def prevailing_wage_compliance_check():
     ).select_related("payroll_run", "project")
 
     updated = 0
-    for report in draft_reports:
+    for report in draft_reports.iterator():
         try:
             CertifiedPayrollService.generate_report(
                 payroll_run=report.payroll_run,

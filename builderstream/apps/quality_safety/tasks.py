@@ -47,7 +47,7 @@ def generate_weekly_safety_report():
     from .services import QualityAnalyticsService
 
     orgs = Organization.objects.filter(subscription_status__in=["active", "trialing"])
-    for org in orgs:
+    for org in orgs.iterator():
         try:
             summary = QualityAnalyticsService.get_safety_summary(org)
             logger.info(

@@ -111,7 +111,7 @@ def calculate_overtime():
     week_start = today - timedelta(days=today.weekday())
 
     updated_total = 0
-    for org in Organization.objects.filter(subscription_status__in=["active", "trialing"]):
+    for org in Organization.objects.filter(subscription_status__in=["active", "trialing"]).iterator():
         # Get all users with entries this week in this org
         from .models import TimeEntry
 

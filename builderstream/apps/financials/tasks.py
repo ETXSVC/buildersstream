@@ -14,7 +14,7 @@ def check_overdue_invoices():
     from .services import InvoicingService
 
     total_updated = 0
-    for org in Organization.objects.filter(is_active=True):
+    for org in Organization.objects.filter(is_active=True).iterator():
         updated = InvoicingService.check_and_mark_overdue(org)
         total_updated += updated
 

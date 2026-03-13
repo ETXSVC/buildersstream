@@ -22,7 +22,7 @@ def check_expiring_warranties():
     from apps.tenants.models import Organization
 
     warning_count = 0
-    for org in Organization.objects.filter(subscription_status__in=["active", "trialing"]):
+    for org in Organization.objects.filter(subscription_status__in=["active", "trialing"]).iterator():
         expiring = WarrantyService.get_expiring_soon(org, days_ahead=30)
         count = expiring.count()
         if count:
@@ -57,7 +57,7 @@ def generate_recurring_invoices():
     from .services import ServiceAgreementService
 
     total = 0
-    for org in Organization.objects.filter(subscription_status__in=["active", "trialing"]):
+    for org in Organization.objects.filter(subscription_status__in=["active", "trialing"]).iterator():
         invoices = ServiceAgreementService.generate_recurring_invoices(org)
         total += len(invoices)
         if invoices:
