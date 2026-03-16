@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.permissions import IsOrganizationAdmin, IsOrganizationOwner
+from apps.core.permissions import ROLE_HIERARCHY, IsOrganizationAdmin, IsOrganizationOwner
 
 from .models import ActiveModule, Organization, OrganizationMembership
 from .serializers import (
@@ -80,6 +80,44 @@ class MembershipViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated(), IsOrganizationAdmin()]
         return [IsAuthenticated()]
 
+    def _requester_role_level(self, org):
+        """Return the numeric hierarchy level of the requesting user in *org*."""
+        role = (
+            self.request.user.memberships.filter(organization=org, is_active=True)
+            .values_list("role", flat=True)
+            .first()
+        )
+        return ROLE_HIERARCHY.get(role, 0), role
+
+    def perform_update(self, serializer):
+        """Enforce role-hierarchy rules on membership updates.
+
+        - An admin cannot modify a member whose role is >= their own.
+        - An admin cannot promote a member to a role above their own.
+        """
+        from rest_framework.exceptions import PermissionDenied
+
+        target = serializer.instance
+        org = target.organization
+        requester_level, requester_role = self._requester_role_level(org)
+        target_level = ROLE_HIERARCHY.get(target.role, 0)
+
+        # Cannot touch a peer or superior
+        if target_level >= requester_level:
+            raise PermissionDenied(
+                "You cannot modify a member with an equal or higher role than your own."
+            )
+
+        # Cannot promote beyond own level
+        new_role = serializer.validated_data.get("role", target.role)
+        new_level = ROLE_HIERARCHY.get(new_role, 0)
+        if new_level > requester_level:
+            raise PermissionDenied(
+                f"You cannot assign a role higher than your own ({requester_role})."
+            )
+
+        serializer.save()
+
     @action(detail=False, methods=["post"])
     def invite(self, request):
         """Invite a new member by email."""
@@ -103,6 +141,14 @@ class MembershipViewSet(viewsets.ModelViewSet):
 
         email = serializer.validated_data["email"]
         role = serializer.validated_data["role"]
+
+        # Enforce role hierarchy: cannot invite with a role higher than your own
+        requester_level, requester_role = self._requester_role_level(org)
+        if ROLE_HIERARCHY.get(role, 0) > requester_level:
+            return Response(
+                {"detail": f"You cannot invite a member with a role higher than your own ({requester_role})."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         # Find or note the user
         try:
