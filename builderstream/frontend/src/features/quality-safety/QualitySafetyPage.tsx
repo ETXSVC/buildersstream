@@ -21,7 +21,7 @@ import type { Inspection, SafetyIncident } from '@/types/quality-safety';
 
 type Tab = 'inspections' | 'deficiencies' | 'incidents';
 
-function QualitySafetyDashboard() {
+function QualitySafetyDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
   const { data: inspData } = useInspections({});
   const { data: defData } = useDeficiencies({});
   const { data: incData } = useSafetyIncidents({});
@@ -61,10 +61,10 @@ function QualitySafetyDashboard() {
   return (
     <div className="mb-8">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
-        <KpiCard label="Inspections" value={stats.total} icon="🔍" />
-        <KpiCard label="Pass Rate" value={`${stats.passRate}%`} icon="✅" accent={stats.passRate >= 80 ? 'green' : stats.passRate >= 60 ? 'amber' : 'red'} />
-        <KpiCard label="Open Deficiencies" value={stats.openDefs} icon="⚠️" accent={stats.openDefs > 0 ? 'amber' : 'default'} />
-        <KpiCard label="Safety Incidents" value={stats.incidentCount} icon="🚨" accent={stats.critical > 0 ? 'red' : 'default'} sub={stats.critical > 0 ? `${stats.critical} recordable` : 'No recordable'} />
+        <KpiCard label="Inspections" value={stats.total} icon="🔍" onClick={() => onNavigate('inspections')} />
+        <KpiCard label="Pass Rate" value={`${stats.passRate}%`} icon="✅" accent={stats.passRate >= 80 ? 'green' : stats.passRate >= 60 ? 'amber' : 'red'} onClick={() => onNavigate('inspections')} />
+        <KpiCard label="Open Deficiencies" value={stats.openDefs} icon="⚠️" accent={stats.openDefs > 0 ? 'amber' : 'default'} onClick={() => onNavigate('deficiencies')} />
+        <KpiCard label="Safety Incidents" value={stats.incidentCount} icon="🚨" accent={stats.critical > 0 ? 'red' : 'default'} sub={stats.critical > 0 ? `${stats.critical} recordable` : 'No recordable'} onClick={() => onNavigate('incidents')} />
       </div>
       {(resultData.length > 0 || sevData.length > 0) && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -113,6 +113,11 @@ export const QualitySafetyPage = () => {
   const openNewIncident = () => { setEditIncident(null); setShowIncidentModal(true); };
   const openEditIncident = (i: SafetyIncident) => { setEditIncident(i); setShowIncidentModal(true); };
 
+  const handleNavigate = (t: Tab) => {
+    setTab(t);
+    setTimeout(() => document.getElementById('qs-list')?.scrollIntoView({ behavior: 'smooth' }), 50);
+  };
+
   return (
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
@@ -130,9 +135,9 @@ export const QualitySafetyPage = () => {
           </button>
         )}
       </div>
-      <QualitySafetyDashboard />
+      <QualitySafetyDashboard onNavigate={handleNavigate} />
 
-      <div className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
+      <div id="qs-list" className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
         {(['inspections', 'deficiencies', 'incidents'] as Tab[]).map((t) => (
           <button
             key={t}

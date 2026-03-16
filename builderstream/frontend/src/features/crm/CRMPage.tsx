@@ -29,7 +29,7 @@ type View = 'leads' | 'contacts';
 
 // ── CRMPage ───────────────────────────────────────────────────────────────────
 
-function CRMDashboard() {
+function CRMDashboard({ onNavigate }: { onNavigate: (view: View, urgency?: string) => void }) {
   const { data: leadsData } = useLeads({});
   const { data: contactsData } = useContacts();
   const { data: stagesData } = usePipelineStages();
@@ -45,10 +45,10 @@ function CRMDashboard() {
     return { total, hot, warm, cold, pipelineValue, contacts };
   }, [leadsData, contactsData]);
 
-  const stages = stagesData?.results ?? [];
-  const stageChartData = stages
-    .filter(s => !s.is_lost_stage)
-    .map(s => ({ name: s.name, leads: s.lead_count ?? 0 }));
+  const stages = stagesData ?? [];
+  const stageChartData = (stages as PipelineStage[])
+    .filter((s) => !s.is_lost_stage)
+    .map((s) => ({ name: s.name, leads: (s as PipelineStage & { lead_count?: number }).lead_count ?? 0 }));
 
   const urgencyData = [
     { name: 'Hot', value: stats.hot, color: '#ef4444' },
@@ -59,10 +59,10 @@ function CRMDashboard() {
   return (
     <div className="mb-8">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
-        <KpiCard label="Total Leads" value={stats.total} icon="🎯" />
-        <KpiCard label="Hot Leads" value={stats.hot} icon="🔥" accent={stats.hot > 0 ? 'red' : 'default'} />
-        <KpiCard label="Pipeline Value" value={`$${(stats.pipelineValue / 1000).toFixed(0)}k`} icon="💼" accent="green" />
-        <KpiCard label="Contacts" value={stats.contacts} icon="👥" accent="blue" />
+        <KpiCard label="Total Leads" value={stats.total} icon="🎯" onClick={() => onNavigate('leads')} />
+        <KpiCard label="Hot Leads" value={stats.hot} icon="🔥" accent={stats.hot > 0 ? 'red' : 'default'} onClick={() => onNavigate('leads', 'hot')} />
+        <KpiCard label="Pipeline Value" value={`$${(stats.pipelineValue / 1000).toFixed(0)}k`} icon="💼" accent="green" onClick={() => onNavigate('leads')} />
+        <KpiCard label="Contacts" value={stats.contacts} icon="👥" accent="blue" onClick={() => onNavigate('contacts')} />
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {stageChartData.length > 0 && (
@@ -100,6 +100,15 @@ function CRMDashboard() {
 export const CRMPage = () => {
   const [view, setView] = useState<View>('leads');
   const [search, setSearch] = useState('');
+  const [urgencyFilter, setUrgencyFilter] = useState('');
+
+  const handleNavigate = (v: View, urgency?: string) => {
+    setView(v);
+    setSearch('');
+    setUrgencyFilter(urgency ?? '');
+    // Scroll past the dashboard
+    setTimeout(() => document.getElementById('crm-list')?.scrollIntoView({ behavior: 'smooth' }), 50);
+  };
 
   return (
     <div className="p-6">
@@ -107,14 +116,14 @@ export const CRMPage = () => {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">CRM</h1>
       </div>
-      <CRMDashboard />
+      <CRMDashboard onNavigate={handleNavigate} />
 
-      <div className="mb-6 flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
+      <div id="crm-list" className="mb-6 flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
         {(['leads', 'contacts'] as View[]).map((v) => (
           <button
             key={v}
             type="button"
-            onClick={() => setView(v)}
+            onClick={() => { setView(v); setUrgencyFilter(''); }}
             className={[
               'rounded-md px-4 py-1.5 text-sm font-medium capitalize transition-colors',
               view === v ? 'bg-amber-500 text-white' : 'text-slate-600 hover:text-slate-900',
@@ -125,7 +134,7 @@ export const CRMPage = () => {
         ))}
       </div>
 
-      <div className="mb-4">
+      <div className="mb-4 flex items-center gap-3">
         <input
           type="search"
           placeholder={`Search ${view}…`}
@@ -133,10 +142,16 @@ export const CRMPage = () => {
           onChange={(e) => setSearch(e.target.value)}
           className="rounded-lg border border-slate-200 px-3 py-2 text-sm w-full max-w-xs text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
         />
+        {urgencyFilter && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
+            {urgencyFilter.charAt(0).toUpperCase() + urgencyFilter.slice(1)} leads
+            <button type="button" onClick={() => setUrgencyFilter('')} className="ml-1 hover:text-red-900">×</button>
+          </span>
+        )}
       </div>
 
       {view === 'leads' ? (
-        <LeadsView search={search} />
+        <LeadsView search={search} urgencyFilter={urgencyFilter} />
       ) : (
         <ContactsView search={search} />
       )}
@@ -146,13 +161,14 @@ export const CRMPage = () => {
 
 // ── Leads View ────────────────────────────────────────────────────────────────
 
-function LeadsView({ search }: { search: string }) {
+function LeadsView({ search, urgencyFilter }: { search: string; urgencyFilter: string }) {
   const [editLead, setEditLead] = useState<Lead | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Lead | null>(null);
 
   const params: Record<string, string> = {};
   if (search) params.search = search;
+  if (urgencyFilter) params.urgency = urgencyFilter;
   const { data, isLoading } = useLeads(params);
   const { data: stages } = usePipelineStages();
   const updateLead = useUpdateLead();
@@ -466,14 +482,14 @@ function ContactModal({ contact, onClose }: ContactModalProps) {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <Field label="First Name *">
-            <Input value={form.first_name} onChange={set('first_name')} required />
+            <Input placeholder="Jane" value={form.first_name} onChange={set('first_name')} required />
           </Field>
           <Field label="Last Name *">
-            <Input value={form.last_name} onChange={set('last_name')} required />
+            <Input placeholder="Smith" value={form.last_name} onChange={set('last_name')} required />
           </Field>
         </div>
         <Field label="Email">
-          <Input type="email" value={form.email} onChange={set('email')} />
+          <Input type="email" placeholder="jane@example.com" value={form.email} onChange={set('email')} />
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Phone">

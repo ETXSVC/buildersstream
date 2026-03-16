@@ -53,6 +53,9 @@ export const ProjectsPage = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
 
+  const scrollToFilters = () =>
+    setTimeout(() => document.getElementById('projects-filters')?.scrollIntoView({ behavior: 'smooth' }), 50);
+
   const filters: ProjectFilters = {};
   if (search) filters.search = search;
   if (statusFilter) filters.status = statusFilter;
@@ -93,10 +96,10 @@ export const ProjectsPage = () => {
       {/* Dashboard */}
       <div className="mb-8">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
-          <KpiCard label="Total Projects" value={stats.total} icon="🏗️" />
-          <KpiCard label="Active" value={stats.active} icon="⚡" accent="blue" />
-          <KpiCard label="Pipeline Value" value={`$${(stats.totalValue / 1000).toFixed(0)}k`} icon="💰" accent="green" />
-          <KpiCard label="Health: Red" value={stats.red} icon="🔴" accent={stats.red > 0 ? 'red' : 'default'} sub={`${stats.green} green · ${stats.yellow} yellow`} />
+          <KpiCard label="Total Projects" value={stats.total} icon="🏗️" onClick={() => { setStatusFilter(''); setHealthFilter(''); scrollToFilters(); }} />
+          <KpiCard label="Active" value={stats.active} icon="⚡" accent="blue" onClick={() => { setStatusFilter('in_progress' as ProjectStatus); setHealthFilter(''); scrollToFilters(); }} />
+          <KpiCard label="Pipeline Value" value={`$${(stats.totalValue / 1000).toFixed(0)}k`} icon="💰" accent="green" onClick={() => { setStatusFilter(''); setHealthFilter(''); scrollToFilters(); }} />
+          <KpiCard label="Health: Red" value={stats.red} icon="🔴" accent={stats.red > 0 ? 'red' : 'default'} sub={`${stats.green} green · ${stats.yellow} yellow`} onClick={() => { setStatusFilter(''); setHealthFilter('red' as HealthStatus); scrollToFilters(); }} />
         </div>
         {(statusChartData.length > 0 || healthData.length > 0) && (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -156,7 +159,7 @@ export const ProjectsPage = () => {
       </div>
 
       {/* Filters */}
-      <div className="mb-6 flex flex-wrap gap-3">
+      <div id="projects-filters" className="mb-6 flex flex-wrap gap-3">
         <input
           type="search"
           placeholder="Search projects…"

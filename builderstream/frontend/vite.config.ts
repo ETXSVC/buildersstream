@@ -10,6 +10,15 @@ export default defineConfig({
       'frappe-gantt/dist/frappe-gantt.css': path.resolve(__dirname, 'node_modules/frappe-gantt/dist/frappe-gantt.css'),
     },
   },
+  preview: {
+    host: true,
+    port: 4173,
+    proxy: {
+      '/api':   { target: 'http://127.0.0.1:8000', changeOrigin: true },
+      '/ws':    { target: 'ws://127.0.0.1:8000', ws: true },
+      '/admin': { target: 'http://127.0.0.1:8000', changeOrigin: true },
+    },
+  },
   server: {
     host: true,
     port: 5173,

@@ -20,7 +20,7 @@ import type { ServiceRequest, Warranty } from '@/types/service';
 
 type Tab = 'requests' | 'warranties' | 'claims';
 
-function ServiceDashboard() {
+function ServiceDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
   const { data: requestsData } = useServiceRequests({});
   const { data: warrantiesData } = useWarranties({});
   const { data: claimsData } = useWarrantyClaims({});
@@ -58,10 +58,10 @@ function ServiceDashboard() {
   return (
     <div className="mb-8">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
-        <KpiCard label="Open Requests" value={stats.openRequests} icon="🔧" accent={stats.openRequests > 0 ? 'amber' : 'default'} />
-        <KpiCard label="High Priority" value={stats.highPriority} icon="🚨" accent={stats.highPriority > 0 ? 'red' : 'default'} />
-        <KpiCard label="Active Warranties" value={stats.activeWarranties} icon="🛡️" accent="green" />
-        <KpiCard label="Open Claims" value={stats.openClaims} icon="📋" accent={stats.openClaims > 0 ? 'indigo' : 'default'} />
+        <KpiCard label="Open Requests" value={stats.openRequests} icon="🔧" accent={stats.openRequests > 0 ? 'amber' : 'default'} onClick={() => onNavigate('requests')} />
+        <KpiCard label="High Priority" value={stats.highPriority} icon="🚨" accent={stats.highPriority > 0 ? 'red' : 'default'} onClick={() => onNavigate('requests')} />
+        <KpiCard label="Active Warranties" value={stats.activeWarranties} icon="🛡️" accent="green" onClick={() => onNavigate('warranties')} />
+        <KpiCard label="Open Claims" value={stats.openClaims} icon="📋" accent={stats.openClaims > 0 ? 'indigo' : 'default'} onClick={() => onNavigate('claims')} />
       </div>
       {(statusData.length > 0 || priorityData.length > 0) && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -110,6 +110,11 @@ export const ServicePage = () => {
   const openNewWarranty = () => { setEditWarranty(null); setShowWarrantyModal(true); };
   const openEditWarranty = (w: Warranty) => { setEditWarranty(w); setShowWarrantyModal(true); };
 
+  const handleNavigate = (t: Tab) => {
+    setTab(t);
+    setTimeout(() => document.getElementById('service-list')?.scrollIntoView({ behavior: 'smooth' }), 50);
+  };
+
   return (
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
@@ -127,9 +132,9 @@ export const ServicePage = () => {
           </button>
         )}
       </div>
-      <ServiceDashboard />
+      <ServiceDashboard onNavigate={handleNavigate} />
 
-      <div className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
+      <div id="service-list" className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
         {([
           { key: 'requests', label: 'Service Requests' },
           { key: 'warranties', label: 'Warranties' },

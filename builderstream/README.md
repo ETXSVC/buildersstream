@@ -84,7 +84,22 @@ frontend/src/
 └── types/                  # TypeScript interfaces per module
 ```
 
-Each section page has a **dashboard section at the top** with KPI cards and Recharts charts (bar/pie) derived live from API data.
+Each section page has a **dashboard section at the top** with KPI cards and Recharts charts (bar/pie) derived live from API data. All KPI cards are **clickable** — clicking navigates directly to the relevant tab or applies the relevant filter in the section below.
+
+## E2E Tests (Playwright)
+
+```bash
+cd frontend
+npm run test:e2e          # run all 44 tests (headless, 2 workers)
+npm run test:e2e:headed   # watch mode
+npm run test:e2e:report   # open last HTML report
+```
+
+Tests run against `https://buildersstream.online` by default. Override with `BASE_URL=http://localhost:4173 npm run test:e2e`.
+
+Coverage: auth flow, dashboard widgets, CRM (contacts/leads/KPI navigation), projects (KPI navigation, create, filter), navigation (sidebar, routing), collaboration (channels, DMs), financials (KPI navigation, tabs), field ops (KPI navigation, clock-in/out).
+
+Auth state is cached in `frontend/e2e/.auth/user.json` by `global-setup.ts` and reused across all tests.
 
 ## Running Locally (Docker)
 

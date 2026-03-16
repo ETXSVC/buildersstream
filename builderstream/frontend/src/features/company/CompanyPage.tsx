@@ -260,11 +260,11 @@ export function CompanyPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <KpiCard label="Total Employees" value={employees.length} icon="👷" accent="blue"
-          sub={`${activeEmp} active`} />
+          sub={`${activeEmp} active`} onClick={() => setTab('employees')} />
         <KpiCard label="Total Contractors" value={contractors.length} icon="🔧" accent="amber"
-          sub={`${activeCon} active`} />
-        <KpiCard label="Total Workforce" value={all.length} icon="🏗️" />
-        <KpiCard label="Active Workers" value={activeEmp + activeCon} icon="⚡" accent="green" />
+          sub={`${activeCon} active`} onClick={() => setTab('contractors')} />
+        <KpiCard label="Total Workforce" value={all.length} icon="🏗️" onClick={() => setTab('employees')} />
+        <KpiCard label="Active Workers" value={activeEmp + activeCon} icon="⚡" accent="green" onClick={() => setTab('employees')} />
       </div>
 
       {/* Tabs */}

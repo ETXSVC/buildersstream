@@ -19,7 +19,7 @@ import { TASK_STATUS_COLORS, TASK_STATUS_LABELS, type Task, type Crew, type Equi
 
 type Tab = 'tasks' | 'crews' | 'equipment' | 'gantt';
 
-function SchedulingDashboard() {
+function SchedulingDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
   const { data: tasksData } = useTasks({});
   const { data: crewsData } = useCrews({});
   const { data: equipmentData } = useEquipment({});
@@ -58,10 +58,10 @@ function SchedulingDashboard() {
   return (
     <div className="mb-8">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
-        <KpiCard label="Total Tasks" value={stats.total} icon="📋" />
-        <KpiCard label="In Progress" value={stats.inProgress} icon="⚡" accent="blue" />
-        <KpiCard label="Completed" value={stats.completed} icon="✅" accent="green" />
-        <KpiCard label="Overdue" value={stats.overdue} icon="⚠️" accent={stats.overdue > 0 ? 'red' : 'default'} sub={`${stats.crews} crews · ${stats.equip} equipment`} />
+        <KpiCard label="Total Tasks" value={stats.total} icon="📋" onClick={() => onNavigate('tasks')} />
+        <KpiCard label="In Progress" value={stats.inProgress} icon="⚡" accent="blue" onClick={() => onNavigate('tasks')} />
+        <KpiCard label="Completed" value={stats.completed} icon="✅" accent="green" onClick={() => onNavigate('tasks')} />
+        <KpiCard label="Overdue" value={stats.overdue} icon="⚠️" accent={stats.overdue > 0 ? 'red' : 'default'} sub={`${stats.crews} crews · ${stats.equip} equipment`} onClick={() => onNavigate('tasks')} />
       </div>
       {statusData.length > 0 && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -100,6 +100,11 @@ export const SchedulingPage = () => {
   const [tab, setTab] = useState<Tab>('tasks');
   const [search, setSearch] = useState('');
 
+  const handleNavigate = (t: Tab) => {
+    setTab(t);
+    setTimeout(() => document.getElementById('scheduling-list')?.scrollIntoView({ behavior: 'smooth' }), 50);
+  };
+
   return (
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
@@ -108,10 +113,10 @@ export const SchedulingPage = () => {
         {tab === 'crews' && <NewCrewButton />}
         {tab === 'equipment' && <NewEquipmentButton />}
       </div>
-      <SchedulingDashboard />
+      <SchedulingDashboard onNavigate={handleNavigate} />
 
       {/* Tabs */}
-      <div className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
+      <div id="scheduling-list" className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
         {(['tasks', 'gantt', 'crews', 'equipment'] as Tab[]).map((t) => (
           <button
             key={t}

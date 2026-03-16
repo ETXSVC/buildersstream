@@ -21,7 +21,7 @@ import type { Estimate, Proposal } from '@/types/estimating';
 
 type Tab = 'estimates' | 'proposals';
 
-function EstimatingDashboard() {
+function EstimatingDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
   const { data: estimatesData } = useEstimates({});
   const { data: proposalsData } = useProposals({});
 
@@ -55,10 +55,10 @@ function EstimatingDashboard() {
   return (
     <div className="mb-8">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
-        <KpiCard label="Total Estimates" value={stats.total} icon="📊" />
-        <KpiCard label="Approved" value={stats.approved} icon="✅" accent="green" />
-        <KpiCard label="Total Est. Value" value={`$${(stats.totalValue / 1000).toFixed(0)}k`} icon="💰" accent="amber" />
-        <KpiCard label="Win Rate" value={`${stats.winRate}%`} icon="🏆" accent={stats.winRate >= 50 ? 'green' : 'default'} sub={`${stats.signed} signed of ${stats.sent + stats.signed} proposals`} />
+        <KpiCard label="Total Estimates" value={stats.total} icon="📊" onClick={() => onNavigate('estimates')} />
+        <KpiCard label="Approved" value={stats.approved} icon="✅" accent="green" onClick={() => onNavigate('estimates')} />
+        <KpiCard label="Total Est. Value" value={`$${(stats.totalValue / 1000).toFixed(0)}k`} icon="💰" accent="amber" onClick={() => onNavigate('estimates')} />
+        <KpiCard label="Win Rate" value={`${stats.winRate}%`} icon="🏆" accent={stats.winRate >= 50 ? 'green' : 'default'} sub={`${stats.signed} signed of ${stats.sent + stats.signed} proposals`} onClick={() => onNavigate('proposals')} />
       </div>
       {statusData.length > 0 && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -114,6 +114,11 @@ export const EstimatingPage = () => {
   const openGenerateProposal = (e: Estimate) => { setGenerateFromEstimate(e); setShowGenerateModal(true); };
   const openSendProposal = (p: Proposal) => { setSendProposalRecord(p); setShowSendModal(true); };
 
+  const handleNavigate = (t: Tab) => {
+    setTab(t);
+    setTimeout(() => document.getElementById('estimating-list')?.scrollIntoView({ behavior: 'smooth' }), 50);
+  };
+
   return (
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
@@ -125,9 +130,9 @@ export const EstimatingPage = () => {
           </button>
         )}
       </div>
-      <EstimatingDashboard />
+      <EstimatingDashboard onNavigate={handleNavigate} />
 
-      <div className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
+      <div id="estimating-list" className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
         {(['estimates', 'proposals'] as Tab[]).map((t) => (
           <button
             key={t}

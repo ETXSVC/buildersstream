@@ -23,7 +23,7 @@ import type { TimeEntry, DailyLog, ExpenseEntry } from '@/types/field-ops';
 
 type Tab = 'time-entries' | 'daily-logs' | 'expenses';
 
-function FieldOpsDashboard() {
+function FieldOpsDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
   const { data: timeData } = useTimeEntries({ page_size: '100' });
   const { data: logsData } = useDailyLogs({ page_size: '100' });
   const { data: expData } = useExpenses({ page_size: '100' });
@@ -50,10 +50,10 @@ function FieldOpsDashboard() {
   return (
     <div className="mb-2">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
-        <KpiCard label="Time Entries" value={stats.entryCount} icon="⏱️" />
-        <KpiCard label="Total Hours" value={stats.totalHours.toFixed(1)} icon="🕐" accent="blue" />
-        <KpiCard label="Daily Logs" value={stats.logCount} icon="📝" accent="indigo" />
-        <KpiCard label="Pending Expenses" value={stats.pendingExpenses} icon="💸" accent={stats.pendingExpenses > 0 ? 'amber' : 'default'} sub={`$${(stats.expenseTotal / 1000).toFixed(1)}k total`} />
+        <KpiCard label="Time Entries" value={stats.entryCount} icon="⏱️" onClick={() => onNavigate('time-entries')} />
+        <KpiCard label="Total Hours" value={stats.totalHours.toFixed(1)} icon="🕐" accent="blue" onClick={() => onNavigate('time-entries')} />
+        <KpiCard label="Daily Logs" value={stats.logCount} icon="📝" accent="indigo" onClick={() => onNavigate('daily-logs')} />
+        <KpiCard label="Pending Expenses" value={stats.pendingExpenses} icon="💸" accent={stats.pendingExpenses > 0 ? 'amber' : 'default'} sub={`$${(stats.expenseTotal / 1000).toFixed(1)}k total`} onClick={() => onNavigate('expenses')} />
       </div>
       {logStatusData.length > 0 && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 mb-6">
@@ -99,6 +99,11 @@ export const FieldOpsPage = () => {
     { key: 'expenses', label: 'Expenses' },
   ];
 
+  const handleNavigate = (t: Tab) => {
+    setTab(t);
+    setTimeout(() => document.getElementById('fieldops-list')?.scrollIntoView({ behavior: 'smooth' }), 50);
+  };
+
   return (
     <div className="p-6 space-y-6">
       <SubNav items={SUBNAV} />
@@ -135,7 +140,7 @@ export const FieldOpsPage = () => {
         </div>
       </div>
 
-      <FieldOpsDashboard />
+      <FieldOpsDashboard onNavigate={handleNavigate} />
 
       {/* Clock status banner */}
       <div className={`rounded-xl border p-4 flex items-center justify-between ${
@@ -161,7 +166,7 @@ export const FieldOpsPage = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
+      <div id="fieldops-list" className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
         {tabs.map((t) => (
           <button
             key={t.key}

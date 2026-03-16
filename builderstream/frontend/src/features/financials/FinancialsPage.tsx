@@ -22,7 +22,7 @@ import {
 
 type Tab = 'invoices' | 'expenses' | 'change-orders' | 'purchase-orders' | 'budgets';
 
-function FinancialsDashboard() {
+function FinancialsDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
   const { data: invoicesData } = useInvoices({});
   const { data: expensesData } = useExpenses({});
 
@@ -55,10 +55,10 @@ function FinancialsDashboard() {
   return (
     <div className="mb-8">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
-        <KpiCard label="Total Invoiced" value={`$${(stats.totalInvoiced / 1000).toFixed(1)}k`} icon="📄" accent="green" />
-        <KpiCard label="Outstanding" value={`$${(stats.outstanding / 1000).toFixed(1)}k`} icon="⏳" accent="amber" />
-        <KpiCard label="Overdue Invoices" value={stats.overdue} icon="⚠️" accent={stats.overdue > 0 ? 'red' : 'default'} />
-        <KpiCard label="Total Expenses" value={`$${(stats.expenseTotal / 1000).toFixed(1)}k`} icon="💳" />
+        <KpiCard label="Total Invoiced" value={`$${(stats.totalInvoiced / 1000).toFixed(1)}k`} icon="📄" accent="green" onClick={() => onNavigate('invoices')} />
+        <KpiCard label="Outstanding" value={`$${(stats.outstanding / 1000).toFixed(1)}k`} icon="⏳" accent="amber" onClick={() => onNavigate('invoices')} />
+        <KpiCard label="Overdue Invoices" value={stats.overdue} icon="⚠️" accent={stats.overdue > 0 ? 'red' : 'default'} onClick={() => onNavigate('invoices')} />
+        <KpiCard label="Total Expenses" value={`$${(stats.expenseTotal / 1000).toFixed(1)}k`} icon="💳" onClick={() => onNavigate('expenses')} />
       </div>
       {invoiceStatusData.length > 0 && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -105,6 +105,11 @@ export const FinancialsPage = () => {
     { key: 'budgets', label: 'Budgets' },
   ];
 
+  const handleNavigate = (t: Tab) => {
+    setTab(t);
+    setTimeout(() => document.getElementById('financials-list')?.scrollIntoView({ behavior: 'smooth' }), 50);
+  };
+
   return (
     <div className="p-6">
       <SubNav items={SUBNAV} />
@@ -117,10 +122,10 @@ export const FinancialsPage = () => {
           {tab === 'invoices' && <NewInvoiceButton search={search} />}
         </div>
       </div>
-      <FinancialsDashboard />
+      <FinancialsDashboard onNavigate={handleNavigate} />
 
       {/* Tabs */}
-      <div className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
+      <div id="financials-list" className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
         {tabs.map((t) => (
           <button
             key={t.key}

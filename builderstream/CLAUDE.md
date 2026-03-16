@@ -22,6 +22,8 @@ Project-specific instructions for BuilderStream Django SaaS platform.
 - ✅ Sprint 4 / Phase 8.2: Dunning Workflows (DunningRule + DunningEvent, daily Celery task, /settings/dunning)
 - ✅ Sprint 4 / Phase 8.3: Client Payment Portal (PayInvoicePage at /pay/:token, Stripe CDN)
 - ✅ Sprint 4 / Phase 14.1: Custom Fields Engine (apps.custom_fields, GenericFK values, /settings/custom-fields)
+- ✅ UX: Clickable KPI cards on all 11 module pages (CRM, Projects, Financials, Field Ops, Estimating, Q&S, Documents, Payroll, Service, Scheduling, Company) — click navigates to relevant tab/filter
+- ✅ QA: Playwright E2E test suite — 44 tests, all passing (auth, dashboard, CRM, projects, navigation, collaboration, financials, field-ops)
 
 **Active Django apps (18):**
 core, tenants, accounts, billing, projects, crm, estimating, scheduling, financials, clients, documents, field_ops, quality_safety, payroll, service, analytics, issue_tracking, custom_fields
@@ -499,16 +501,54 @@ def authenticated_client(user, org):
 - **VITE_API_URL must be unset**: Do not set `VITE_API_URL=http://localhost:8000` in `docker-compose.yml`. Leaving it empty makes the frontend use relative paths proxied by Vite, which works from any IP. Setting it breaks remote access.
 - **Vite HMR host**: Do not set `hmr.host: 'localhost'` in `vite.config.ts`. Without it, Vite auto-uses `window.location.hostname` for the HMR WebSocket — works locally and remotely.
 - **FRONTEND_URL for email links**: Set `FRONTEND_URL=http://<vps-ip>:5173` in `.env` so password reset and verification emails link to the correct host.
+- **KPI card onClick pattern**: `KpiCard` accepts `onClick?: () => void`. When provided, adds `role="button"` + hover styles. Parent page passes `onNavigate(tab)` → `handleNavigate` sets state + calls `window.scrollTo` to `id="xxx-list"` anchor on the tab bar. `ProjectStatus` values in `ProjectsPage` are: `prospect`, `site_survey`, `proposal`, `acceptance`, `in_progress`, `milestones`, `finish_project`, `billing`, `paid_complete`, `canceled` — NOT the CLAUDE.md lifecycle values.
+- **CRMPage stagesData**: `fetchPipelineStages` returns `PipelineStage[]` directly (not a paginated object). Use `stagesData ?? []`, not `stagesData?.results`.
+
+## E2E Testing (Playwright)
+
+**Setup:** `@playwright/test` installed as devDep. Chromium installed via `npx playwright install chromium`.
+
+**Run:**
+```bash
+cd frontend
+npm run test:e2e           # headless, 2 workers (default)
+npm run test:e2e:headed    # visible browser
+npm run test:e2e:report    # open HTML report
+```
+
+**CRITICAL:** Always use `node_modules/.bin/playwright test` (via `npm run test:e2e`). Never `npx playwright test` — a globally-installed playwright can conflict and cause 0 tests to be found.
+
+**Auth:** `global-setup.ts` logs in once and saves cookies to `e2e/.auth/user.json`. All spec files import `STORAGE_STATE` from `playwright.config.ts` and call `test.use({ storageState: STORAGE_STATE })`.
+
+**Selector patterns:**
+- **KPI cards** (`role="button"`): `page.locator('[role="button"]').filter({ hasText: /label/i }).first()`
+- **Field component inputs** (no `htmlFor`): add `placeholder` to the `Input` call, then `getByPlaceholder('...', { exact: true })`
+- **Unique test data**: always use `Date.now()` suffix for names — tests run against the live site and records persist
+
+**Spec files (`frontend/e2e/`):**
+| File | Coverage |
+|------|----------|
+| `global-setup.ts` | Login once, save auth state |
+| `auth.spec.ts` | Login page, sign-in, wrong password, logout |
+| `dashboard.spec.ts` | Widgets visible, refresh button, analytics link |
+| `crm.spec.ts` | KPI nav, create contact, search, subnav |
+| `projects.spec.ts` | KPI nav, create project, status filter, subnav |
+| `navigation.spec.ts` | Sidebar links, section routing, Company, Team/collab |
+| `collaboration.spec.ts` | Channels, create channel, DM modal, subnav |
+| `financials.spec.ts` | KPI nav, tab switching, create invoice modal, subnav |
+| `field-ops.spec.ts` | KPI nav, tab switching, clock-in button, subnav |
+
+**Test count:** 44 tests, all passing (as of 2026-03-16).
 
 ## Next Steps
 
-The platform is feature-complete. All 18 sections and 4 sprints are done.
+The platform is feature-complete. All 18 sections, 4 sprints, and E2E tests are done.
 
 **Potential next work:**
 - Production deployment — Coolify (self-hosted, auto-SSL) or AWS ECS / Railway / Render
-- Add tests for `apps.issue_tracking`, `apps.custom_fields`
+- Add Django unit tests for `apps.issue_tracking`, `apps.custom_fields`
 - Stripe webhook handler for invoice payment success (mark invoice paid)
-- End-to-end E2E tests (Playwright)
+- Expand Playwright coverage: estimating, scheduling, quality-safety, service, payroll, issues pages
 - Seed demo org with issue tracking and custom field examples
 
 Each new feature follows the established pattern: models → services → serializers → views → URLs → signals/tasks → tests → frontend.

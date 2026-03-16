@@ -1,0 +1,61 @@
+import { test, expect } from '@playwright/test';
+import { STORAGE_STATE } from '../playwright.config';
+
+// All dashboard tests run authenticated via the pre-saved storage state.
+test.use({ storageState: STORAGE_STATE });
+
+test.describe('Dashboard', () => {
+  test('loads dashboard with widgets', async ({ page }) => {
+    await page.goto('/dashboard');
+
+    // The page renders a personalised h1 ("Welcome back, <name>!").
+    // The WidgetCard component renders widget titles in <h3> elements.
+    // Wait for at least one widget heading to confirm the grid has loaded.
+    await expect(
+      page.getByRole('heading', { name: /project overview/i }).first(),
+    ).toBeVisible();
+
+    // The WidgetCard wrapper is a plain div — verify multiple widget titles
+    // are present to confirm several widgets rendered successfully.
+    await expect(
+      page.getByRole('heading', { name: /financial summary/i }).first(),
+    ).toBeVisible();
+  });
+
+  test('shows project metrics', async ({ page }) => {
+    await page.goto('/dashboard');
+
+    // ProjectMetricsWidget renders MetricCard labels as small text nodes.
+    // "Total Projects" and "Active" are always present regardless of data.
+    await expect(page.getByText(/total projects/i).first()).toBeVisible();
+    await expect(page.getByText(/active/i).first()).toBeVisible();
+  });
+
+  test('can refresh dashboard', async ({ page }) => {
+    await page.goto('/dashboard');
+
+    // Wait for the dashboard to finish loading before trying to refresh
+    await expect(
+      page.getByRole('heading', { name: /project overview/i }).first(),
+    ).toBeVisible();
+
+    // The refresh button has title="Refresh dashboard" and no visible label
+    const refreshButton = page.getByTitle('Refresh dashboard');
+    await expect(refreshButton).toBeVisible();
+    await refreshButton.click();
+
+    // After clicking refresh the page should not show an error state
+    await expect(
+      page.getByText(/failed to load dashboard/i),
+    ).not.toBeVisible();
+  });
+
+  test('subnav shows Analytics link', async ({ page }) => {
+    await page.goto('/dashboard');
+
+    // DashboardPage renders <SubNav items={[{label:'Dashboard',...},{label:'Analytics',...}]} />
+    // SubNav produces <NavLink> elements which render as <a> tags.
+    const analyticsLink = page.getByRole('link', { name: 'Analytics' }).first();
+    await expect(analyticsLink).toBeVisible();
+  });
+});

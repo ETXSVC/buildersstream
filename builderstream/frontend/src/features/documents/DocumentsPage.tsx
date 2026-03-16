@@ -16,7 +16,7 @@ import type { RFI, Submittal, RFIStatus, SubmittalStatus } from '@/types/documen
 
 type Tab = 'documents' | 'rfis' | 'submittals' | 'photos';
 
-function DocumentsDashboard() {
+function DocumentsDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
   const { data: docsData } = useDocuments({});
   const { data: rfisData } = useRFIs({});
   const { data: submittalsData } = useSubmittals({});
@@ -51,10 +51,10 @@ function DocumentsDashboard() {
   return (
     <div className="mb-8">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
-        <KpiCard label="Documents" value={stats.docs} icon="📁" />
-        <KpiCard label="Open RFIs" value={stats.openRFIs} icon="❓" accent={stats.openRFIs > 0 ? 'amber' : 'default'} />
-        <KpiCard label="Pending Submittals" value={stats.pendingSubmittals} icon="📨" accent={stats.pendingSubmittals > 0 ? 'indigo' : 'default'} />
-        <KpiCard label="Photos" value={stats.photos} icon="📷" accent="blue" />
+        <KpiCard label="Documents" value={stats.docs} icon="📁" onClick={() => onNavigate('documents')} />
+        <KpiCard label="Open RFIs" value={stats.openRFIs} icon="❓" accent={stats.openRFIs > 0 ? 'amber' : 'default'} onClick={() => onNavigate('rfis')} />
+        <KpiCard label="Pending Submittals" value={stats.pendingSubmittals} icon="📨" accent={stats.pendingSubmittals > 0 ? 'indigo' : 'default'} onClick={() => onNavigate('submittals')} />
+        <KpiCard label="Photos" value={stats.photos} icon="📷" accent="blue" onClick={() => onNavigate('photos')} />
       </div>
       {(rfiData.length > 0 || submData.length > 0) && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -104,6 +104,11 @@ export const DocumentsPage = () => {
     { key: 'photos', label: 'Photos' },
   ];
 
+  const handleNavigate = (t: Tab) => {
+    setTab(t);
+    setTimeout(() => document.getElementById('docs-list')?.scrollIntoView({ behavior: 'smooth' }), 50);
+  };
+
   return (
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
@@ -129,9 +134,9 @@ export const DocumentsPage = () => {
           )}
         </div>
       </div>
-      <DocumentsDashboard />
+      <DocumentsDashboard onNavigate={handleNavigate} />
 
-      <div className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
+      <div id="docs-list" className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
         {tabs.map((t) => (
           <button
             key={t.key}

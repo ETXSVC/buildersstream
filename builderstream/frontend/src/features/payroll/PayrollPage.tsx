@@ -16,7 +16,7 @@ import type { Employee, EmploymentType, EmployeeTrade, PayRun, PayRunStatus } fr
 
 type Tab = 'pay-runs' | 'certified' | 'employees' | 'workforce';
 
-function PayrollDashboard() {
+function PayrollDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
   const { data: payRunsData } = usePayRuns({});
   const { data: employeesData } = useEmployees({});
   const { data: workforce } = useWorkforceSummary();
@@ -53,10 +53,10 @@ function PayrollDashboard() {
   return (
     <div className="mb-8">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
-        <KpiCard label="Active Employees" value={stats.active} icon="👷" accent="blue" />
-        <KpiCard label="Contractors" value={stats.contractors} icon="🤝" />
-        <KpiCard label="Pending Pay Runs" value={stats.pendingRuns} icon="📊" accent={stats.pendingRuns > 0 ? 'amber' : 'default'} />
-        <KpiCard label="Last Payroll Net" value={stats.lastTotal > 0 ? `$${(stats.lastTotal / 1000).toFixed(1)}k` : '—'} icon="💵" accent={stats.lastTotal > 0 ? 'green' : 'default'} />
+        <KpiCard label="Active Employees" value={stats.active} icon="👷" accent="blue" onClick={() => onNavigate('employees')} />
+        <KpiCard label="Contractors" value={stats.contractors} icon="🤝" onClick={() => onNavigate('workforce')} />
+        <KpiCard label="Pending Pay Runs" value={stats.pendingRuns} icon="📊" accent={stats.pendingRuns > 0 ? 'amber' : 'default'} onClick={() => onNavigate('pay-runs')} />
+        <KpiCard label="Last Payroll Net" value={stats.lastTotal > 0 ? `$${(stats.lastTotal / 1000).toFixed(1)}k` : '—'} icon="💵" accent={stats.lastTotal > 0 ? 'green' : 'default'} onClick={() => onNavigate('pay-runs')} />
       </div>
       {(typeData.length > 0 || tradeData.length > 0) && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -99,6 +99,11 @@ export const PayrollPage = () => {
   const [paidModal, setPaidModal] = useState<PayRun | null>(null);
   const [employeeModal, setEmployeeModal] = useState<Employee | null | 'new'>(null);
 
+  const handleNavigate = (t: Tab) => {
+    setTab(t);
+    setTimeout(() => document.getElementById('payroll-list')?.scrollIntoView({ behavior: 'smooth' }), 50);
+  };
+
   return (
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
@@ -122,9 +127,9 @@ export const PayrollPage = () => {
           </button>
         )}
       </div>
-      <PayrollDashboard />
+      <PayrollDashboard onNavigate={handleNavigate} />
 
-      <div className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
+      <div id="payroll-list" className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
         {([
           { key: 'pay-runs', label: 'Pay Runs' },
           { key: 'certified', label: 'Certified Payroll' },

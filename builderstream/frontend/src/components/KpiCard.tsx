@@ -4,6 +4,7 @@ interface KpiCardProps {
   sub?: string;
   accent?: 'default' | 'green' | 'red' | 'amber' | 'blue' | 'indigo';
   icon?: string;
+  onClick?: () => void;
 }
 
 const ACCENT_CLASSES: Record<NonNullable<KpiCardProps['accent']>, string> = {
@@ -24,9 +25,13 @@ const VALUE_CLASSES: Record<NonNullable<KpiCardProps['accent']>, string> = {
   indigo: 'text-indigo-700',
 };
 
-export function KpiCard({ label, value, sub, accent = 'default', icon }: KpiCardProps) {
+export function KpiCard({ label, value, sub, accent = 'default', icon, onClick }: KpiCardProps) {
   return (
-    <div className={`rounded-xl border bg-white p-5 shadow-sm ${ACCENT_CLASSES[accent]}`}>
+    <div
+      className={`rounded-xl border bg-white p-5 shadow-sm ${ACCENT_CLASSES[accent]} ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+    >
       <div className="flex items-start justify-between">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
         {icon && <span className="text-xl">{icon}</span>}
