@@ -130,11 +130,15 @@ class ChannelViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
         if existing:
             return Response(ChannelSerializer(existing, context={"request": request}).data)
 
+        # Build a deterministic slug from both user IDs so it's always unique
+        import uuid
+        ids = sorted([str(request.user.pk), str(other_user.pk)])
+        slug = f"dm-{uuid.uuid5(uuid.NAMESPACE_DNS, '-'.join(ids))}"
         channel = Channel.objects.create(
             organization=org,
             channel_type=Channel.ChannelType.DIRECT,
             name="",
-            slug="",
+            slug=slug,
         )
         channel.members.set([request.user, other_user])
         return Response(
