@@ -38,7 +38,7 @@ function EstimatingDashboard() {
       acc[e.status] = (acc[e.status] ?? 0) + 1;
       return acc;
     }, {});
-    return { total, approved, totalValue, sent, accepted, winRate, statusCounts };
+    return { total, approved, totalValue, sent, signed, winRate, statusCounts };
   }, [estimatesData, proposalsData]);
 
   const COLORS: Record<string, string> = {
