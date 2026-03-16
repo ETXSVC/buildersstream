@@ -27,10 +27,10 @@ class ChannelViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         qs = Channel.objects.filter(is_archived=False)
         user = self.request.user
-        from apps.tenants.models import Membership
+        from apps.tenants.models import OrganizationMembership
         org = getattr(self.request, "organization", None)
         if org:
-            membership = Membership.objects.filter(
+            membership = OrganizationMembership.objects.filter(
                 organization=org, user=user
             ).first()
             admin_roles = {"owner", "admin"}
