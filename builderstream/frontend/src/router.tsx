@@ -18,6 +18,7 @@ import { ServicePage } from '@/features/service';
 import { BrandingPage, DunningPage, CustomFieldsPage } from '@/features/settings';
 import { CollaborationPage } from '@/features/collaboration';
 import { IssuesPage } from '@/features/issues';
+import { CompanyPage } from '@/features/company/CompanyPage';
 import { PayInvoicePage } from '@/features/financials/PayInvoicePage';
 
 export const router = createBrowserRouter(
@@ -100,6 +101,7 @@ export const router = createBrowserRouter(
             { path: '/service', element: <ServicePage /> },
 
             // Collaboration / Team Chat
+            { path: '/company', element: <CompanyPage /> },
             { path: '/collaboration', element: <CollaborationPage /> },
 
             // Issue Tracking

@@ -48,6 +48,12 @@ const NAV_GROUPS = [
     ],
   },
   {
+    label: 'Company',
+    items: [
+      { label: 'Company', to: '/company' },
+    ],
+  },
+  {
     label: 'Team',
     items: [
       { label: 'Collaboration', to: '/collaboration' },
