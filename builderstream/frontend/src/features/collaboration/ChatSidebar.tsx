@@ -6,6 +6,7 @@ import { useChatStore } from '@/stores/chat';
 
 interface Props {
   onCreateChannel?: () => void;
+  onNewDm?: () => void;
 }
 
 function ChannelItem({ channel }: { channel: Channel }) {
@@ -42,7 +43,7 @@ function ChannelItem({ channel }: { channel: Channel }) {
   );
 }
 
-export function ChatSidebar({ onCreateChannel }: Props) {
+export function ChatSidebar({ onCreateChannel, onNewDm }: Props) {
   const { setChannels, channels } = useChatStore();
 
   const { data } = useQuery({
@@ -98,20 +99,30 @@ export function ChatSidebar({ onCreateChannel }: Props) {
           </section>
         )}
 
-        {dms.length > 0 && (
-          <section>
-            <p className="px-4 text-xs text-gray-500 uppercase tracking-wider mb-1">
+        <section>
+          <div className="flex items-center justify-between px-4 mb-1">
+            <p className="text-xs text-gray-500 uppercase tracking-wider">
               Direct Messages
             </p>
-            {dms.map((ch) => (
-              <ChannelItem key={ch.id} channel={ch} />
-            ))}
-          </section>
-        )}
+            {onNewDm && (
+              <button
+                type="button"
+                onClick={onNewDm}
+                className="text-gray-500 hover:text-white"
+                title="New direct message"
+              >
+                <Plus size={13} />
+              </button>
+            )}
+          </div>
+          {dms.map((ch) => (
+            <ChannelItem key={ch.id} channel={ch} />
+          ))}
+          {dms.length === 0 && (
+            <p className="px-4 text-xs text-gray-600 italic">No direct messages yet.</p>
+          )}
+        </section>
 
-        {channels.length === 0 && (
-          <p className="px-4 text-xs text-gray-500 mt-4">No channels yet.</p>
-        )}
       </nav>
     </aside>
   );

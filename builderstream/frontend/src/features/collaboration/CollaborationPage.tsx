@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Hash } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChatSidebar } from './ChatSidebar';
 import { MessageFeed } from './MessageFeed';
 import { MessageComposer } from './MessageComposer';
 import { useChatStore } from '@/stores/chat';
-import { createChannel } from '@/api/collaboration';
+import { createChannel, createDirectChannel } from '@/api/collaboration';
+import { fetchOrgMembers } from '@/api/scheduling';
 import type { Message } from '@/api/collaboration';
 
 function CreateChannelModal({ onClose }: { onClose: () => void }) {
@@ -94,10 +95,77 @@ function CreateChannelModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+function NewDmModal({ onClose }: { onClose: () => void }) {
+  const qc = useQueryClient();
+  const { setActiveChannel } = useChatStore();
+  const [search, setSearch] = useState('');
+
+  const { data: members = [] } = useQuery({
+    queryKey: ['org-members'],
+    queryFn: fetchOrgMembers,
+  });
+
+  const mutation = useMutation({
+    mutationFn: (userId: string) => createDirectChannel(userId),
+    onSuccess: (channel) => {
+      qc.invalidateQueries({ queryKey: ['collaboration', 'channels'] });
+      setActiveChannel(channel.id);
+      onClose();
+    },
+  });
+
+  const filtered = members.filter((m) =>
+    m.user_full_name.toLowerCase().includes(search.toLowerCase()) ||
+    m.user_email.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-gray-800 rounded-xl p-5 w-full max-w-sm space-y-3 shadow-2xl"
+      >
+        <h2 className="text-white font-semibold text-lg">New Direct Message</h2>
+        <input
+          autoFocus
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search teammates…"
+          className="w-full bg-gray-700 text-white rounded px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+        <ul className="max-h-52 overflow-y-auto space-y-0.5">
+          {filtered.map((m) => (
+            <li key={m.user}>
+              <button
+                type="button"
+                disabled={mutation.isPending}
+                onClick={() => mutation.mutate(m.user)}
+                className="w-full text-left px-3 py-2 rounded text-sm text-gray-200 hover:bg-gray-700 disabled:opacity-50"
+              >
+                <span className="font-medium">{m.user_full_name || m.user_email}</span>
+                {m.user_full_name && (
+                  <span className="ml-2 text-xs text-gray-500">{m.user_email}</span>
+                )}
+              </button>
+            </li>
+          ))}
+          {filtered.length === 0 && (
+            <li className="px-3 py-2 text-xs text-gray-500">No teammates found.</li>
+          )}
+        </ul>
+        {mutation.isError && (
+          <p className="text-xs text-red-400">Failed to open DM.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function CollaborationPage() {
   const { activeChannelId, channels, connectWs, disconnectWs } = useChatStore();
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [showDm, setShowDm] = useState(false);
 
   const activeChannel = channels.find((c) => c.id === activeChannelId);
 
@@ -117,7 +185,8 @@ export function CollaborationPage() {
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-gray-900">
       {showCreate && <CreateChannelModal onClose={() => setShowCreate(false)} />}
-      <ChatSidebar onCreateChannel={() => setShowCreate(true)} />
+      {showDm && <NewDmModal onClose={() => setShowDm(false)} />}
+      <ChatSidebar onCreateChannel={() => setShowCreate(true)} onNewDm={() => setShowDm(true)} />
 
       {activeChannel ? (
         <main className="flex-1 flex flex-col min-w-0">
