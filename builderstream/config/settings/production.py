@@ -17,6 +17,7 @@ SECURE_HSTS_PRELOAD = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Static files with whitenoise
+WHITENOISE_MANIFEST_STRICT = False  # Don't error on missing source map references
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")  # noqa: F405
 STORAGES = {
     "default": {
