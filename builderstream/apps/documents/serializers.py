@@ -67,11 +67,12 @@ class DocumentFolderCreateSerializer(serializers.ModelSerializer):
 class DocumentListSerializer(serializers.ModelSerializer):
     uploaded_by_name = serializers.SerializerMethodField()
     folder_name = serializers.CharField(source="folder.name", read_only=True, default=None)
+    project_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Document
         fields = [
-            "id", "folder", "folder_name", "project", "title", "file_name",
+            "id", "folder", "folder_name", "project", "project_name", "title", "file_name",
             "file_size", "content_type", "version", "is_current_version",
             "status", "tags", "uploaded_by", "uploaded_by_name",
             "requires_acknowledgment", "created_at",
@@ -82,6 +83,9 @@ class DocumentListSerializer(serializers.ModelSerializer):
         if obj.uploaded_by:
             return obj.uploaded_by.get_full_name() or obj.uploaded_by.email
         return None
+
+    def get_project_name(self, obj):
+        return obj.project.name if obj.project_id else None
 
 
 class DocumentDetailSerializer(serializers.ModelSerializer):

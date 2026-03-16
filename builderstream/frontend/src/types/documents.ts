@@ -19,10 +19,11 @@ export interface Document {
   title: string;
   file_name: string;
   file_size: number | null;
-  file_type: string | null;
+  content_type: string | null;
   status: DocumentStatus;
-  version_number: number;
+  version: number;
   is_current_version: boolean;
+  uploaded_by: string | null;
   uploaded_by_name: string | null;
   download_url: string | null;
   created_at: string;

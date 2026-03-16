@@ -480,31 +480,20 @@ function DocumentsTable({ search }: { search: string }) {
             <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
               <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <FileIcon type={doc.file_type} />
-                  {doc.download_url ? (
-                    <a
-                      href={doc.download_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium text-amber-600 hover:underline"
-                    >
-                      {doc.title}
-                    </a>
-                  ) : (
-                    <span className="font-medium text-slate-900">{doc.title}</span>
-                  )}
+                  <FileIcon type={doc.content_type} />
+                  <span className="font-medium text-slate-900">{doc.title}</span>
                 </div>
               </td>
               <td className="px-4 py-3 text-slate-500 text-xs">{doc.project_name ?? '—'}</td>
               <td className="px-4 py-3 text-slate-500 text-xs">{doc.folder_name ?? '—'}</td>
               <td className="px-4 py-3">
-                {doc.file_type && (
+                {doc.content_type && (
                   <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs uppercase text-slate-600">
-                    {doc.file_type}
+                    {doc.content_type.split('/').pop()}
                   </span>
                 )}
               </td>
-              <td className="px-4 py-3 text-center text-slate-500">v{doc.version_number}</td>
+              <td className="px-4 py-3 text-center text-slate-500">v{doc.version}</td>
               <td className="px-4 py-3 text-slate-600">{doc.uploaded_by_name ?? '—'}</td>
               <td className="px-4 py-3 text-slate-500">
                 {new Date(doc.created_at).toLocaleDateString()}
@@ -761,12 +750,21 @@ function ActionBtn({ children, onClick, danger }: { children: React.ReactNode; o
 }
 
 function FileIcon({ type }: { type: string | null }) {
+  const MIME_EXT: Record<string, string> = {
+    'application/pdf': 'pdf',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+    'application/vnd.ms-excel': 'xls',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+    'application/msword': 'doc',
+    'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp',
+  };
   const colors: Record<string, string> = {
     pdf: 'text-red-500', xlsx: 'text-green-600', xls: 'text-green-600',
     docx: 'text-blue-600', doc: 'text-blue-600', jpg: 'text-amber-500',
-    jpeg: 'text-amber-500', png: 'text-amber-500',
+    jpeg: 'text-amber-500', png: 'text-amber-500', gif: 'text-amber-500', webp: 'text-amber-500',
   };
-  const color = type ? (colors[type.toLowerCase()] ?? 'text-slate-400') : 'text-slate-400';
+  const ext = type ? (MIME_EXT[type] ?? type.split('/').pop() ?? '') : '';
+  const color = colors[ext.toLowerCase()] ?? 'text-slate-400';
   return (
     <svg className={`h-4 w-4 flex-shrink-0 ${color}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
