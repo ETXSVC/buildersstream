@@ -673,3 +673,48 @@ class ClientSurveyView(APIView):
             {"detail": "Survey submitted. Thank you for your feedback!", "id": str(survey.pk)},
             status=status.HTTP_201_CREATED,
         )
+
+
+class ClientDocumentsView(APIView):
+    """Portal: list project documents visible to client."""
+
+    authentication_classes = [ClientPortalAuthentication]
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from apps.documents.models import Document
+        from apps.documents.serializers import DocumentListSerializer
+
+        portal_access = request.user.portal_access
+        project = portal_access.project
+
+        qs = Document.objects.filter(
+            project=project,
+            is_current_version=True,
+            status="active",
+        ).select_related("folder", "project", "uploaded_by").order_by("-created_at")
+
+        serializer = DocumentListSerializer(qs, many=True)
+        return Response({"results": serializer.data})
+
+
+class ClientPhotosView(APIView):
+    """Portal: list client-visible project photos."""
+
+    authentication_classes = [ClientPortalAuthentication]
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from apps.documents.models import Photo
+        from apps.documents.serializers import PhotoListSerializer
+
+        portal_access = request.user.portal_access
+        project = portal_access.project
+
+        qs = Photo.objects.filter(
+            project=project,
+            is_client_visible=True,
+        ).select_related("uploaded_by").order_by("-taken_at", "-created_at")
+
+        serializer = PhotoListSerializer(qs, many=True, context={"request": request})
+        return Response({"results": serializer.data})

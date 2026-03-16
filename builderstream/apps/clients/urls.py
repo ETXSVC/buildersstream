@@ -48,6 +48,8 @@ portal_urlpatterns = [
     path("messages/", views.ClientMessagesView.as_view(), name="portal-messages"),
     path("schedule/", views.ClientScheduleView.as_view(), name="portal-schedule"),
     path("survey/", views.ClientSurveyView.as_view(), name="portal-survey"),
+    path("documents/", views.ClientDocumentsView.as_view(), name="portal-documents"),
+    path("photos/", views.ClientPhotosView.as_view(), name="portal-photos"),
 ]
 
 # Default urlpatterns (used when included without prefix — will be overridden in config/urls.py)

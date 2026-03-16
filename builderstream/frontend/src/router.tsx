@@ -20,6 +20,15 @@ import { CollaborationPage } from '@/features/collaboration';
 import { IssuesPage } from '@/features/issues';
 import { CompanyPage } from '@/features/company/CompanyPage';
 import { PayInvoicePage } from '@/features/financials/PayInvoicePage';
+import { PortalLoginPage } from '@/features/portal/PortalLoginPage';
+import { PortalLayout } from '@/features/portal/PortalLayout';
+import { PortalDashboard } from '@/features/portal/PortalDashboard';
+import { PortalApprovals } from '@/features/portal/PortalApprovals';
+import { PortalSelections } from '@/features/portal/PortalSelections';
+import { PortalMessages } from '@/features/portal/PortalMessages';
+import { PortalSchedule } from '@/features/portal/PortalSchedule';
+import { PortalDocuments } from '@/features/portal/PortalDocuments';
+import { PortalPhotos } from '@/features/portal/PortalPhotos';
 
 export const router = createBrowserRouter(
   [
@@ -27,6 +36,21 @@ export const router = createBrowserRouter(
       // Public routes — no authentication required
       children: [
         { path: '/pay/:token', element: <PayInvoicePage /> },
+        { path: '/portal/login', element: <PortalLoginPage /> },
+        { path: '/portal', element: <Navigate to="/portal/login" replace /> },
+      ],
+    },
+    {
+      // Client portal — own layout, portal JWT auth
+      element: <PortalLayout />,
+      children: [
+        { path: '/portal/dashboard', element: <PortalDashboard /> },
+        { path: '/portal/approvals', element: <PortalApprovals /> },
+        { path: '/portal/selections', element: <PortalSelections /> },
+        { path: '/portal/messages', element: <PortalMessages /> },
+        { path: '/portal/schedule', element: <PortalSchedule /> },
+        { path: '/portal/documents', element: <PortalDocuments /> },
+        { path: '/portal/photos', element: <PortalPhotos /> },
       ],
     },
     {
