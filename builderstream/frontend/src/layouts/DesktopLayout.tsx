@@ -16,7 +16,7 @@ const NAV_ITEMS = [
   { label: 'Operations',   to: '/field-ops' },
   { label: 'Finance & HR', to: '/financials' },
   { label: 'Company',      to: '/company' },
-  { label: 'Team',         to: '/collaboration' },
+  { label: 'Team Messaging', to: '/collaboration' },
   { label: 'Settings',     to: '/settings/branding' },
 ];
 
