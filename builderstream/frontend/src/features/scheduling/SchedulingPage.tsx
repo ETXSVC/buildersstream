@@ -1,6 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { fmtDate } from '@/utils/date';
 import { GanttView } from './GanttView';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from 'recharts';
+import { KpiCard } from '@/components/KpiCard';
 import {
   useTasks, useCrews, useEquipment,
   useCreateTask, useUpdateTask, useDeleteTask,
@@ -14,6 +19,83 @@ import { TASK_STATUS_COLORS, TASK_STATUS_LABELS, type Task, type Crew, type Equi
 
 type Tab = 'tasks' | 'crews' | 'equipment' | 'gantt';
 
+function SchedulingDashboard() {
+  const { data: tasksData } = useTasks({});
+  const { data: crewsData } = useCrews({});
+  const { data: equipmentData } = useEquipment({});
+
+  const stats = useMemo(() => {
+    const tasks = tasksData?.results ?? [];
+    const total = tasks.length;
+    const inProgress = tasks.filter(t => t.status === 'in_progress').length;
+    const completed = tasks.filter(t => t.status === 'completed').length;
+    const today = new Date().toISOString().split('T')[0];
+    const overdue = tasks.filter(t => t.status !== 'completed' && t.status !== 'canceled' && t.end_date && t.end_date < today).length;
+    const statusCounts = tasks.reduce<Record<string, number>>((acc, t) => {
+      acc[t.status] = (acc[t.status] ?? 0) + 1;
+      return acc;
+    }, {});
+    const crews = crewsData?.results?.length ?? 0;
+    const equip = equipmentData?.results?.length ?? 0;
+    return { total, inProgress, completed, overdue, statusCounts, crews, equip };
+  }, [tasksData, crewsData, equipmentData]);
+
+  const STATUS_LABELS: Record<string, string> = {
+    not_started: 'Not Started', in_progress: 'In Progress',
+    completed: 'Completed', on_hold: 'On Hold', canceled: 'Canceled',
+  };
+  const STATUS_COLORS_MAP: Record<string, string> = {
+    not_started: '#94a3b8', in_progress: '#60a5fa',
+    completed: '#22c55e', on_hold: '#f59e0b', canceled: '#e2e8f0',
+  };
+
+  const statusData = Object.entries(stats.statusCounts).map(([k, v]) => ({
+    name: STATUS_LABELS[k] ?? k,
+    value: v,
+    color: STATUS_COLORS_MAP[k] ?? '#94a3b8',
+  }));
+
+  return (
+    <div className="mb-8">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
+        <KpiCard label="Total Tasks" value={stats.total} icon="📋" />
+        <KpiCard label="In Progress" value={stats.inProgress} icon="⚡" accent="blue" />
+        <KpiCard label="Completed" value={stats.completed} icon="✅" accent="green" />
+        <KpiCard label="Overdue" value={stats.overdue} icon="⚠️" accent={stats.overdue > 0 ? 'red' : 'default'} sub={`${stats.crews} crews · ${stats.equip} equipment`} />
+      </div>
+      {statusData.length > 0 && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="mb-3 text-sm font-semibold text-slate-700">Task Status Breakdown</h3>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={statusData} margin={{ top: 0, right: 8, left: -20, bottom: 20 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {statusData.map(e => <Cell key={e.name} fill={e.color} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="mb-3 text-sm font-semibold text-slate-700">Task Distribution</h3>
+            <ResponsiveContainer width="100%" height={180}>
+              <PieChart>
+                <Pie data={statusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70}>
+                  {statusData.map(e => <Cell key={e.name} fill={e.color} />)}
+                </Pie>
+                <Legend />
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export const SchedulingPage = () => {
   const [tab, setTab] = useState<Tab>('tasks');
   const [search, setSearch] = useState('');
@@ -26,6 +108,7 @@ export const SchedulingPage = () => {
         {tab === 'crews' && <NewCrewButton />}
         {tab === 'equipment' && <NewEquipmentButton />}
       </div>
+      <SchedulingDashboard />
 
       {/* Tabs */}
       <div className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">

@@ -209,12 +209,64 @@ class DocumentViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
         )
         return Response(DocumentDetailSerializer(new_doc).data, status=status.HTTP_201_CREATED)
 
+    @action(detail=False, methods=["post"], url_path="direct-upload")
+    def direct_upload(self, request):
+        """Upload a file directly to local storage (no S3 required)."""
+        import uuid as _uuid
+        from django.core.files.storage import default_storage
+        from django.conf import settings as _settings
+
+        title = (request.data.get("title") or "").strip()
+        project_id = request.data.get("project") or None
+        uploaded_file = request.FILES.get("file")
+
+        if not title:
+            return Response({"title": "Required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not uploaded_file:
+            return Response({"file": "Required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        from apps.tenants.context import get_current_organization
+        org = get_current_organization() or request.current_organization
+        proj_segment = str(project_id) if project_id else "org-level"
+        file_key = f"documents/{org.id}/{proj_segment}/{_uuid.uuid4()}/{uploaded_file.name}"
+        default_storage.save(file_key, uploaded_file)
+
+        project = None
+        if project_id:
+            from apps.projects.models import Project
+            try:
+                project = Project.objects.get(pk=project_id, organization=org)
+            except Project.DoesNotExist:
+                return Response({"project": "Project not found."}, status=status.HTTP_400_BAD_REQUEST)
+
+        doc = Document.objects.create(
+            organization=org,
+            project=project,
+            title=title,
+            file_key=file_key,
+            file_name=uploaded_file.name,
+            file_size=uploaded_file.size,
+            content_type=uploaded_file.content_type or "application/octet-stream",
+            uploaded_by=request.user,
+            version=1,
+            is_current_version=True,
+        )
+        return Response(DocumentDetailSerializer(doc).data, status=status.HTTP_201_CREATED)
+
     @action(detail=True, methods=["get"], url_path="download")
     def download(self, request, pk=None):
-        """Return a presigned S3 download URL."""
+        """Return a download URL — local media URL or presigned S3 URL."""
         doc = self.get_object()
         if not doc.file_key:
             return Response({"detail": "No file attached."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Local storage: file_key is a relative path under MEDIA_ROOT
+        if doc.file_key.startswith("documents/") or doc.file_key.startswith("photos/"):
+            from django.conf import settings as _settings
+            url = request.build_absolute_uri(_settings.MEDIA_URL + doc.file_key)
+            return Response({"download_url": url, "file_name": doc.file_name})
+
+        # S3 storage fallback (for any files uploaded before switching to local)
         from apps.documents.services import FileUploadService
         try:
             url = FileUploadService.generate_download_url(doc.file_key, doc.file_name)

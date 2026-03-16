@@ -1,5 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { fmtDate } from '@/utils/date';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from 'recharts';
+import { KpiCard } from '@/components/KpiCard';
 import {
   useServiceRequests, useWarranties, useWarrantyClaims,
   useCreateServiceRequest, useUpdateServiceRequest, useDeleteServiceRequest,
@@ -14,6 +19,84 @@ import {
 import type { ServiceRequest, Warranty } from '@/types/service';
 
 type Tab = 'requests' | 'warranties' | 'claims';
+
+function ServiceDashboard() {
+  const { data: requestsData } = useServiceRequests({});
+  const { data: warrantiesData } = useWarranties({});
+  const { data: claimsData } = useWarrantyClaims({});
+
+  const stats = useMemo(() => {
+    const requests = requestsData?.results ?? [];
+    const warranties = warrantiesData?.results ?? [];
+    const claims = claimsData?.results ?? [];
+    const openRequests = requests.filter(r => !['completed', 'closed', 'cancelled'].includes(r.status)).length;
+    const highPriority = requests.filter(r => ['high', 'urgent'].includes(r.priority)).length;
+    const activeWarranties = warranties.filter(w => w.status === 'active').length;
+    const openClaims = claims.filter(c => !['resolved', 'closed'].includes(c.status)).length;
+    const statusCounts = requests.reduce<Record<string, number>>((acc, r) => {
+      acc[r.status] = (acc[r.status] ?? 0) + 1;
+      return acc;
+    }, {});
+    const priorityCounts = requests.reduce<Record<string, number>>((acc, r) => {
+      acc[r.priority] = (acc[r.priority] ?? 0) + 1;
+      return acc;
+    }, {});
+    return { openRequests, highPriority, activeWarranties, openClaims, statusCounts, priorityCounts };
+  }, [requestsData, warrantiesData, claimsData]);
+
+  const PRIORITY_COLORS: Record<string, string> = {
+    low: '#94a3b8', medium: '#60a5fa', high: '#f59e0b', urgent: '#ef4444',
+  };
+
+  const statusData = Object.entries(stats.statusCounts).map(([k, v]) => ({ name: k.replace('_', ' '), value: v }));
+  const priorityData = Object.entries(stats.priorityCounts).map(([k, v]) => ({
+    name: k.charAt(0).toUpperCase() + k.slice(1),
+    value: v,
+    color: PRIORITY_COLORS[k] ?? '#94a3b8',
+  }));
+
+  return (
+    <div className="mb-8">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
+        <KpiCard label="Open Requests" value={stats.openRequests} icon="🔧" accent={stats.openRequests > 0 ? 'amber' : 'default'} />
+        <KpiCard label="High Priority" value={stats.highPriority} icon="🚨" accent={stats.highPriority > 0 ? 'red' : 'default'} />
+        <KpiCard label="Active Warranties" value={stats.activeWarranties} icon="🛡️" accent="green" />
+        <KpiCard label="Open Claims" value={stats.openClaims} icon="📋" accent={stats.openClaims > 0 ? 'indigo' : 'default'} />
+      </div>
+      {(statusData.length > 0 || priorityData.length > 0) && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {statusData.length > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold text-slate-700">Requests by Status</h3>
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={statusData} margin={{ top: 0, right: 8, left: -20, bottom: 20 }}>
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#60a5fa" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+          {priorityData.length > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold text-slate-700">Requests by Priority</h3>
+              <ResponsiveContainer width="100%" height={160}>
+                <PieChart>
+                  <Pie data={priorityData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65}>
+                    {priorityData.map(e => <Cell key={e.name} fill={e.color} />)}
+                  </Pie>
+                  <Legend />
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export const ServicePage = () => {
   const [tab, setTab] = useState<Tab>('requests');
@@ -44,6 +127,7 @@ export const ServicePage = () => {
           </button>
         )}
       </div>
+      <ServiceDashboard />
 
       <div className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
         {([

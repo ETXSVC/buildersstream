@@ -1,5 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { fmtDate } from '@/utils/date';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from 'recharts';
+import { KpiCard } from '@/components/KpiCard';
 import {
   useEstimates, useProposals,
   useCreateEstimate, useUpdateEstimate, useDeleteEstimate,
@@ -15,6 +20,78 @@ import {
 import type { Estimate, Proposal } from '@/types/estimating';
 
 type Tab = 'estimates' | 'proposals';
+
+function EstimatingDashboard() {
+  const { data: estimatesData } = useEstimates({});
+  const { data: proposalsData } = useProposals({});
+
+  const stats = useMemo(() => {
+    const estimates = estimatesData?.results ?? [];
+    const proposals = proposalsData?.results ?? [];
+    const total = estimates.length;
+    const approved = estimates.filter(e => e.status === 'approved').length;
+    const totalValue = estimates.reduce((s, e) => s + parseFloat(e.total ?? '0'), 0);
+    const sent = proposals.filter(p => p.status === 'sent').length;
+    const signed = proposals.filter(p => p.status === 'signed').length;
+    const winRate = (sent + signed) > 0 ? Math.round((signed / (sent + signed)) * 100) : 0;
+    const statusCounts = estimates.reduce<Record<string, number>>((acc, e) => {
+      acc[e.status] = (acc[e.status] ?? 0) + 1;
+      return acc;
+    }, {});
+    return { total, approved, totalValue, sent, accepted, winRate, statusCounts };
+  }, [estimatesData, proposalsData]);
+
+  const COLORS: Record<string, string> = {
+    draft: '#94a3b8', in_review: '#60a5fa', approved: '#22c55e',
+    rejected: '#ef4444', won: '#16a34a', lost: '#dc2626',
+  };
+
+  const statusData = Object.entries(stats.statusCounts).map(([k, v]) => ({
+    name: k.replace('_', ' '),
+    value: v,
+    color: COLORS[k] ?? '#94a3b8',
+  }));
+
+  return (
+    <div className="mb-8">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
+        <KpiCard label="Total Estimates" value={stats.total} icon="📊" />
+        <KpiCard label="Approved" value={stats.approved} icon="✅" accent="green" />
+        <KpiCard label="Total Est. Value" value={`$${(stats.totalValue / 1000).toFixed(0)}k`} icon="💰" accent="amber" />
+        <KpiCard label="Win Rate" value={`${stats.winRate}%`} icon="🏆" accent={stats.winRate >= 50 ? 'green' : 'default'} sub={`${stats.signed} signed of ${stats.sent + stats.signed} proposals`} />
+      </div>
+      {statusData.length > 0 && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="mb-3 text-sm font-semibold text-slate-700">Estimates by Status</h3>
+            <ResponsiveContainer width="100%" height={160}>
+              <BarChart data={statusData} margin={{ top: 0, right: 8, left: -20, bottom: 20 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {statusData.map(e => <Cell key={e.name} fill={e.color} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="mb-3 text-sm font-semibold text-slate-700">Estimate Status Mix</h3>
+            <ResponsiveContainer width="100%" height={160}>
+              <PieChart>
+                <Pie data={statusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65}>
+                  {statusData.map(e => <Cell key={e.name} fill={e.color} />)}
+                </Pie>
+                <Legend />
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export const EstimatingPage = () => {
   const [tab, setTab] = useState<Tab>('estimates');
@@ -48,6 +125,7 @@ export const EstimatingPage = () => {
           </button>
         )}
       </div>
+      <EstimatingDashboard />
 
       <div className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
         {(['estimates', 'proposals'] as Tab[]).map((t) => (

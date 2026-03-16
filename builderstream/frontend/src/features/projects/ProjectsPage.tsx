@@ -1,6 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { fmtDate } from '@/utils/date';
 import { Link } from 'react-router-dom';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from 'recharts';
+import { KpiCard } from '@/components/KpiCard';
 import {
   useProjects,
   useCreateProject,
@@ -52,10 +57,76 @@ export const ProjectsPage = () => {
   if (healthFilter) filters.health_status = healthFilter;
 
   const { data, isLoading, error } = useProjects(filters);
+  const allProjects = useProjects({});
   const deleteProject = useDeleteProject();
+
+  const stats = useMemo(() => {
+    const projects = allProjects.data?.results ?? [];
+    const total = projects.length;
+    const active = projects.filter(p => ['in_progress', 'milestones', 'finish_project'].includes(p.status)).length;
+    const totalValue = projects.reduce((s, p) => s + parseFloat(p.estimated_value ?? '0'), 0);
+    const green = projects.filter(p => p.health_status === 'green').length;
+    const yellow = projects.filter(p => p.health_status === 'yellow').length;
+    const red = projects.filter(p => p.health_status === 'red').length;
+    const statusCounts = projects.reduce<Record<string, number>>((acc, p) => {
+      acc[p.status] = (acc[p.status] ?? 0) + 1;
+      return acc;
+    }, {});
+    return { total, active, totalValue, green, yellow, red, statusCounts };
+  }, [allProjects.data]);
+
+  const statusChartData = Object.entries(stats.statusCounts).map(([k, v]) => ({
+    name: STATUS_LABELS[k as ProjectStatus] ?? k,
+    count: v,
+  }));
+  const healthData = [
+    { name: 'Green', value: stats.green, color: '#22c55e' },
+    { name: 'Yellow', value: stats.yellow, color: '#f59e0b' },
+    { name: 'Red', value: stats.red, color: '#ef4444' },
+  ].filter(d => d.value > 0);
 
   return (
     <div className="p-6">
+      {/* Dashboard */}
+      <div className="mb-8">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
+          <KpiCard label="Total Projects" value={stats.total} icon="🏗️" />
+          <KpiCard label="Active" value={stats.active} icon="⚡" accent="blue" />
+          <KpiCard label="Pipeline Value" value={`$${(stats.totalValue / 1000).toFixed(0)}k`} icon="💰" accent="green" />
+          <KpiCard label="Health: Red" value={stats.red} icon="🔴" accent={stats.red > 0 ? 'red' : 'default'} sub={`${stats.green} green · ${stats.yellow} yellow`} />
+        </div>
+        {(statusChartData.length > 0 || healthData.length > 0) && (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold text-slate-700">Projects by Status</h3>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={statusChartData} margin={{ top: 0, right: 8, left: -20, bottom: 40 }}>
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-35} textAnchor="end" interval={0} />
+                  <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold text-slate-700">Health Distribution</h3>
+              {healthData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={180}>
+                  <PieChart>
+                    <Pie data={healthData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, value }) => `${name}: ${value}`} labelLine={false}>
+                      {healthData.map((entry) => <Cell key={entry.name} fill={entry.color} />)}
+                    </Pie>
+                    <Legend />
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-[180px] items-center justify-center text-sm text-slate-400">No health data yet</div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
@@ -149,9 +220,10 @@ export const ProjectsPage = () => {
       {data && data.results.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {data.results.map((project) => (
-            <div
+            <Link
               key={project.id}
-              className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+              to={`/projects/${project.id}`}
+              className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md block"
             >
               {/* Top row */}
               <div className="mb-3 flex items-start justify-between gap-2">
@@ -170,7 +242,7 @@ export const ProjectsPage = () => {
                   )}
                   <button
                     type="button"
-                    onClick={() => setEditProject(project)}
+                    onClick={(e) => { e.preventDefault(); setEditProject(project); }}
                     title="Edit project"
                     className="rounded p-1 text-slate-300 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-700 group-hover:opacity-100"
                   >
@@ -178,7 +250,7 @@ export const ProjectsPage = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setDeleteTarget(project)}
+                    onClick={(e) => { e.preventDefault(); setDeleteTarget(project); }}
                     title="Delete project"
                     className="rounded p-1 text-slate-300 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
                   >
@@ -237,7 +309,7 @@ export const ProjectsPage = () => {
                   </div>
                 </div>
               )}
-            </div>
+            </Link>
           ))}
         </div>
       )}

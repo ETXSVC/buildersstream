@@ -1,5 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { fmtDate } from '@/utils/date';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from 'recharts';
+import { KpiCard } from '@/components/KpiCard';
 import {
   usePayRuns, useCreatePayRun, useProcessPayRun, useApprovePayRun, useMarkPayRunPaid, useVoidPayRun,
   useCertifiedPayrolls, useSubmitCertifiedPayroll,
@@ -10,6 +15,83 @@ import { PAY_RUN_STATUS_COLORS, EMPLOYMENT_TYPE_LABELS, EMPLOYMENT_TYPE_COLORS, 
 import type { Employee, EmploymentType, EmployeeTrade, PayRun, PayRunStatus } from '@/types/payroll';
 
 type Tab = 'pay-runs' | 'certified' | 'employees' | 'workforce';
+
+function PayrollDashboard() {
+  const { data: payRunsData } = usePayRuns({});
+  const { data: employeesData } = useEmployees({});
+  const { data: workforce } = useWorkforceSummary();
+
+  const stats = useMemo(() => {
+    const payRuns = payRunsData?.results ?? [];
+    const employees = employeesData?.results ?? [];
+    const active = employees.filter(e => e.is_active).length;
+    const contractors = employees.filter(e => e.employment_type === 'contractor').length;
+    const pendingRuns = payRuns.filter(r => r.status === 'draft').length;
+    const lastPaid = payRuns.filter(r => r.status === 'paid').sort((a, b) => b.pay_period_end.localeCompare(a.pay_period_end))[0];
+    const lastTotal = lastPaid ? parseFloat(lastPaid.total_net_pay ?? '0') : 0;
+    const typeCounts = employees.reduce<Record<string, number>>((acc, e) => {
+      acc[e.employment_type] = (acc[e.employment_type] ?? 0) + 1;
+      return acc;
+    }, {});
+    const tradeCounts = employees.reduce<Record<string, number>>((acc, e) => {
+      if (e.trade) acc[e.trade] = (acc[e.trade] ?? 0) + 1;
+      return acc;
+    }, {});
+    return { active, contractors, pendingRuns, lastTotal, typeCounts, tradeCounts };
+  }, [payRunsData, employeesData, workforce]);
+
+  const typeData = Object.entries(stats.typeCounts).map(([k, v]) => ({
+    name: EMPLOYMENT_TYPE_LABELS[k as EmploymentType] ?? k,
+    value: v,
+  }));
+
+  const tradeData = Object.entries(stats.tradeCounts).map(([k, v]) => ({
+    name: TRADE_LABELS[k as EmployeeTrade] ?? k,
+    value: v,
+  }));
+
+  return (
+    <div className="mb-8">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
+        <KpiCard label="Active Employees" value={stats.active} icon="👷" accent="blue" />
+        <KpiCard label="Contractors" value={stats.contractors} icon="🤝" />
+        <KpiCard label="Pending Pay Runs" value={stats.pendingRuns} icon="📊" accent={stats.pendingRuns > 0 ? 'amber' : 'default'} />
+        <KpiCard label="Last Payroll Net" value={stats.lastTotal > 0 ? `$${(stats.lastTotal / 1000).toFixed(1)}k` : '—'} icon="💵" accent={stats.lastTotal > 0 ? 'green' : 'default'} />
+      </div>
+      {(typeData.length > 0 || tradeData.length > 0) && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {typeData.length > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold text-slate-700">Employment Type Mix</h3>
+              <ResponsiveContainer width="100%" height={160}>
+                <PieChart>
+                  <Pie data={typeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65}>
+                    {typeData.map((_, i) => <Cell key={i} fill={['#60a5fa','#f59e0b','#22c55e','#94a3b8'][i % 4]} />)}
+                  </Pie>
+                  <Legend />
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+          {tradeData.length > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold text-slate-700">Workforce by Trade</h3>
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={tradeData} margin={{ top: 0, right: 8, left: -20, bottom: 40 }}>
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-35} textAnchor="end" interval={0} />
+                  <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#a78bfa" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export const PayrollPage = () => {
   const [tab, setTab] = useState<Tab>('pay-runs');
@@ -40,6 +122,7 @@ export const PayrollPage = () => {
           </button>
         )}
       </div>
+      <PayrollDashboard />
 
       <div className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
         {([

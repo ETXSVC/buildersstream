@@ -3,6 +3,7 @@ import {
   fetchFolders, fetchDocuments, fetchRFIs, fetchSubmittals, fetchPhotos,
   createRFI, updateRFI, deleteRFI,
   createSubmittal, updateSubmittal, deleteSubmittal,
+  directUpload, deleteDocument,
 } from '@/api/documents';
 
 const STALE = 30_000;
@@ -92,5 +93,22 @@ export function usePhotos(params: Record<string, string> = {}) {
     queryKey: ['documents', 'photos', params],
     queryFn: () => fetchPhotos(params),
     staleTime: STALE,
+  });
+}
+
+export function useUploadDocument(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ file, title }: { file: File; title: string }) =>
+      directUpload({ file, title, project: projectId }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['documents', 'documents'] }),
+  });
+}
+
+export function useDeleteDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteDocument(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['documents', 'documents'] }),
   });
 }

@@ -1,5 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { fmtDate } from '@/utils/date';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from 'recharts';
+import { KpiCard } from '@/components/KpiCard';
 import {
   useInvoices, useBudgets, useChangeOrders, usePurchaseOrders, useExpenses,
   useCreateExpense, useUpdateExpense, useDeleteExpense,
@@ -14,6 +19,77 @@ import {
 } from '@/types/financials';
 
 type Tab = 'invoices' | 'expenses' | 'change-orders' | 'purchase-orders' | 'budgets';
+
+function FinancialsDashboard() {
+  const { data: invoicesData } = useInvoices({});
+  const { data: expensesData } = useExpenses({});
+
+  const stats = useMemo(() => {
+    const invoices = invoicesData?.results ?? [];
+    const expenses = expensesData?.results ?? [];
+    const totalInvoiced = invoices.reduce((s, i) => s + parseFloat(i.total ?? '0'), 0);
+    const outstanding = invoices.filter(i => ['sent', 'viewed', 'partial'].includes(i.status))
+      .reduce((s, i) => s + parseFloat(i.balance_due ?? '0'), 0);
+    const overdue = invoices.filter(i => i.status === 'overdue').length;
+    const expenseTotal = expenses.reduce((s, e) => s + parseFloat(e.amount ?? '0'), 0);
+    const statusCounts = invoices.reduce<Record<string, number>>((acc, i) => {
+      acc[i.status] = (acc[i.status] ?? 0) + 1;
+      return acc;
+    }, {});
+    return { totalInvoiced, outstanding, overdue, expenseTotal, statusCounts };
+  }, [invoicesData, expensesData]);
+
+  const statusColors: Record<string, string> = {
+    draft: '#94a3b8', sent: '#60a5fa', viewed: '#818cf8',
+    partial: '#f59e0b', paid: '#22c55e', overdue: '#ef4444', void: '#e2e8f0',
+  };
+
+  const invoiceStatusData = Object.entries(stats.statusCounts).map(([k, v]) => ({
+    name: k.charAt(0).toUpperCase() + k.slice(1),
+    value: v,
+    color: statusColors[k] ?? '#94a3b8',
+  }));
+
+  return (
+    <div className="mb-8">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
+        <KpiCard label="Total Invoiced" value={`$${(stats.totalInvoiced / 1000).toFixed(1)}k`} icon="📄" accent="green" />
+        <KpiCard label="Outstanding" value={`$${(stats.outstanding / 1000).toFixed(1)}k`} icon="⏳" accent="amber" />
+        <KpiCard label="Overdue Invoices" value={stats.overdue} icon="⚠️" accent={stats.overdue > 0 ? 'red' : 'default'} />
+        <KpiCard label="Total Expenses" value={`$${(stats.expenseTotal / 1000).toFixed(1)}k`} icon="💳" />
+      </div>
+      {invoiceStatusData.length > 0 && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="mb-3 text-sm font-semibold text-slate-700">Invoice Status</h3>
+            <ResponsiveContainer width="100%" height={180}>
+              <PieChart>
+                <Pie data={invoiceStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70}>
+                  {invoiceStatusData.map(e => <Cell key={e.name} fill={e.color} />)}
+                </Pie>
+                <Legend />
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="mb-3 text-sm font-semibold text-slate-700">Invoice Count by Status</h3>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={invoiceStatusData} margin={{ top: 0, right: 8, left: -20, bottom: 20 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {invoiceStatusData.map(e => <Cell key={e.name} fill={e.color} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export const FinancialsPage = () => {
   const [tab, setTab] = useState<Tab>('invoices');
@@ -31,11 +107,14 @@ export const FinancialsPage = () => {
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">Financials</h1>
-        {tab === 'expenses' && <NewExpenseButton search={search} />}
-        {tab === 'change-orders' && <NewChangeOrderButton search={search} />}
-        {tab === 'purchase-orders' && <NewPurchaseOrderButton search={search} />}
-        {tab === 'invoices' && <NewInvoiceButton search={search} />}
+        <div className="flex gap-2">
+          {tab === 'expenses' && <NewExpenseButton search={search} />}
+          {tab === 'change-orders' && <NewChangeOrderButton search={search} />}
+          {tab === 'purchase-orders' && <NewPurchaseOrderButton search={search} />}
+          {tab === 'invoices' && <NewInvoiceButton search={search} />}
+        </div>
       </div>
+      <FinancialsDashboard />
 
       {/* Tabs */}
       <div className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">

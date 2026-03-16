@@ -1,5 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { fmtDate } from '@/utils/date';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from 'recharts';
+import { KpiCard } from '@/components/KpiCard';
 import {
   useContacts,
   useLeads,
@@ -22,6 +27,74 @@ type View = 'leads' | 'contacts';
 
 // ── CRMPage ───────────────────────────────────────────────────────────────────
 
+function CRMDashboard() {
+  const { data: leadsData } = useLeads({});
+  const { data: contactsData } = useContacts();
+  const { data: stagesData } = usePipelineStages();
+
+  const stats = useMemo(() => {
+    const leads = leadsData?.results ?? [];
+    const total = leads.length;
+    const hot = leads.filter(l => l.urgency === 'hot').length;
+    const warm = leads.filter(l => l.urgency === 'warm').length;
+    const cold = leads.filter(l => l.urgency === 'cold').length;
+    const pipelineValue = leads.reduce((s, l) => s + parseFloat(l.estimated_value ?? '0'), 0);
+    const contacts = contactsData?.results?.length ?? 0;
+    return { total, hot, warm, cold, pipelineValue, contacts };
+  }, [leadsData, contactsData]);
+
+  const stages = stagesData?.results ?? [];
+  const stageChartData = stages
+    .filter(s => !s.is_lost_stage)
+    .map(s => ({ name: s.name, leads: s.lead_count ?? 0 }));
+
+  const urgencyData = [
+    { name: 'Hot', value: stats.hot, color: '#ef4444' },
+    { name: 'Warm', value: stats.warm, color: '#f59e0b' },
+    { name: 'Cold', value: stats.cold, color: '#94a3b8' },
+  ].filter(d => d.value > 0);
+
+  return (
+    <div className="mb-8">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
+        <KpiCard label="Total Leads" value={stats.total} icon="🎯" />
+        <KpiCard label="Hot Leads" value={stats.hot} icon="🔥" accent={stats.hot > 0 ? 'red' : 'default'} />
+        <KpiCard label="Pipeline Value" value={`$${(stats.pipelineValue / 1000).toFixed(0)}k`} icon="💼" accent="green" />
+        <KpiCard label="Contacts" value={stats.contacts} icon="👥" accent="blue" />
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {stageChartData.length > 0 && (
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="mb-3 text-sm font-semibold text-slate-700">Leads by Pipeline Stage</h3>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={stageChartData} margin={{ top: 0, right: 8, left: -20, bottom: 40 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-35} textAnchor="end" interval={0} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="leads" fill="#6366f1" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+        {urgencyData.length > 0 && (
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="mb-3 text-sm font-semibold text-slate-700">Lead Urgency</h3>
+            <ResponsiveContainer width="100%" height={180}>
+              <PieChart>
+                <Pie data={urgencyData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70}>
+                  {urgencyData.map(e => <Cell key={e.name} fill={e.color} />)}
+                </Pie>
+                <Legend />
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export const CRMPage = () => {
   const [view, setView] = useState<View>('leads');
   const [search, setSearch] = useState('');
@@ -31,6 +104,7 @@ export const CRMPage = () => {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">CRM</h1>
       </div>
+      <CRMDashboard />
 
       <div className="mb-6 flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
         {(['leads', 'contacts'] as View[]).map((v) => (

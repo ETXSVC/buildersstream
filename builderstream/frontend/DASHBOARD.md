@@ -1,122 +1,84 @@
-# Dashboard UI Implementation
+# Dashboard & Module Dashboards
 
-Complete dashboard UI connecting to the backend API from Section 5.
+BuilderStream has two tiers of dashboards:
 
-## Features Implemented
+1. **Home Dashboard** (`/`) — org-wide summary with 5 widgets
+2. **Module Dashboards** — each section page has KPI cards + charts at the top
 
-### ✅ API Layer
-- **Types**: Complete TypeScript interfaces matching backend API
-- **API Functions**: Dashboard data and layout endpoints
-- **React Query Hooks**: Cached data fetching with 60-second stale time
+---
 
-### ✅ Widget Components
-1. **ProjectMetricsWidget** - Project overview with health distribution
-2. **FinancialSummaryWidget** - Budget, revenue, costs tracking
-3. **ScheduleOverviewWidget** - Milestones and crew availability
-4. **ActionItemsWidget** - Top priority action items with metadata
-5. **ActivityStreamWidget** - Recent project activity with icons
+## Home Dashboard
 
-### ✅ Dashboard Layout
-- Responsive grid layout (mobile → tablet → desktop)
-- Conditional widget rendering based on visibility settings
-- Loading states with spinner
-- Error states with retry functionality
-- Refresh button with cache invalidation
+Located at `frontend/src/features/dashboard/`.
 
-### ✅ Customization
-- Widget visibility toggle (show/hide widgets)
-- Modal interface for customization
-- Persists to backend via PUT `/api/v1/dashboard/layout/`
-- Foundation for future drag-and-drop functionality
+### Widgets
 
-## File Structure
+| Widget | Description |
+|--------|-------------|
+| `ProjectMetricsWidget` | Project overview with health distribution |
+| `FinancialSummaryWidget` | Budget, revenue, costs |
+| `ScheduleOverviewWidget` | Milestones and crew availability |
+| `ActionItemsWidget` | Top 20 priority action items |
+| `ActivityStreamWidget` | Recent project activity feed |
 
-```
-frontend/src/
-├── types/
-│   └── dashboard.ts              # TypeScript interfaces
-├── api/
-│   └── dashboard.ts              # API functions
-├── hooks/
-│   └── useDashboard.ts           # React Query hooks
-└── features/dashboard/
-    ├── DashboardPage.tsx         # Main dashboard container
-    └── components/
-        ├── index.ts              # Clean exports
-        ├── WidgetCard.tsx        # Shared widget wrapper
-        ├── ProjectMetricsWidget.tsx
-        ├── FinancialSummaryWidget.tsx
-        ├── ScheduleOverviewWidget.tsx
-        ├── ActionItemsWidget.tsx
-        ├── ActivityStreamWidget.tsx
-        └── DashboardCustomizer.tsx
-```
+### API Endpoints
+- `GET /api/v1/dashboard/` — cached org dashboard (60s Redis TTL)
+- `GET /api/v1/dashboard/layout/` — user's widget visibility settings
+- `PUT /api/v1/dashboard/layout/` — save widget customization
 
-## API Endpoints Used
+---
 
-- `GET /api/v1/dashboard/` - Main dashboard data (60s Redis cache)
-- `GET /api/v1/dashboard/layout/` - User's widget layout config
-- `PUT /api/v1/dashboard/layout/` - Save widget customization
+## Module Dashboards
 
-## How to Test
+Each section page shows KPI cards + Recharts charts above the data table/list.
+All metrics are derived client-side from existing API hooks using `useMemo`.
 
-### 1. Start Backend (if not running)
-```bash
-cd builderstream
-docker compose up -d
-```
+### Shared Component
 
-### 2. Start Frontend
-```bash
-cd frontend
-npm install  # if not already done
-npm run dev
-```
+`frontend/src/components/KpiCard.tsx` — reusable KPI card with label, value, sub-text, and color accent variants (`default`, `green`, `red`, `amber`, `blue`, `indigo`).
 
-### 3. Access Dashboard
-- Open: http://localhost:5173/
-- Login with: `admin@builderstream.com` / `demo1234!`
-- Dashboard will auto-load
+### Per-Module Summary
 
-### 4. Test Features
-- ✅ View all 5 widgets with live data
-- ✅ Click "Customize" button (top right, settings icon)
-- ✅ Toggle widgets on/off
-- ✅ Save changes (persists to backend)
-- ✅ Click "Refresh" button (top right, circular arrows)
-- ✅ Test responsive design (resize browser)
+| Module | KPIs | Charts |
+|--------|------|--------|
+| **Projects** | Total, Active, Pipeline Value, Health Red | Status bar + Health pie |
+| **CRM** | Total Leads, Hot Leads, Pipeline Value, Contacts | Leads by stage bar + Urgency pie |
+| **Financials** | Total Invoiced, Outstanding, Overdue, Expenses | Invoice status pie + count bar |
+| **Scheduling** | Total Tasks, In Progress, Completed, Overdue | Status bar + distribution pie |
+| **Field Ops** | Time Entries, Total Hours, Daily Logs, Pending Expenses | Log status pie + count bar |
+| **Documents** | Documents, Open RFIs, Pending Submittals, Photos | RFI status pie + Submittals bar |
+| **Estimating** | Total Estimates, Approved, Est. Value, Win Rate | Status bar + mix pie |
+| **Quality & Safety** | Inspections, Pass Rate, Open Deficiencies, Incidents | Inspection results pie + Severity bar |
+| **Service** | Open Requests, High Priority, Active Warranties, Open Claims | Status bar + Priority pie |
+| **Payroll** | Active Employees, Contractors, Pending Pay Runs, Last Payroll Net | Employment type pie + Trade bar |
+| **Issues** | Open Issues, Critical, SLA Compliance, Resolved | Status bar + Priority pie |
+
+### Charting Library
+
+[Recharts](https://recharts.org/) v3 — `BarChart`, `PieChart`, `ResponsiveContainer`, `Cell`, `Legend`, `Tooltip`.
+
+---
 
 ## Tech Stack
 
-- **React 18** - UI framework
-- **TypeScript** - Type safety
-- **TailwindCSS** - Styling
-- **React Query** - Data fetching & caching
-- **Zustand** - Auth state management
-- **Axios** - HTTP client
-- **Vite** - Build tool
+- **React 18** — UI framework
+- **TypeScript** — Type safety
+- **TailwindCSS** — Styling
+- **React Query (@tanstack/react-query)** — Data fetching & caching
+- **Recharts** — Charts and visualizations
+- **Zustand** — Auth state
+- **Axios** — HTTP client
+- **Vite** — Build tool
 
-## Future Enhancements
+---
 
-1. **Drag-and-Drop Layout** - Use `react-grid-layout` for repositioning
-2. **Widget Resizing** - Allow users to resize widgets
-3. **Date Range Filters** - Filter dashboard by date ranges
-4. **Export Data** - Export dashboard data as PDF/CSV
-5. **Real-time Updates** - WebSocket for live data updates
-6. **Custom Widgets** - Allow users to create custom metrics
-7. **Dashboard Templates** - Pre-configured layouts by role
+## Running
 
-## Performance
+```bash
+cd frontend
+npm install
+npm run dev      # dev server at http://localhost:5173
+npm run build    # production build to dist/
+```
 
-- **Initial Load**: ~2-3 seconds (includes auth + data fetch)
-- **Refresh**: ~1 second (60s cache, instant if cached)
-- **Customization**: Instant (optimistic updates)
-- **Bundle Size**: ~450KB gzipped (React + deps)
-
-## Notes
-
-- All widgets gracefully handle empty data states
-- Loading spinners prevent layout shift
-- Error boundaries catch widget failures
-- Mobile-first responsive design
-- Accessibility: semantic HTML, keyboard navigation
+Login: `admin@builderstream.com` / `demo1234!`

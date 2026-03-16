@@ -1,5 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { fmtDate } from '@/utils/date';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from 'recharts';
+import { KpiCard } from '@/components/KpiCard';
 import {
   useInspections, useDeficiencies, useSafetyIncidents,
   useCreateInspection, useUpdateInspection, useDeleteInspection,
@@ -15,6 +20,86 @@ import {
 import type { Inspection, SafetyIncident } from '@/types/quality-safety';
 
 type Tab = 'inspections' | 'deficiencies' | 'incidents';
+
+function QualitySafetyDashboard() {
+  const { data: inspData } = useInspections({});
+  const { data: defData } = useDeficiencies({});
+  const { data: incData } = useSafetyIncidents({});
+
+  const stats = useMemo(() => {
+    const inspections = inspData?.results ?? [];
+    const deficiencies = defData?.results ?? [];
+    const incidents = incData?.results ?? [];
+    const total = inspections.length;
+    const passed = inspections.filter(i => i.passed === true).length;
+    const passRate = total > 0 ? Math.round((passed / total) * 100) : 0;
+    const openDefs = deficiencies.filter(d => !['resolved', 'closed'].includes(d.status)).length;
+    const critical = incidents.filter(i => ['recordable', 'lost_time'].includes(i.severity)).length;
+    const resultCounts = inspections.reduce<Record<string, number>>((acc, i) => {
+      const k = i.passed === true ? 'pass' : i.passed === false ? 'fail' : 'pending';
+      acc[k] = (acc[k] ?? 0) + 1;
+      return acc;
+    }, {});
+    const sevCounts = incidents.reduce<Record<string, number>>((acc, i) => {
+      acc[i.severity] = (acc[i.severity] ?? 0) + 1;
+      return acc;
+    }, {});
+    return { total, passRate, openDefs, incidentCount: incidents.length, critical, resultCounts, sevCounts };
+  }, [inspData, defData, incData]);
+
+  const resultData = Object.entries(stats.resultCounts).map(([k, v]) => ({
+    name: k.charAt(0).toUpperCase() + k.slice(1),
+    value: v,
+    color: k === 'pass' ? '#22c55e' : k === 'fail' ? '#ef4444' : '#94a3b8',
+  }));
+
+  const sevData = Object.entries(stats.sevCounts).map(([k, v]) => ({
+    name: k.replace('_', ' '),
+    value: v,
+  }));
+
+  return (
+    <div className="mb-8">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
+        <KpiCard label="Inspections" value={stats.total} icon="🔍" />
+        <KpiCard label="Pass Rate" value={`${stats.passRate}%`} icon="✅" accent={stats.passRate >= 80 ? 'green' : stats.passRate >= 60 ? 'amber' : 'red'} />
+        <KpiCard label="Open Deficiencies" value={stats.openDefs} icon="⚠️" accent={stats.openDefs > 0 ? 'amber' : 'default'} />
+        <KpiCard label="Safety Incidents" value={stats.incidentCount} icon="🚨" accent={stats.critical > 0 ? 'red' : 'default'} sub={stats.critical > 0 ? `${stats.critical} recordable` : 'No recordable'} />
+      </div>
+      {(resultData.length > 0 || sevData.length > 0) && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {resultData.length > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold text-slate-700">Inspection Results</h3>
+              <ResponsiveContainer width="100%" height={160}>
+                <PieChart>
+                  <Pie data={resultData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65}>
+                    {resultData.map(e => <Cell key={e.name} fill={e.color} />)}
+                  </Pie>
+                  <Legend />
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+          {sevData.length > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold text-slate-700">Incidents by Severity</h3>
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={sevData} margin={{ top: 0, right: 8, left: -20, bottom: 20 }}>
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#f97316" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export const QualitySafetyPage = () => {
   const [tab, setTab] = useState<Tab>('inspections');
@@ -45,6 +130,7 @@ export const QualitySafetyPage = () => {
           </button>
         )}
       </div>
+      <QualitySafetyDashboard />
 
       <div className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
         {(['inspections', 'deficiencies', 'incidents'] as Tab[]).map((t) => (

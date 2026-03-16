@@ -1,9 +1,14 @@
 /**
  * Desktop Field Ops management view — time entries, daily logs, expenses.
  */
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { fmtDate } from '@/utils/date';
 import { Link } from 'react-router-dom';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from 'recharts';
+import { KpiCard } from '@/components/KpiCard';
 import {
   useOpenTimeEntry,
   useTimeEntries, useCreateManualEntry, useApproveTimeEntry, useRejectTimeEntry,
@@ -15,6 +20,69 @@ import { EXPENSE_CATEGORIES } from '@/types/field-ops';
 import type { TimeEntry, DailyLog, ExpenseEntry } from '@/types/field-ops';
 
 type Tab = 'time-entries' | 'daily-logs' | 'expenses';
+
+function FieldOpsDashboard() {
+  const { data: timeData } = useTimeEntries({ page_size: '100' });
+  const { data: logsData } = useDailyLogs({ page_size: '100' });
+  const { data: expData } = useExpenses({ page_size: '100' });
+
+  const stats = useMemo(() => {
+    const entries = timeData?.results ?? [];
+    const logs = logsData?.results ?? [];
+    const expenses = expData?.results ?? [];
+    const totalHours = entries.reduce((s, e) => s + parseFloat(e.total_hours ?? '0'), 0);
+    const pendingExpenses = expenses.filter(e => e.status === 'pending').length;
+    const expenseTotal = expenses.reduce((s, e) => s + parseFloat(e.amount ?? '0'), 0);
+    const statusCounts = logs.reduce<Record<string, number>>((acc, l) => {
+      acc[l.status] = (acc[l.status] ?? 0) + 1;
+      return acc;
+    }, {});
+    return { totalHours, pendingExpenses, expenseTotal, logCount: logs.length, statusCounts, entryCount: entries.length };
+  }, [timeData, logsData, expData]);
+
+  const logStatusData = Object.entries(stats.statusCounts).map(([k, v]) => ({
+    name: k.charAt(0).toUpperCase() + k.slice(1),
+    value: v,
+  }));
+
+  return (
+    <div className="mb-2">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
+        <KpiCard label="Time Entries" value={stats.entryCount} icon="⏱️" />
+        <KpiCard label="Total Hours" value={stats.totalHours.toFixed(1)} icon="🕐" accent="blue" />
+        <KpiCard label="Daily Logs" value={stats.logCount} icon="📝" accent="indigo" />
+        <KpiCard label="Pending Expenses" value={stats.pendingExpenses} icon="💸" accent={stats.pendingExpenses > 0 ? 'amber' : 'default'} sub={`$${(stats.expenseTotal / 1000).toFixed(1)}k total`} />
+      </div>
+      {logStatusData.length > 0 && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 mb-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="mb-3 text-sm font-semibold text-slate-700">Daily Logs by Status</h3>
+            <ResponsiveContainer width="100%" height={160}>
+              <PieChart>
+                <Pie data={logStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65}>
+                  {logStatusData.map((_, i) => <Cell key={i} fill={['#60a5fa','#22c55e','#f59e0b','#94a3b8'][i % 4]} />)}
+                </Pie>
+                <Legend />
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="mb-3 text-sm font-semibold text-slate-700">Log Status Counts</h3>
+            <ResponsiveContainer width="100%" height={160}>
+              <BarChart data={logStatusData} margin={{ top: 0, right: 8, left: -20, bottom: 0 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export const FieldOpsPage = () => {
   const [tab, setTab] = useState<Tab>('time-entries');
@@ -63,6 +131,8 @@ export const FieldOpsPage = () => {
           )}
         </div>
       </div>
+
+      <FieldOpsDashboard />
 
       {/* Clock status banner */}
       <div className={`rounded-xl border p-4 flex items-center justify-between ${

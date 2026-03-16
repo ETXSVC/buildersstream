@@ -43,3 +43,29 @@ export async function fetchPhotos(params: Record<string, string> = {}): Promise<
   const { data } = await apiClient.get<ListResponse<Photo>>('/api/v1/documents/photos/', { params });
   return data;
 }
+
+export async function directUpload(params: {
+  file: File;
+  title: string;
+  project?: string;
+}): Promise<Document> {
+  const form = new FormData();
+  form.append('file', params.file);
+  form.append('title', params.title);
+  if (params.project) form.append('project', params.project);
+  const { data } = await apiClient.post<Document>(
+    '/api/v1/documents/documents/direct-upload/',
+    form,
+    { headers: { 'Content-Type': undefined } },
+  );
+  return data;
+}
+
+export async function fetchDocumentDownloadUrl(id: string): Promise<{ download_url: string }> {
+  const { data } = await apiClient.get(`/api/v1/documents/documents/${id}/download/`);
+  return data;
+}
+
+export async function deleteDocument(id: string): Promise<void> {
+  await apiClient.delete(`/api/v1/documents/documents/${id}/`);
+}

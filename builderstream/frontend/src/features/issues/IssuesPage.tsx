@@ -1,5 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from 'recharts';
+import { KpiCard } from '@/components/KpiCard';
 import {
   fetchIssues,
   fetchIssue,
@@ -384,6 +389,92 @@ function CreateIssueModal({
   );
 }
 
+function IssuesDashboard() {
+  const { data } = useQuery({ queryKey: ['issues', {}], queryFn: () => fetchIssues({}) });
+  const { data: sla } = useQuery({ queryKey: ['issues', 'sla'], queryFn: fetchSLACompliance });
+
+  const stats = useMemo(() => {
+    const issues = data?.results ?? [];
+    const open = issues.filter(i => !['resolved', 'closed'].includes(i.status)).length;
+    const critical = issues.filter(i => i.priority === 'critical').length;
+    const breached = issues.filter(i => i.is_sla_resolution_breached).length;
+    const resolved = issues.filter(i => ['resolved', 'closed'].includes(i.status)).length;
+    const statusCounts = issues.reduce<Record<string, number>>((acc, i) => {
+      acc[i.status] = (acc[i.status] ?? 0) + 1;
+      return acc;
+    }, {});
+    const priorityCounts = issues.reduce<Record<string, number>>((acc, i) => {
+      acc[i.priority] = (acc[i.priority] ?? 0) + 1;
+      return acc;
+    }, {});
+    return { open, critical, breached, resolved, statusCounts, priorityCounts };
+  }, [data]);
+
+  const PRIORITY_C: Record<string, string> = {
+    critical: '#dc2626', high: '#f97316', medium: '#f59e0b', low: '#22c55e',
+  };
+  const STATUS_C: Record<string, string> = {
+    new: '#94a3b8', open: '#60a5fa', in_progress: '#818cf8', pending: '#f59e0b',
+    resolved: '#22c55e', closed: '#e2e8f0',
+  };
+
+  const statusData = Object.entries(stats.statusCounts).map(([k, v]) => ({
+    name: k.replace('_', ' '),
+    value: v,
+    color: STATUS_C[k] ?? '#94a3b8',
+  }));
+  const priorityData = Object.entries(stats.priorityCounts).map(([k, v]) => ({
+    name: k.charAt(0).toUpperCase() + k.slice(1),
+    value: v,
+    color: PRIORITY_C[k] ?? '#94a3b8',
+  }));
+  const slaCompliance = sla ? Math.round((sla.resolution_sla.compliance_pct + sla.response_sla.compliance_pct) / 2) : null;
+
+  return (
+    <div className="px-6 pt-4 pb-2">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
+        <KpiCard label="Open Issues" value={stats.open} icon="🐛" accent={stats.open > 0 ? 'blue' : 'default'} />
+        <KpiCard label="Critical" value={stats.critical} icon="🚨" accent={stats.critical > 0 ? 'red' : 'default'} />
+        <KpiCard label="SLA Compliance" value={slaCompliance !== null ? `${slaCompliance}%` : '—'} icon="⏱️" accent={slaCompliance !== null && slaCompliance < 80 ? 'red' : 'green'} sub={`${stats.breached} breached`} />
+        <KpiCard label="Resolved" value={stats.resolved} icon="✅" accent="green" />
+      </div>
+      {(statusData.length > 0 || priorityData.length > 0) && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 mb-6">
+          {statusData.length > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold text-slate-700">Issues by Status</h3>
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={statusData} margin={{ top: 0, right: 8, left: -20, bottom: 20 }}>
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                    {statusData.map(e => <Cell key={e.name} fill={e.color} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+          {priorityData.length > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold text-slate-700">Issues by Priority</h3>
+              <ResponsiveContainer width="100%" height={160}>
+                <PieChart>
+                  <Pie data={priorityData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65}>
+                    {priorityData.map(e => <Cell key={e.name} fill={e.color} />)}
+                  </Pie>
+                  <Legend />
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function IssuesPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
@@ -430,9 +521,11 @@ export function IssuesPage() {
               + New Issue
             </button>
           </div>
-
+        </div>
+        <IssuesDashboard />
+        <div className="border-b border-slate-200 bg-white px-6 py-4">
           {/* Filters */}
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3">
             <input
               type="text"
               placeholder="Search issues..."

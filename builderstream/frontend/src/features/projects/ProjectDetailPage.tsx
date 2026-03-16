@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { fmtDate } from '@/utils/date';
 import { useParams, Link } from 'react-router-dom';
 import { useProject, useUpdateProjectStatus, useUpdateProject } from '@/hooks/useProjects';
+import { useDocuments, useUploadDocument, useDeleteDocument } from '@/hooks/useDocuments';
+import { fetchDocumentDownloadUrl } from '@/api/documents';
 import type { ProjectStatus } from '@/types/projects';
+import type { Document } from '@/types/documents';
 import { STATUS_LABELS, STATUS_COLORS, HEALTH_COLORS } from '@/types/projects';
 import { ProjectComments } from './ProjectComments';
 
-type Tab = 'overview' | 'milestones' | 'team' | 'comments';
+type Tab = 'overview' | 'milestones' | 'team' | 'comments' | 'documents';
 
 const VALID_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
   prospect:       ['site_survey', 'canceled'],
@@ -307,7 +310,7 @@ export const ProjectDetailPage = () => {
 
       {/* Tabs */}
       <div className="mb-6 flex border-b border-slate-200">
-        {(['overview', 'milestones', 'team', 'comments'] as Tab[]).map((t) => (
+        {(['overview', 'milestones', 'team', 'comments', 'documents'] as Tab[]).map((t) => (
           <button
             key={t}
             type="button"
@@ -397,9 +400,203 @@ export const ProjectDetailPage = () => {
           <ProjectComments projectId={project.id} />
         </div>
       )}
+
+      {tab === 'documents' && (
+        <ProjectDocumentsTab projectId={project.id} />
+      )}
     </div>
   );
 };
+
+function ProjectDocumentsTab({ projectId }: { projectId: string }) {
+  const { data, isLoading } = useDocuments({ project: projectId });
+  const upload = useUploadDocument(projectId);
+  const remove = useDeleteDocument();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [title, setTitle] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const docs: Document[] = data?.results ?? [];
+
+  const handleUpload = () => {
+    if (!file || !title.trim()) return;
+    setUploadError('');
+    upload.mutate(
+      { file, title: title.trim() },
+      {
+        onSuccess: () => {
+          setModalOpen(false);
+          setTitle('');
+          setFile(null);
+        },
+        onError: () => setUploadError('Upload failed. Check that AWS S3 is configured in .env'),
+      },
+    );
+  };
+
+  const handleDownload = async (doc: Document) => {
+    try {
+      const { download_url } = await fetchDocumentDownloadUrl(doc.id);
+      const res = await fetch(download_url, { credentials: 'include' });
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = doc.file_name;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      alert('Could not download file.');
+    }
+  };
+
+  const handleDelete = (doc: Document) => {
+    if (!confirm(`Delete "${doc.title}"?`)) return;
+    remove.mutate(doc.id);
+  };
+
+  function fmtSize(bytes: number | null) {
+    if (!bytes) return '—';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  return (
+    <div>
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-sm text-slate-500">{docs.length} document{docs.length !== 1 ? 's' : ''}</p>
+        <button
+          type="button"
+          onClick={() => setModalOpen(true)}
+          className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-600"
+        >
+          + Upload Document
+        </button>
+      </div>
+
+      {isLoading && (
+        <div className="flex h-24 items-center justify-center">
+          <div className="h-6 w-6 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+        </div>
+      )}
+
+      {!isLoading && docs.length === 0 && (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 py-12 text-center">
+          <p className="text-sm text-slate-400">No documents attached to this project yet.</p>
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="mt-3 text-sm font-medium text-amber-600 hover:text-amber-700"
+          >
+            Upload the first document
+          </button>
+        </div>
+      )}
+
+      {docs.length > 0 && (
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <table className="w-full text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Title</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">File</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Size</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Uploaded by</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Date</th>
+                <th className="px-4 py-3" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {docs.map((doc) => (
+                <tr key={doc.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 font-medium text-slate-900">{doc.title}</td>
+                  <td className="px-4 py-3 text-slate-500">{doc.file_name}</td>
+                  <td className="px-4 py-3 text-slate-500">{fmtSize(doc.file_size)}</td>
+                  <td className="px-4 py-3 text-slate-500">{doc.uploaded_by_name ?? '—'}</td>
+                  <td className="px-4 py-3 text-slate-500">{new Date(doc.created_at).toLocaleDateString()}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleDownload(doc)}
+                        className="text-xs font-medium text-amber-600 hover:text-amber-700"
+                      >
+                        Download
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(doc)}
+                        className="text-xs font-medium text-red-500 hover:text-red-600"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <h2 className="mb-4 text-base font-semibold text-slate-900">Upload Document</h2>
+
+            {uploadError && (
+              <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                {uploadError}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600">Title *</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Signed Contract"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600">File *</label>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  className="w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-amber-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-amber-700 hover:file:bg-amber-100"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => { setModalOpen(false); setTitle(''); setFile(null); setUploadError(''); }}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleUpload}
+                disabled={!file || !title.trim() || upload.isPending}
+                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-50"
+              >
+                {upload.isPending ? 'Uploading…' : 'Upload'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (

@@ -1,5 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { fmtDate } from '@/utils/date';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from 'recharts';
+import { KpiCard } from '@/components/KpiCard';
 import {
   useDocuments, useRFIs, useSubmittals, usePhotos,
   useCreateRFI, useUpdateRFI, useDeleteRFI,
@@ -10,6 +15,81 @@ import { RFI_STATUS_COLORS, SUBMITTAL_STATUS_COLORS } from '@/types/documents';
 import type { RFI, Submittal, RFIStatus, SubmittalStatus } from '@/types/documents';
 
 type Tab = 'documents' | 'rfis' | 'submittals' | 'photos';
+
+function DocumentsDashboard() {
+  const { data: docsData } = useDocuments({});
+  const { data: rfisData } = useRFIs({});
+  const { data: submittalsData } = useSubmittals({});
+  const { data: photosData } = usePhotos({});
+
+  const stats = useMemo(() => {
+    const rfis = rfisData?.results ?? [];
+    const submittals = submittalsData?.results ?? [];
+    const openRFIs = rfis.filter(r => !['closed', 'void'].includes(r.status)).length;
+    const pendingSubmittals = submittals.filter(s => ['pending', 'submitted'].includes(s.status)).length;
+    const rfiStatusCounts = rfis.reduce<Record<string, number>>((acc, r) => {
+      acc[r.status] = (acc[r.status] ?? 0) + 1;
+      return acc;
+    }, {});
+    const submStatusCounts = submittals.reduce<Record<string, number>>((acc, s) => {
+      acc[s.status] = (acc[s.status] ?? 0) + 1;
+      return acc;
+    }, {});
+    return {
+      docs: docsData?.count ?? 0,
+      openRFIs,
+      pendingSubmittals,
+      photos: photosData?.count ?? 0,
+      rfiStatusCounts,
+      submStatusCounts,
+    };
+  }, [docsData, rfisData, submittalsData, photosData]);
+
+  const rfiData = Object.entries(stats.rfiStatusCounts).map(([k, v]) => ({ name: k, value: v }));
+  const submData = Object.entries(stats.submStatusCounts).map(([k, v]) => ({ name: k, value: v }));
+
+  return (
+    <div className="mb-8">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
+        <KpiCard label="Documents" value={stats.docs} icon="📁" />
+        <KpiCard label="Open RFIs" value={stats.openRFIs} icon="❓" accent={stats.openRFIs > 0 ? 'amber' : 'default'} />
+        <KpiCard label="Pending Submittals" value={stats.pendingSubmittals} icon="📨" accent={stats.pendingSubmittals > 0 ? 'indigo' : 'default'} />
+        <KpiCard label="Photos" value={stats.photos} icon="📷" accent="blue" />
+      </div>
+      {(rfiData.length > 0 || submData.length > 0) && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {rfiData.length > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold text-slate-700">RFIs by Status</h3>
+              <ResponsiveContainer width="100%" height={160}>
+                <PieChart>
+                  <Pie data={rfiData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65}>
+                    {rfiData.map((_, i) => <Cell key={i} fill={['#f59e0b','#60a5fa','#22c55e','#94a3b8'][i % 4]} />)}
+                  </Pie>
+                  <Legend />
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+          {submData.length > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold text-slate-700">Submittals by Status</h3>
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={submData} margin={{ top: 0, right: 8, left: -20, bottom: 0 }}>
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#818cf8" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export const DocumentsPage = () => {
   const [tab, setTab] = useState<Tab>('documents');
@@ -49,6 +129,7 @@ export const DocumentsPage = () => {
           )}
         </div>
       </div>
+      <DocumentsDashboard />
 
       <div className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
         {tabs.map((t) => (
