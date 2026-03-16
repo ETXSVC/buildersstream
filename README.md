@@ -1,6 +1,8 @@
 # BuilderStream
 
-Construction management SaaS platform built with Django 5.x, Django REST Framework, Celery, and PostgreSQL.
+**Live:** https://buildersstream.online
+
+Construction management SaaS platform built with Django 4.2, Django REST Framework, Celery, and PostgreSQL.
 
 ## Implementation Status
 
@@ -38,7 +40,7 @@ Construction management SaaS platform built with Django 5.x, Django REST Framewo
 - **Cache/Broker**: Redis 7
 - **Task Queue**: Celery with django-celery-beat
 - **Auth**: JWT (SimpleJWT) + django-allauth, email-only (no username)
-- **Storage**: AWS S3 via django-storages
+- **Storage**: Local filesystem (`FileSystemStorage`), served via Apache `/media/` alias
 - **Billing**: Stripe subscriptions
 - **API Docs**: drf-spectacular (OpenAPI/Swagger)
 - **Admin UI**: django-jazzmin (Bootstrap 5, dark sidebar, custom icons per model)
@@ -277,7 +279,7 @@ All API endpoints are mounted under `/api/v1/`:
 | Scheduling | `/api/v1/scheduling/` | CPM, Gantt, crews, equipment | ✅ Complete |
 | Financials | `/api/v1/financials/` | Job costing, invoicing, change orders, POs, dunning | ✅ Complete |
 | Clients | `/api/v1/clients/` | Magic-link portal, selections, approvals | ✅ Complete |
-| Documents | `/api/v1/documents/` | S3 presigned URLs, versioning, RFIs, submittals | ✅ Complete |
+| Documents | `/api/v1/documents/` | Local file storage, direct upload, RFIs, submittals, photos | ✅ Complete |
 | Field Ops | `/api/v1/field-ops/` | GPS clock-in/out, daily logs, expenses | ✅ Complete |
 | Quality & Safety | `/api/v1/quality-safety/` | Inspections, incidents, OSHA | ✅ Complete |
 | Payroll | `/api/v1/payroll/` | Certified payroll, workforce analytics | ✅ Complete |
@@ -486,6 +488,72 @@ curl -fsSL https://cdn.coollabs.io/coolify/install.sh | bash
 ```
 
 Coolify detects `docker-compose.yml` automatically and handles SSL certificates, nginx, and auto-deploy on `git push`.
+
+## Module Dashboards
+
+Every section page in the React app has a **dashboard panel at the top** — KPI cards and Recharts charts powered by live API data, displayed above the existing table/list.
+
+| Module | KPI Cards | Charts |
+|--------|-----------|--------|
+| Projects | Total, Active, Pipeline Value, Health Red | Status bar + Health pie |
+| CRM | Total Leads, Hot Leads, Pipeline Value, Contacts | Leads by stage + Urgency pie |
+| Financials | Total Invoiced, Outstanding, Overdue, Expenses | Invoice status pie + count bar |
+| Scheduling | Total Tasks, In Progress, Completed, Overdue | Status bar + distribution pie |
+| Field Ops | Time Entries, Total Hours, Daily Logs, Pending Expenses | Log status pie + count bar |
+| Documents | Documents, Open RFIs, Pending Submittals, Photos | RFI status pie + Submittals bar |
+| Estimating | Total Estimates, Approved, Est. Value, Win Rate | Status bar + mix pie |
+| Quality & Safety | Inspections, Pass Rate, Open Deficiencies, Incidents | Results pie + Severity bar |
+| Service | Open Requests, High Priority, Active Warranties, Open Claims | Status bar + Priority pie |
+| Payroll | Active Employees, Contractors, Pending Pay Runs, Last Payroll Net | Employment type pie + Trade bar |
+| Issues | Open Issues, Critical, SLA Compliance, Resolved | Status bar + Priority pie |
+
+Charts use **Recharts v3** (`BarChart`, `PieChart`, `ResponsiveContainer`). Shared `KpiCard` component at `frontend/src/components/KpiCard.tsx`.
+
+---
+
+## Production Deployment
+
+The platform is deployed at **https://buildersstream.online** on an Ubuntu VPS.
+
+### Stack
+- **Apache2** — SSL termination, reverse proxy to Gunicorn, static/media file serving
+- **Docker Compose** (`docker-compose.prod.yml`) — web, celery, beat, db, redis
+- **Let's Encrypt** — SSL via certbot (certs at `/etc/letsencrypt/live/buildersstream.online-0001/`)
+
+### Apache Config
+`/etc/apache2/sites-available/builderstream.online.conf`
+- Proxies `/api/`, `/admin/`, `/ws/` to `127.0.0.1:8000`
+- Serves React SPA from `frontend/dist/` with `FallbackResource /index.html`
+- Serves media files via `Alias /media/ .../builderstream/media/`
+- WebSocket upgrade via `mod_proxy_wstunnel`
+
+### Deploy Steps
+```bash
+git pull origin main
+cd builderstream/frontend && npm run build
+cd ..
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml exec web python manage.py migrate
+docker compose -f docker-compose.prod.yml exec web python manage.py collectstatic --noinput
+sudo systemctl reload apache2
+```
+
+### Environment (.env)
+```env
+SECRET_KEY=...
+DEBUG=False
+ALLOWED_HOSTS=buildersstream.online,www.buildersstream.online
+DB_HOST=db
+CELERY_BROKER_URL=redis://redis:6379/0
+REDIS_CACHE_URL=redis://redis:6379/1
+REDIS_CHANNELS_URL=redis://redis:6379/2
+STRIPE_SECRET_KEY=sk_live_...
+```
+
+### Frontend Build Note
+`npm run build` runs `vite build` only — `tsc` is excluded from the build script. Run `npx tsc --noEmit` separately to check types.
+
+---
 
 ## Known Issues & Fixes
 
