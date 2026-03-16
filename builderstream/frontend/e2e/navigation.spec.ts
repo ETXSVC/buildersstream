@@ -14,7 +14,7 @@ test('sidebar has 8 top-level nav items', async ({ page }) => {
   await expect(sidebar.getByText('Operations')).toBeVisible();
   await expect(sidebar.getByText('Finance & HR')).toBeVisible();
   await expect(sidebar.getByText('Company')).toBeVisible();
-  await expect(sidebar.getByText('Team')).toBeVisible();
+  await expect(sidebar.getByText('Team Messaging')).toBeVisible();
   await expect(sidebar.getByText('Settings')).toBeVisible();
 });
 
@@ -56,7 +56,7 @@ test('Company page loads', async ({ page }) => {
   await expect(page.getByText('Total Employees')).toBeVisible();
   await expect(page.getByText('Total Contractors')).toBeVisible();
   await expect(page.getByText('Total Workforce')).toBeVisible();
-  await expect(page.getByText('Active Workers')).toBeVisible();
+  await expect(page.getByText('Team Members').first()).toBeVisible();
 });
 
 test('Team page loads collaboration', async ({ page }) => {
