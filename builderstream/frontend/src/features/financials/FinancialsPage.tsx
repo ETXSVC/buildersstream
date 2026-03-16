@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { fmtDate } from '@/utils/date';
+import { SubNav } from '@/components/SubNav';
+const SUBNAV = [{ label: 'Financials', to: '/financials' }, { label: 'Payroll', to: '/payroll' }];
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -105,6 +107,7 @@ export const FinancialsPage = () => {
 
   return (
     <div className="p-6">
+      <SubNav items={SUBNAV} />
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">Financials</h1>
         <div className="flex gap-2">

@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { fmtDate } from '@/utils/date';
 import { Link } from 'react-router-dom';
+import { SubNav } from '@/components/SubNav';
+const SUBNAV = [{ label: 'Projects', to: '/projects' }, { label: 'Scheduling', to: '/scheduling' }, { label: 'Documents', to: '/documents' }];
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -87,6 +89,7 @@ export const ProjectsPage = () => {
 
   return (
     <div className="p-6">
+      <SubNav items={SUBNAV} />
       {/* Dashboard */}
       <div className="mb-8">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">

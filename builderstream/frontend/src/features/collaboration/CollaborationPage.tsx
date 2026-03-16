@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Hash } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { SubNav } from '@/components/SubNav';
+const SUBNAV = [{ label: 'Collaboration', to: '/collaboration' }, { label: 'Issues', to: '/issues' }];
 import { ChatSidebar } from './ChatSidebar';
 import { MessageFeed } from './MessageFeed';
 import { MessageComposer } from './MessageComposer';
@@ -183,7 +185,9 @@ export function CollaborationPage() {
   }, [activeChannelId]);
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-gray-900">
+    <div className="flex flex-col h-[calc(100vh-4rem)]">
+      <div className="bg-white px-4 pt-3"><SubNav items={SUBNAV} /></div>
+      <div className="flex flex-1 min-h-0 bg-gray-900">
       {showCreate && <CreateChannelModal onClose={() => setShowCreate(false)} />}
       {showDm && <NewDmModal onClose={() => setShowDm(false)} />}
       <ChatSidebar onCreateChannel={() => setShowCreate(true)} onNewDm={() => setShowDm(true)} />
@@ -227,6 +231,7 @@ export function CollaborationPage() {
           </div>
         </main>
       )}
+      </div>
     </div>
   );
 }

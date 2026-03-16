@@ -9,65 +9,15 @@ import { SyncStatusBar } from '@/components/mobile/SyncStatusBar';
 import { NotificationBell } from '@/components/NotificationBell';
 import { CommandPalette } from '@/components/CommandPalette';
 
-const NAV_GROUPS = [
-  {
-    label: 'Overview',
-    items: [
-      { label: 'Dashboard', to: '/dashboard' },
-      { label: 'Analytics', to: '/analytics' },
-    ],
-  },
-  {
-    label: 'Projects',
-    items: [
-      { label: 'Projects', to: '/projects' },
-      { label: 'Scheduling', to: '/scheduling' },
-      { label: 'Documents', to: '/documents' },
-    ],
-  },
-  {
-    label: 'Sales',
-    items: [
-      { label: 'CRM', to: '/crm' },
-      { label: 'Estimating', to: '/estimating' },
-    ],
-  },
-  {
-    label: 'Operations',
-    items: [
-      { label: 'Field Ops', to: '/field-ops' },
-      { label: 'Quality & Safety', to: '/quality-safety' },
-      { label: 'Service', to: '/service' },
-    ],
-  },
-  {
-    label: 'Finance & HR',
-    items: [
-      { label: 'Financials', to: '/financials' },
-      { label: 'Payroll', to: '/payroll' },
-    ],
-  },
-  {
-    label: 'Company',
-    items: [
-      { label: 'Company', to: '/company' },
-    ],
-  },
-  {
-    label: 'Team',
-    items: [
-      { label: 'Collaboration', to: '/collaboration' },
-      { label: 'Issues', to: '/issues' },
-    ],
-  },
-  {
-    label: 'Settings',
-    items: [
-      { label: 'Branding', to: '/settings/branding' },
-      { label: 'Dunning', to: '/settings/dunning' },
-      { label: 'Custom Fields', to: '/settings/custom-fields' },
-    ],
-  },
+const NAV_ITEMS = [
+  { label: 'Overview',     to: '/dashboard' },
+  { label: 'Projects',     to: '/projects' },
+  { label: 'Sales',        to: '/crm' },
+  { label: 'Operations',   to: '/field-ops' },
+  { label: 'Finance & HR', to: '/financials' },
+  { label: 'Company',      to: '/company' },
+  { label: 'Team',         to: '/collaboration' },
+  { label: 'Settings',     to: '/settings/branding' },
 ];
 
 export const DesktopLayout = () => {
@@ -122,32 +72,23 @@ export const DesktopLayout = () => {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Full sidebar */}
-        <aside className="w-60 flex-shrink-0 border-r border-slate-200 bg-white overflow-y-auto">
-          <nav className="flex flex-col p-4 gap-5">
-            {NAV_GROUPS.map((group) => (
-              <div key={group.label}>
-                <p className="mb-1.5 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  {group.label}
-                </p>
-                <div className="flex flex-col gap-0.5">
-                  {group.items.map((item) => (
-                    <NavLink
-                      key={item.to}
-                      to={item.to}
-                      className={({ isActive }) =>
-                        [
-                          'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                          isActive
-                            ? 'bs-sidebar-link-active'
-                            : 'text-slate-600 hover:bg-slate-50',
-                        ].join(' ')
-                      }
-                    >
-                      {item.label}
-                    </NavLink>
-                  ))}
-                </div>
-              </div>
+        <aside className="w-52 flex-shrink-0 border-r border-slate-200 bg-white overflow-y-auto">
+          <nav className="flex flex-col p-3 gap-0.5 pt-4">
+            {NAV_ITEMS.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  [
+                    'rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bs-sidebar-link-active'
+                      : 'text-slate-600 hover:bg-slate-50',
+                  ].join(' ')
+                }
+              >
+                {item.label}
+              </NavLink>
             ))}
           </nav>
         </aside>

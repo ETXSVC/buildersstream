@@ -3,6 +3,8 @@
  */
 import { useState, useMemo } from 'react';
 import { fmtDate } from '@/utils/date';
+import { SubNav } from '@/components/SubNav';
+const SUBNAV = [{ label: 'Field Ops', to: '/field-ops' }, { label: 'Quality & Safety', to: '/quality-safety' }, { label: 'Service', to: '/service' }];
 import { Link } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -99,6 +101,7 @@ export const FieldOpsPage = () => {
 
   return (
     <div className="p-6 space-y-6">
+      <SubNav items={SUBNAV} />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">Field Operations</h1>
         <div>

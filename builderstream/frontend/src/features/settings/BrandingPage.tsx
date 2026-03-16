@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react';
 import { useBranding, useUpdateBranding, useUploadBrandingFile } from '@/hooks/useBranding';
+import { SubNav } from '@/components/SubNav';
+const SUBNAV = [{ label: 'Branding', to: '/settings/branding' }, { label: 'Dunning', to: '/settings/dunning' }, { label: 'Custom Fields', to: '/settings/custom-fields' }];
 
 const DEFAULT_COLORS = {
   primary_color: '#f59e0b',
@@ -71,6 +73,7 @@ export const BrandingPage = () => {
 
   return (
     <div className="p-6 max-w-3xl space-y-8">
+      <SubNav items={SUBNAV} />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Branding</h1>

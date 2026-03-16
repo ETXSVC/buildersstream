@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { SubNav } from '@/components/SubNav';
+const SUBNAV = [{ label: 'Dashboard', to: '/dashboard' }, { label: 'Analytics', to: '/analytics' }];
 import {
   useDashboard,
   useRefreshDashboard,
@@ -126,6 +128,7 @@ export const DashboardPage = () => {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <SubNav items={SUBNAV} />
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
