@@ -18,219 +18,6 @@ import {
   type EmployeeTrade,
 } from '@/types/payroll';
 import { KpiCard } from '@/components/KpiCard';
-import {
-  fetchMembers,
-  inviteMember,
-  updateMember,
-  ROLE_LABELS,
-  ROLE_COLORS,
-  type Member,
-  type MemberRole,
-} from '@/api/members';
-
-const ROLES: MemberRole[] = [
-  'owner', 'admin', 'project_manager', 'estimator', 'accountant', 'field_worker', 'read_only',
-];
-
-function InviteMemberModal({ onClose }: { onClose: () => void }) {
-  const qc = useQueryClient();
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState<MemberRole>('read_only');
-  const [successMsg, setSuccessMsg] = useState('');
-
-  const mutation = useMutation({
-    mutationFn: () => inviteMember({ email, role }),
-    onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['members'] });
-      if ('detail' in data) {
-        setSuccessMsg(data.detail);
-      } else {
-        onClose();
-      }
-    },
-  });
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <form
-        onClick={(e) => e.stopPropagation()}
-        onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4"
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">Invite Team Member</h2>
-          <button type="button" onClick={onClose}><X size={18} className="text-slate-400 hover:text-slate-600" /></button>
-        </div>
-
-        {successMsg ? (
-          <div className="space-y-4">
-            <p className="text-sm text-green-700 bg-green-50 rounded-lg p-3">{successMsg}</p>
-            <div className="flex justify-end">
-              <button type="button" onClick={onClose}
-                className="px-4 py-2 rounded-lg text-sm bg-amber-500 text-white hover:bg-amber-600 font-medium">Close</button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Email Address *</label>
-              <input
-                required
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="colleague@example.com"
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Role *</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as MemberRole)}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-              >
-                {ROLES.map((r) => (
-                  <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                ))}
-              </select>
-            </div>
-            {mutation.isError && (
-              <p className="text-xs text-red-500">Failed to invite. Please try again.</p>
-            )}
-            <div className="flex justify-end gap-2 pt-1">
-              <button type="button" onClick={onClose}
-                className="px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100">Cancel</button>
-              <button type="submit" disabled={mutation.isPending}
-                className="px-4 py-2 rounded-lg text-sm bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 font-medium">
-                {mutation.isPending ? 'Inviting…' : 'Send Invite'}
-              </button>
-            </div>
-          </>
-        )}
-      </form>
-    </div>
-  );
-}
-
-function EditMemberModal({ member, onClose }: { member: Member; onClose: () => void }) {
-  const qc = useQueryClient();
-  const [role, setRole] = useState<MemberRole>(member.role);
-  const [isActive, setIsActive] = useState(member.is_active);
-
-  const mutation = useMutation({
-    mutationFn: () => updateMember(member.id, { role, is_active: isActive }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['members'] });
-      onClose();
-    },
-  });
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <form
-        onClick={(e) => e.stopPropagation()}
-        onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4"
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">Edit Member</h2>
-          <button type="button" onClick={onClose}><X size={18} className="text-slate-400 hover:text-slate-600" /></button>
-        </div>
-
-        <div>
-          <p className="text-sm font-medium text-slate-900">{member.user_full_name || member.user_email}</p>
-          <p className="text-xs text-slate-500">{member.user_email}</p>
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Role</label>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as MemberRole)}
-            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-          >
-            {ROLES.map((r) => (
-              <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <input
-            id="is_active"
-            type="checkbox"
-            checked={isActive}
-            onChange={(e) => setIsActive(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-300 accent-amber-500"
-          />
-          <label htmlFor="is_active" className="text-sm text-slate-700">Active</label>
-        </div>
-
-        {mutation.isError && (
-          <p className="text-xs text-red-500">Failed to save. Please try again.</p>
-        )}
-        <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose}
-            className="px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100">Cancel</button>
-          <button type="submit" disabled={mutation.isPending}
-            className="px-4 py-2 rounded-lg text-sm bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 font-medium">
-            {mutation.isPending ? 'Saving…' : 'Save'}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-function MembersTable({ members, onEdit }: { members: Member[]; onEdit: (m: Member) => void }) {
-  if (members.length === 0) {
-    return <p className="py-12 text-center text-sm text-slate-400">No team members yet.</p>;
-  }
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide">
-            <th className="py-2 px-4 text-left">Name</th>
-            <th className="py-2 px-4 text-left">Role</th>
-            <th className="py-2 px-4 text-left">Status</th>
-            <th className="py-2 px-4 text-left">Joined</th>
-            <th className="py-2 px-4" />
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-50">
-          {members.map((m) => (
-            <tr key={m.id} className="hover:bg-slate-50">
-              <td className="py-2.5 px-4 font-medium text-slate-900">
-                {m.user_full_name || '—'}
-                <div className="text-xs text-slate-400 font-normal">{m.user_email}</div>
-              </td>
-              <td className="py-2.5 px-4">
-                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_COLORS[m.role]}`}>
-                  {ROLE_LABELS[m.role]}
-                </span>
-              </td>
-              <td className="py-2.5 px-4">
-                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${m.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-                  {m.is_active ? 'Active' : 'Inactive'}
-                </span>
-              </td>
-              <td className="py-2.5 px-4 text-slate-500 text-xs">
-                {m.accepted_at ? new Date(m.accepted_at).toLocaleDateString() : m.invited_at ? `Invited ${new Date(m.invited_at).toLocaleDateString()}` : '—'}
-              </td>
-              <td className="py-2.5 px-4">
-                <button type="button" onClick={() => onEdit(m)} className="text-slate-400 hover:text-slate-700">
-                  <Pencil size={14} />
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
 // ── Teams Tab ──────────────────────────────────────────────────────────────────
 
@@ -676,17 +463,10 @@ function EmployeeTable({
 export function CompanyPage() {
   const [tab, setTab] = useState<'employees' | 'contractors' | 'team-members' | 'teams'>('employees');
   const [modal, setModal] = useState<{ open: boolean; editing?: Employee }>({ open: false });
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [editingMember, setEditingMember] = useState<Member | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['employees'],
     queryFn: () => fetchEmployees({ page_size: '500' }),
-  });
-
-  const { data: membersData, isLoading: membersLoading } = useQuery({
-    queryKey: ['members'],
-    queryFn: fetchMembers,
   });
 
   const { data: teamsData } = useQuery({ queryKey: ['teams'], queryFn: fetchTeams });
@@ -696,9 +476,6 @@ export function CompanyPage() {
   const contractors = all.filter((e) => e.employment_type === CONTRACTOR_TYPE);
   const activeEmp = employees.filter((e) => e.is_active).length;
   const activeCon = contractors.filter((e) => e.is_active).length;
-
-  const members = membersData ?? [];
-  const activeMembers = members.filter((m) => m.is_active).length;
 
   const defaultType: EmploymentType = tab === 'contractors' ? CONTRACTOR_TYPE : 'w2_full_time';
   const shown = tab === 'employees' ? employees : contractors;
@@ -714,8 +491,8 @@ export function CompanyPage() {
         <KpiCard label="Total Contractors" value={contractors.length} icon="🔧" accent="amber"
           sub={`${activeCon} active`} onClick={() => setTab('contractors')} />
         <KpiCard label="Total Workforce" value={all.length} icon="🏗️" onClick={() => setTab('employees')} />
-        <KpiCard label="Team Members" value={members.length} icon="🔑" accent="green"
-          sub={`${activeMembers} active`} onClick={() => setTab('team-members')} />
+        <KpiCard label="Team Members" value={all.length} icon="🔑" accent="green"
+          sub={`${all.filter((e) => e.is_active).length} active`} onClick={() => setTab('team-members')} />
         <KpiCard label="Teams" value={teamsData?.length ?? 0} icon="👥" accent="indigo"
           onClick={() => setTab('teams')} />
       </div>
@@ -740,22 +517,22 @@ export function CompanyPage() {
                   : t === 'contractors'
                   ? `Contractors (${contractors.length})`
                   : t === 'team-members'
-                  ? `Team Members (${members.length})`
+                  ? `Team Members (${all.length})`
                   : `Teams (${teamsData?.length ?? 0})`}
               </button>
             ))}
           </div>
 
-          {tab === 'team-members' ? (
+          {tab === 'teams' ? null : tab === 'team-members' ? (
             <button
               type="button"
-              onClick={() => setInviteOpen(true)}
+              onClick={() => setModal({ open: true })}
               className="mb-2 flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600"
             >
-              <UserPlus size={14} />
-              Invite Member
+              <Plus size={14} />
+              Add Employee
             </button>
-          ) : tab === 'teams' ? null : (
+          ) : (
             <button
               type="button"
               onClick={() => setModal({ open: true })}
@@ -770,12 +547,12 @@ export function CompanyPage() {
         {tab === 'teams' ? (
           <TeamsTab />
         ) : tab === 'team-members' ? (
-          membersLoading ? (
+          isLoading ? (
             <div className="flex h-40 items-center justify-center">
               <div className="h-6 w-6 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
             </div>
           ) : (
-            <MembersTable members={members} onEdit={setEditingMember} />
+            <EmployeeTable employees={all} onEdit={(e) => setModal({ open: true, editing: e })} />
           )
         ) : isLoading ? (
           <div className="flex h-40 items-center justify-center">
@@ -793,8 +570,6 @@ export function CompanyPage() {
           onClose={() => setModal({ open: false })}
         />
       )}
-      {inviteOpen && <InviteMemberModal onClose={() => setInviteOpen(false)} />}
-      {editingMember && <EditMemberModal member={editingMember} onClose={() => setEditingMember(null)} />}
     </div>
   );
 }

@@ -62,9 +62,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   hydrate: async () => {
     // 'bs_access' cookie is sent automatically via withCredentials.
-    // Use rawClient (no interceptors) so a 401 here simply falls through to
-    // the catch block — never triggering the refresh-and-redirect flow while
-    // the user is unauthenticated (e.g. on first page load or after logout).
+    // Use rawClient (no interceptors) so a 401 falls through to the catch
+    // block without triggering the redirect loop — session simply expired.
     try {
       const { data } = await rawClient.get<{
         user: User;

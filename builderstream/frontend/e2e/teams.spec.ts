@@ -7,7 +7,7 @@ test('Company page shows Teams KPI card', async ({ page }) => {
   await page.goto('/company');
   await page.waitForLoadState('networkidle');
 
-  await expect(page.getByText('Teams')).toBeVisible();
+  await expect(page.locator('[role="button"]').filter({ hasText: /^Teams/ }).first()).toBeVisible();
 });
 
 test('Teams tab is visible on Company page', async ({ page }) => {

@@ -43,35 +43,34 @@ test('Company page can switch to Team Members tab', async ({ page }) => {
   // Use the tab button specifically (not the KPI card div[role=button])
   await page.locator('button').filter({ hasText: /^Team Members \(/ }).click();
 
-  // Invite Member button appears
-  await expect(page.getByRole('button', { name: 'Invite Member' })).toBeVisible();
+  // Add Employee button appears (Team Members tab shows all employees+contractors)
+  await expect(page.getByRole('button', { name: 'Add Employee' })).toBeVisible();
 });
 
-test('Team Members tab shows member list', async ({ page }) => {
+test('Team Members tab shows employee list', async ({ page }) => {
   await page.goto('/company');
   await page.waitForLoadState('networkidle');
 
   await page.locator('button').filter({ hasText: /^Team Members \(/ }).click();
 
-  // Table headers should be visible
+  // EmployeeTable headers should be visible
   await expect(page.getByText('Name', { exact: true }).first()).toBeVisible();
-  await expect(page.getByText('Role', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Trade', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('Status', { exact: true }).first()).toBeVisible();
 });
 
-test('Invite Member modal opens and closes', async ({ page }) => {
+test('Team Members tab Add Employee modal opens and closes', async ({ page }) => {
   await page.goto('/company');
   await page.waitForLoadState('networkidle');
 
   await page.locator('button').filter({ hasText: /^Team Members \(/ }).click();
-  await page.getByRole('button', { name: 'Invite Member' }).click();
+  await page.getByRole('button', { name: 'Add Employee' }).click();
 
-  await expect(page.getByRole('heading', { name: 'Invite Team Member' })).toBeVisible();
-  await expect(page.getByPlaceholder('colleague@example.com')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Add Employee/ })).toBeVisible();
 
   // Cancel closes the modal
   await page.getByRole('button', { name: 'Cancel' }).click();
-  await expect(page.getByRole('heading', { name: 'Invite Team Member' })).not.toBeVisible();
+  await expect(page.getByRole('heading', { name: /Add Employee/ })).not.toBeVisible();
 });
 
 test('Team Members KPI card navigates to team members tab', async ({ page }) => {
@@ -81,6 +80,6 @@ test('Team Members KPI card navigates to team members tab', async ({ page }) => 
   // Click the "Team Members" KPI card
   await page.locator('[role="button"]').filter({ hasText: /Team Members/i }).first().click();
 
-  // Invite Member button should now be visible (tab is active)
-  await expect(page.getByRole('button', { name: 'Invite Member' })).toBeVisible();
+  // Add Employee button should now be visible (tab is active)
+  await expect(page.getByRole('button', { name: 'Add Employee' })).toBeVisible();
 });

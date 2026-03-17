@@ -30,7 +30,12 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// --- Response interceptor: auto-refresh on 401 ---
+// --- Response interceptor: refresh access token on 401, redirect to login if refresh fails ---
+// During active use, a 401 means the 30-min access token expired; silently refresh it so the
+// user's in-progress work isn't interrupted. A failed refresh (7-day refresh token expired)
+// means the session is truly over → redirect to /login.
+// Note: hydrate() uses rawClient (no interceptors) so page-load 401s — when the user returns
+// after 30+ min idle — fall through to the catch block there and log the user out.
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: () => void;
@@ -54,7 +59,6 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // If a refresh is already in flight, queue this request
     if (isRefreshing) {
       return new Promise<void>((resolve, reject) => {
         failedQueue.push({ resolve, reject });
@@ -65,9 +69,8 @@ apiClient.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      // The bs_refresh cookie is sent automatically (withCredentials).
+      // bs_refresh cookie sent automatically (withCredentials).
       // Backend sets a new bs_access cookie in the response.
-      // Send {} so DRF gets a valid JSON body (empty body causes ParseError).
       await rawClient.post('/api/v1/auth/token/refresh/', {});
       processQueue(null);
       return apiClient(originalRequest);
