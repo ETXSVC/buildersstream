@@ -13,6 +13,12 @@ A project record is more than a name and a value. Before work can begin, the sys
 
 ---
 
+## Notes for v3.3.0
+
+Projects can now have an **Assigned Team** selected in the create/edit modal. The team name appears on the project card. Teams are created and managed under **Company → Teams** tab.
+
+---
+
 ## Part A — Find and Review the Project
 
 ### Step 1 — Go to Projects

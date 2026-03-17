@@ -1,7 +1,7 @@
 # BuilderStream Human Test Guide
 
-**Version:** 3.2.0
-**Last Updated:** 2026-03-16
+**Version:** 3.3.0
+**Last Updated:** 2026-03-17
 **Platform URL:** https://buildersstream.online
 **Test Login:** admin@builderstream.com / demo1234!
 

@@ -63,7 +63,7 @@ After logging in you will see a dark sidebar on the left with these 8 links:
 | **Operations** | Field Ops — time tracking, daily logs, expenses |
 | **Finance & HR** | Financials, invoices, payroll |
 | **Company** | Employee and contractor roster |
-| **Team** | Chat channels and direct messages |
+| **Team Messaging** | Chat channels, direct messages, archive/restore |
 | **Settings** | Branding, custom fields, dunning rules |
 
 Each section also has a **sub-navigation bar** at the top with related areas. For example, clicking **Sales** in the sidebar shows you the CRM sub-nav which includes links for **CRM** and **Estimating**.
