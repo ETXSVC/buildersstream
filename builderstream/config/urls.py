@@ -63,6 +63,7 @@ urlpatterns = [
     path("api/v1/collaboration/", include("apps.collaboration.urls", namespace="collaboration")),
     path("api/v1/issue-tracking/", include("apps.issue_tracking.urls", namespace="issue_tracking")),
     path("api/v1/custom-fields/", include("apps.custom_fields.urls", namespace="custom_fields")),
+    path("api/v1/teams/", include("apps.teams.urls", namespace="teams")),
 ]
 
 if settings.DEBUG:

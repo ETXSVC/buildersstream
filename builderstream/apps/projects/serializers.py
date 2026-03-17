@@ -41,6 +41,7 @@ class ProjectListSerializer(serializers.ModelSerializer):
 
     client_name = serializers.SerializerMethodField()
     project_manager_name = serializers.SerializerMethodField()
+    team_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
@@ -50,6 +51,7 @@ class ProjectListSerializer(serializers.ModelSerializer):
             "estimated_value", "start_date", "estimated_completion",
             "health_score", "health_status", "completion_percentage",
             "project_manager", "project_manager_name",
+            "team", "team_name",
             "is_active", "is_archived", "created_at",
         ]
         read_only_fields = fields
@@ -60,12 +62,16 @@ class ProjectListSerializer(serializers.ModelSerializer):
     def get_project_manager_name(self, obj):
         return obj.project_manager.get_full_name() if obj.project_manager else None
 
+    def get_team_name(self, obj):
+        return obj.team.name if obj.team else None
+
 
 class ProjectDetailSerializer(serializers.ModelSerializer):
     """Full serializer for project detail views."""
 
     client_name = serializers.SerializerMethodField()
     project_manager_name = serializers.SerializerMethodField()
+    team_name = serializers.SerializerMethodField()
     team_members = ProjectTeamMemberSerializer(many=True, read_only=True)
     milestones = MilestoneSerializer(many=True, read_only=True)
 
@@ -81,6 +87,7 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
             "estimated_cost", "actual_cost",
             "start_date", "estimated_completion", "actual_completion",
             "project_manager", "project_manager_name",
+            "team", "team_name",
             "team_members", "milestones",
             "health_score", "health_status", "completion_percentage",
             "tags", "custom_fields",
@@ -99,6 +106,9 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
     def get_project_manager_name(self, obj):
         return obj.project_manager.get_full_name() if obj.project_manager else None
 
+    def get_team_name(self, obj):
+        return obj.team.name if obj.team else None
+
 
 class ProjectCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating projects (project_number auto-generated)."""
@@ -111,7 +121,7 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
             "latitude", "longitude",
             "estimated_value", "estimated_cost",
             "start_date", "estimated_completion",
-            "project_manager", "tags", "custom_fields",
+            "project_manager", "team", "tags", "custom_fields",
         ]
 
     def create(self, validated_data):

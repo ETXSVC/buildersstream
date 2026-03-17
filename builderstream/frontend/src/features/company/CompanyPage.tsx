@@ -1,7 +1,14 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, X, UserPlus } from 'lucide-react';
+import { Plus, Pencil, X, UserPlus, Users, Trash2 } from 'lucide-react';
 import { fetchEmployees, createEmployee, updateEmployee } from '@/api/payroll';
+import {
+  fetchTeams,
+  createTeam,
+  deleteTeam,
+  addTeamMember,
+  removeTeamMember,
+} from '@/api/teams';
 import {
   EMPLOYMENT_TYPE_LABELS,
   EMPLOYMENT_TYPE_COLORS,
@@ -221,6 +228,184 @@ function MembersTable({ members, onEdit }: { members: Member[]; onEdit: (m: Memb
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+// ── Teams Tab ──────────────────────────────────────────────────────────────────
+
+function TeamsTab() {
+  const qc = useQueryClient();
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newDesc, setNewDesc] = useState('');
+  const [addingTo, setAddingTo] = useState<string | null>(null);
+
+  const { data: teams = [], isLoading } = useQuery({ queryKey: ['teams'], queryFn: fetchTeams });
+  const { data: members = [] } = useQuery({ queryKey: ['members'], queryFn: fetchMembers });
+
+  const createMut = useMutation({
+    mutationFn: () => createTeam({ name: newName.trim(), description: newDesc.trim() }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['teams'] }); setShowCreate(false); setNewName(''); setNewDesc(''); },
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => deleteTeam(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['teams'] }); setExpanded(null); },
+  });
+
+  const addMut = useMutation({
+    mutationFn: ({ teamId, userId }: { teamId: string; userId: string }) =>
+      addTeamMember(teamId, userId),
+    onSuccess: (_, { teamId }) => {
+      qc.invalidateQueries({ queryKey: ['teams'] });
+      qc.invalidateQueries({ queryKey: ['team', teamId] });
+      setAddingTo(null);
+    },
+  });
+
+  const removeMut = useMutation({
+    mutationFn: ({ teamId, userId }: { teamId: string; userId: string }) =>
+      removeTeamMember(teamId, userId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['teams'] }),
+  });
+
+  const { data: teamDetail } = useQuery({
+    queryKey: ['team', expanded],
+    queryFn: () => fetchTeam(expanded!),
+    enabled: !!expanded,
+  });
+
+  if (isLoading) {
+    return <div className="flex h-40 items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" /></div>;
+  }
+
+  const memberIdsInTeam = new Set((teamDetail?.members ?? []).map((m) => m.user));
+
+  return (
+    <div className="p-5 space-y-4">
+      {/* Create form */}
+      {showCreate ? (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+          <p className="text-sm font-medium text-slate-700">New Team</p>
+          <input
+            autoFocus
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Team name (e.g. Framing Crew)"
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+          />
+          <input
+            value={newDesc}
+            onChange={(e) => setNewDesc(e.target.value)}
+            placeholder="Description (optional)"
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+          />
+          {createMut.isError && <p className="text-xs text-red-500">Failed — name may already exist.</p>}
+          <div className="flex gap-2 justify-end">
+            <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+            <button type="button" disabled={!newName.trim() || createMut.isPending} onClick={() => createMut.mutate()}
+              className="px-3 py-1.5 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50 font-medium">
+              {createMut.isPending ? 'Creating…' : 'Create'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" onClick={() => setShowCreate(true)}
+          className="flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-700 font-medium">
+          <Plus size={14} /> New Team
+        </button>
+      )}
+
+      {teams.length === 0 && !showCreate && (
+        <p className="py-8 text-center text-sm text-slate-400">No teams yet. Create one to get started.</p>
+      )}
+
+      {/* Team list */}
+      <div className="space-y-2">
+        {teams.map((team) => {
+          const isExpanded = expanded === team.id;
+          return (
+            <div key={team.id} className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+              {/* Header */}
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setExpanded(isExpanded ? null : team.id)}
+                onKeyDown={(e) => e.key === 'Enter' && setExpanded(isExpanded ? null : team.id)}
+                className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-slate-50"
+              >
+                <div className="flex items-center gap-3">
+                  <Users size={16} className="text-amber-500 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">{team.name}</p>
+                    {team.description && <p className="text-xs text-slate-400">{team.description}</p>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-slate-500">{team.member_count} member{team.member_count !== 1 ? 's' : ''}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); if (window.confirm(`Delete team "${team.name}"?`)) deleteMut.mutate(team.id); }}
+                    className="text-slate-300 hover:text-red-500 p-1 rounded"
+                    title="Delete team"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                  <svg className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Expanded members */}
+              {isExpanded && (
+                <div className="border-t border-slate-100 px-4 py-3 space-y-2 bg-slate-50">
+                  {(teamDetail?.members ?? []).length === 0 && (
+                    <p className="text-xs text-slate-400 py-1">No members yet.</p>
+                  )}
+                  {(teamDetail?.members ?? []).map((m) => (
+                    <div key={m.id} className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm border border-slate-100">
+                      <div>
+                        <span className="font-medium text-slate-800">{m.user_full_name || m.user_email}</span>
+                        <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${m.role === 'lead' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                          {m.role === 'lead' ? 'Team Lead' : 'Member'}
+                        </span>
+                      </div>
+                      <button type="button"
+                        onClick={() => removeMut.mutate({ teamId: team.id, userId: m.user })}
+                        className="text-slate-300 hover:text-red-500"><X size={14} /></button>
+                    </div>
+                  ))}
+
+                  {/* Add member */}
+                  {addingTo === team.id ? (
+                    <div className="pt-1 space-y-2">
+                      <select
+                        defaultValue=""
+                        onChange={(e) => { if (e.target.value) addMut.mutate({ teamId: team.id, userId: e.target.value }); }}
+                        className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                      >
+                        <option value="">— Pick a member to add —</option>
+                        {members.filter((m) => !memberIdsInTeam.has(m.user)).map((m) => (
+                          <option key={m.id} value={m.user}>{m.user_full_name || m.user_email}</option>
+                        ))}
+                      </select>
+                      <button type="button" onClick={() => setAddingTo(null)} className="text-xs text-slate-500 hover:underline">Cancel</button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => setAddingTo(team.id)}
+                      className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium pt-1">
+                      <UserPlus size={12} /> Add member
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -449,7 +634,7 @@ function EmployeeTable({
 }
 
 export function CompanyPage() {
-  const [tab, setTab] = useState<'employees' | 'contractors' | 'team-members'>('employees');
+  const [tab, setTab] = useState<'employees' | 'contractors' | 'team-members' | 'teams'>('employees');
   const [modal, setModal] = useState<{ open: boolean; editing?: Employee }>({ open: false });
   const [inviteOpen, setInviteOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
@@ -463,6 +648,8 @@ export function CompanyPage() {
     queryKey: ['members'],
     queryFn: fetchMembers,
   });
+
+  const { data: teamsData } = useQuery({ queryKey: ['teams'], queryFn: fetchTeams });
 
   const all = data?.results ?? [];
   const employees = all.filter((e) => W2_TYPES.includes(e.employment_type));
@@ -481,7 +668,7 @@ export function CompanyPage() {
       <h1 className="text-2xl font-bold text-slate-900">Company</h1>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         <KpiCard label="Total Employees" value={employees.length} icon="👷" accent="blue"
           sub={`${activeEmp} active`} onClick={() => setTab('employees')} />
         <KpiCard label="Total Contractors" value={contractors.length} icon="🔧" accent="amber"
@@ -489,13 +676,15 @@ export function CompanyPage() {
         <KpiCard label="Total Workforce" value={all.length} icon="🏗️" onClick={() => setTab('employees')} />
         <KpiCard label="Team Members" value={members.length} icon="🔑" accent="green"
           sub={`${activeMembers} active`} onClick={() => setTab('team-members')} />
+        <KpiCard label="Teams" value={teamsData?.length ?? 0} icon="👥" accent="purple"
+          onClick={() => setTab('teams')} />
       </div>
 
       {/* Tabs */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 pt-4 pb-0">
-          <div className="flex gap-1">
-            {(['employees', 'contractors', 'team-members'] as const).map((t) => (
+          <div className="flex gap-1 flex-wrap">
+            {(['employees', 'contractors', 'team-members', 'teams'] as const).map((t) => (
               <button
                 key={t}
                 type="button"
@@ -510,7 +699,9 @@ export function CompanyPage() {
                   ? `Employees (${employees.length})`
                   : t === 'contractors'
                   ? `Contractors (${contractors.length})`
-                  : `Team Members (${members.length})`}
+                  : t === 'team-members'
+                  ? `Team Members (${members.length})`
+                  : `Teams (${teamsData?.length ?? 0})`}
               </button>
             ))}
           </div>
@@ -524,7 +715,7 @@ export function CompanyPage() {
               <UserPlus size={14} />
               Invite Member
             </button>
-          ) : (
+          ) : tab === 'teams' ? null : (
             <button
               type="button"
               onClick={() => setModal({ open: true })}
@@ -536,7 +727,9 @@ export function CompanyPage() {
           )}
         </div>
 
-        {tab === 'team-members' ? (
+        {tab === 'teams' ? (
+          <TeamsTab />
+        ) : tab === 'team-members' ? (
           membersLoading ? (
             <div className="flex h-40 items-center justify-center">
               <div className="h-6 w-6 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />

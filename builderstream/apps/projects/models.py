@@ -58,6 +58,15 @@ class Project(TenantModel):
         related_name="projects",
     )
 
+    # Team assignment (links to a named Team)
+    team = models.ForeignKey(
+        "teams.Team",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="projects",
+    )
+
     # Location
     address = models.TextField(blank=True)
     city = models.CharField(max_length=100, blank=True)

@@ -49,6 +49,8 @@ export interface Project {
   health_status: HealthStatus | null;
   project_manager: string | null;
   project_manager_name: string | null;
+  team: string | null;
+  team_name: string | null;
   created_at: string;
   updated_at: string;
 }

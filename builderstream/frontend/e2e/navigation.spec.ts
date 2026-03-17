@@ -57,6 +57,7 @@ test('Company page loads', async ({ page }) => {
   await expect(page.getByText('Total Contractors')).toBeVisible();
   await expect(page.getByText('Total Workforce')).toBeVisible();
   await expect(page.getByText('Team Members').first()).toBeVisible();
+  await expect(page.getByText('Teams').first()).toBeVisible();
 });
 
 test('Team page loads collaboration', async ({ page }) => {

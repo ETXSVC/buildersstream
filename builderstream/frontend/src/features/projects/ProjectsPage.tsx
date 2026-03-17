@@ -15,6 +15,8 @@ import {
   useDeleteProject,
 } from '@/hooks/useProjects';
 import { useContacts } from '@/hooks/useCRM';
+import { useQuery } from '@tanstack/react-query';
+import { fetchTeams } from '@/api/teams';
 import type { Project, ProjectStatus, HealthStatus, ProjectFilters } from '@/types/projects';
 import { STATUS_LABELS, STATUS_COLORS, HEALTH_COLORS } from '@/types/projects';
 
@@ -283,6 +285,11 @@ export const ProjectsPage = () => {
                       <span className="font-medium">PM:</span> {project.project_manager_name}
                     </p>
                   )}
+                  {project.team_name && (
+                    <p className="truncate text-xs text-slate-500">
+                      <span className="font-medium">Team:</span> {project.team_name}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -355,11 +362,13 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
   const isPending = createProject.isPending || updateProject.isPending;
   const { data: contactsData, isLoading: contactsLoading } = useContacts();
 
+  const { data: teamsData } = useQuery({ queryKey: ['teams'], queryFn: fetchTeams });
   const [nameError, setNameError] = useState('');
   const [form, setForm] = useState({
     name: project?.name ?? '',
     project_type: project?.project_type ?? '',
     client: project?.client ?? '',
+    team: project?.team ?? '',
     address: project?.address ?? '',
     city: project?.city ?? '',
     state: project?.state ?? '',
@@ -393,6 +402,7 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
       estimated_completion: form.estimated_completion || null,
     };
     if (form.client) payload.client = form.client;
+    payload.team = form.team || null;
 
     if (isEdit) {
       updateProject.mutate(
@@ -457,6 +467,20 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
                 </select>
               </Field>
             </div>
+
+            <Field label="Assigned Team">
+              <select
+                title="Assigned team"
+                value={form.team}
+                onChange={set('team')}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+              >
+                <option value="">— No team —</option>
+                {(teamsData ?? []).map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </Field>
 
             <Field label="Address">
               <input
