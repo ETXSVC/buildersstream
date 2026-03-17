@@ -240,7 +240,11 @@ function TeamsTab() {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
+  // addingTo: which team's "add member" panel is open
   const [addingTo, setAddingTo] = useState<string | null>(null);
+  // pending add form state
+  const [pendingUserId, setPendingUserId] = useState('');
+  const [pendingRole, setPendingRole] = useState<'lead' | 'member'>('member');
 
   // fetchTeams now returns TeamSerializer (includes members[]) for every team
   const { data: teams = [], isLoading } = useQuery({ queryKey: ['teams'], queryFn: fetchTeams });
@@ -259,9 +263,16 @@ function TeamsTab() {
   });
 
   const addMut = useMutation({
-    mutationFn: ({ teamId, userId }: { teamId: string; userId: string }) =>
-      addTeamMember(teamId, userId),
-    onSuccess: () => { refetchTeams(); setAddingTo(null); },
+    mutationFn: ({ teamId, userId, role }: { teamId: string; userId: string; role: 'lead' | 'member' }) =>
+      addTeamMember(teamId, userId, role),
+    onSuccess: () => { refetchTeams(); setAddingTo(null); setPendingUserId(''); setPendingRole('member'); },
+  });
+
+  // Update an existing team member's role
+  const updateRoleMut = useMutation({
+    mutationFn: ({ teamId, userId, role }: { teamId: string; userId: string; role: 'lead' | 'member' }) =>
+      addTeamMember(teamId, userId, role), // add-member does upsert
+    onSuccess: refetchTeams,
   });
 
   const removeMut = useMutation({
@@ -350,7 +361,7 @@ function TeamsTab() {
                 </div>
               </div>
 
-              {/* Expanded members — sourced directly from teams list (no separate query) */}
+              {/* Expanded members */}
               {isExpanded && (() => {
                 const teamMembers = team.members ?? [];
                 const memberIdsInTeam = new Set(teamMembers.map((m) => m.user));
@@ -361,32 +372,58 @@ function TeamsTab() {
                     )}
                     {teamMembers.map((m) => (
                       <div key={m.id} className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm border border-slate-100">
-                        <div>
-                          <span className="font-medium text-slate-800">{m.user_full_name || m.user_email}</span>
-                          <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${m.role === 'lead' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
-                            {m.role === 'lead' ? 'Team Lead' : 'Member'}
-                          </span>
+                        <span className="font-medium text-slate-800">{m.user_full_name || m.user_email}</span>
+                        <div className="flex items-center gap-2">
+                          {/* Role selector — inline toggle */}
+                          <select
+                            value={m.role}
+                            onChange={(e) => updateRoleMut.mutate({ teamId: team.id, userId: m.user, role: e.target.value as 'lead' | 'member' })}
+                            className="rounded-full border border-slate-200 px-2 py-0.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white cursor-pointer"
+                          >
+                            <option value="member">Member</option>
+                            <option value="lead">Team Lead</option>
+                          </select>
+                          <button type="button"
+                            onClick={() => removeMut.mutate({ teamId: team.id, userId: m.user })}
+                            className="text-slate-300 hover:text-red-500"><X size={14} /></button>
                         </div>
-                        <button type="button"
-                          onClick={() => removeMut.mutate({ teamId: team.id, userId: m.user })}
-                          className="text-slate-300 hover:text-red-500"><X size={14} /></button>
                       </div>
                     ))}
 
                     {/* Add member */}
                     {addingTo === team.id ? (
-                      <div className="pt-1 space-y-2">
-                        <select
-                          defaultValue=""
-                          onChange={(e) => { if (e.target.value) addMut.mutate({ teamId: team.id, userId: e.target.value }); }}
-                          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                        >
-                          <option value="">— Pick a member to add —</option>
-                          {members.filter((m) => !memberIdsInTeam.has(m.user)).map((m) => (
-                            <option key={m.id} value={m.user}>{m.user_full_name || m.user_email}</option>
-                          ))}
-                        </select>
-                        <button type="button" onClick={() => setAddingTo(null)} className="text-xs text-slate-500 hover:underline">Cancel</button>
+                      <div className="pt-2 space-y-2">
+                        <div className="flex gap-2">
+                          <select
+                            value={pendingUserId}
+                            onChange={(e) => setPendingUserId(e.target.value)}
+                            className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          >
+                            <option value="">— Select person —</option>
+                            {members.filter((m) => !memberIdsInTeam.has(m.user)).map((m) => (
+                              <option key={m.id} value={m.user}>{m.user_full_name || m.user_email}</option>
+                            ))}
+                          </select>
+                          <select
+                            value={pendingRole}
+                            onChange={(e) => setPendingRole(e.target.value as 'lead' | 'member')}
+                            className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          >
+                            <option value="member">Member</option>
+                            <option value="lead">Team Lead</option>
+                          </select>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            disabled={!pendingUserId || addMut.isPending}
+                            onClick={() => addMut.mutate({ teamId: team.id, userId: pendingUserId, role: pendingRole })}
+                            className="px-3 py-1.5 text-xs bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50 font-medium"
+                          >
+                            {addMut.isPending ? 'Adding…' : 'Add'}
+                          </button>
+                          <button type="button" onClick={() => { setAddingTo(null); setPendingUserId(''); setPendingRole('member'); }} className="text-xs text-slate-500 hover:underline">Cancel</button>
+                        </div>
                       </div>
                     ) : (
                       <button type="button" onClick={() => setAddingTo(team.id)}
