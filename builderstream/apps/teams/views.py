@@ -26,8 +26,6 @@ class TeamViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
-        if self.action == "list":
-            return TeamListSerializer
         return TeamSerializer
 
     def get_permissions(self):

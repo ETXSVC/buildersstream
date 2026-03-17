@@ -242,46 +242,37 @@ function TeamsTab() {
   const [newDesc, setNewDesc] = useState('');
   const [addingTo, setAddingTo] = useState<string | null>(null);
 
+  // fetchTeams now returns TeamSerializer (includes members[]) for every team
   const { data: teams = [], isLoading } = useQuery({ queryKey: ['teams'], queryFn: fetchTeams });
   const { data: members = [] } = useQuery({ queryKey: ['members'], queryFn: fetchMembers });
 
+  const refetchTeams = () => qc.invalidateQueries({ queryKey: ['teams'] });
+
   const createMut = useMutation({
     mutationFn: () => createTeam({ name: newName.trim(), description: newDesc.trim() }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['teams'] }); setShowCreate(false); setNewName(''); setNewDesc(''); },
+    onSuccess: () => { refetchTeams(); setShowCreate(false); setNewName(''); setNewDesc(''); },
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteTeam(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['teams'] }); setExpanded(null); },
+    onSuccess: () => { refetchTeams(); setExpanded(null); },
   });
 
   const addMut = useMutation({
     mutationFn: ({ teamId, userId }: { teamId: string; userId: string }) =>
       addTeamMember(teamId, userId),
-    onSuccess: (_, { teamId }) => {
-      qc.invalidateQueries({ queryKey: ['teams'] });
-      qc.invalidateQueries({ queryKey: ['team', teamId] });
-      setAddingTo(null);
-    },
+    onSuccess: () => { refetchTeams(); setAddingTo(null); },
   });
 
   const removeMut = useMutation({
     mutationFn: ({ teamId, userId }: { teamId: string; userId: string }) =>
       removeTeamMember(teamId, userId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['teams'] }),
-  });
-
-  const { data: teamDetail } = useQuery({
-    queryKey: ['team', expanded],
-    queryFn: () => fetchTeam(expanded!),
-    enabled: !!expanded,
+    onSuccess: refetchTeams,
   });
 
   if (isLoading) {
     return <div className="flex h-40 items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" /></div>;
   }
-
-  const memberIdsInTeam = new Set((teamDetail?.members ?? []).map((m) => m.user));
 
   return (
     <div className="p-5 space-y-4">
@@ -359,49 +350,53 @@ function TeamsTab() {
                 </div>
               </div>
 
-              {/* Expanded members */}
-              {isExpanded && (
-                <div className="border-t border-slate-100 px-4 py-3 space-y-2 bg-slate-50">
-                  {(teamDetail?.members ?? []).length === 0 && (
-                    <p className="text-xs text-slate-400 py-1">No members yet.</p>
-                  )}
-                  {(teamDetail?.members ?? []).map((m) => (
-                    <div key={m.id} className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm border border-slate-100">
-                      <div>
-                        <span className="font-medium text-slate-800">{m.user_full_name || m.user_email}</span>
-                        <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${m.role === 'lead' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
-                          {m.role === 'lead' ? 'Team Lead' : 'Member'}
-                        </span>
+              {/* Expanded members — sourced directly from teams list (no separate query) */}
+              {isExpanded && (() => {
+                const teamMembers = team.members ?? [];
+                const memberIdsInTeam = new Set(teamMembers.map((m) => m.user));
+                return (
+                  <div className="border-t border-slate-100 px-4 py-3 space-y-2 bg-slate-50">
+                    {teamMembers.length === 0 && (
+                      <p className="text-xs text-slate-400 py-1">No members yet.</p>
+                    )}
+                    {teamMembers.map((m) => (
+                      <div key={m.id} className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm border border-slate-100">
+                        <div>
+                          <span className="font-medium text-slate-800">{m.user_full_name || m.user_email}</span>
+                          <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${m.role === 'lead' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                            {m.role === 'lead' ? 'Team Lead' : 'Member'}
+                          </span>
+                        </div>
+                        <button type="button"
+                          onClick={() => removeMut.mutate({ teamId: team.id, userId: m.user })}
+                          className="text-slate-300 hover:text-red-500"><X size={14} /></button>
                       </div>
-                      <button type="button"
-                        onClick={() => removeMut.mutate({ teamId: team.id, userId: m.user })}
-                        className="text-slate-300 hover:text-red-500"><X size={14} /></button>
-                    </div>
-                  ))}
+                    ))}
 
-                  {/* Add member */}
-                  {addingTo === team.id ? (
-                    <div className="pt-1 space-y-2">
-                      <select
-                        defaultValue=""
-                        onChange={(e) => { if (e.target.value) addMut.mutate({ teamId: team.id, userId: e.target.value }); }}
-                        className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                      >
-                        <option value="">— Pick a member to add —</option>
-                        {members.filter((m) => !memberIdsInTeam.has(m.user)).map((m) => (
-                          <option key={m.id} value={m.user}>{m.user_full_name || m.user_email}</option>
-                        ))}
-                      </select>
-                      <button type="button" onClick={() => setAddingTo(null)} className="text-xs text-slate-500 hover:underline">Cancel</button>
-                    </div>
-                  ) : (
-                    <button type="button" onClick={() => setAddingTo(team.id)}
-                      className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium pt-1">
-                      <UserPlus size={12} /> Add member
-                    </button>
-                  )}
-                </div>
-              )}
+                    {/* Add member */}
+                    {addingTo === team.id ? (
+                      <div className="pt-1 space-y-2">
+                        <select
+                          defaultValue=""
+                          onChange={(e) => { if (e.target.value) addMut.mutate({ teamId: team.id, userId: e.target.value }); }}
+                          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        >
+                          <option value="">— Pick a member to add —</option>
+                          {members.filter((m) => !memberIdsInTeam.has(m.user)).map((m) => (
+                            <option key={m.id} value={m.user}>{m.user_full_name || m.user_email}</option>
+                          ))}
+                        </select>
+                        <button type="button" onClick={() => setAddingTo(null)} className="text-xs text-slate-500 hover:underline">Cancel</button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => setAddingTo(team.id)}
+                        className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium pt-1">
+                        <UserPlus size={12} /> Add member
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           );
         })}
