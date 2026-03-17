@@ -7,62 +7,47 @@ test.describe('Projects page', () => {
   test('loads projects page with KPI cards', async ({ page }) => {
     await page.goto('/projects');
 
-    // KpiCard renders role="button" when onClick is provided.
-    // Labels are rendered uppercase via CSS class but the DOM text is mixed-case,
-    // so use case-insensitive regex for robustness.
-    // KpiCard accessible name includes label + value text, so use filter({ hasText })
     await expect(page.locator('[role="button"]').filter({ hasText: /total projects/i }).first()).toBeVisible();
     await expect(page.locator('[role="button"]').filter({ hasText: /^active/i }).first()).toBeVisible();
     await expect(page.locator('[role="button"]').filter({ hasText: /pipeline value/i }).first()).toBeVisible();
     await expect(page.locator('[role="button"]').filter({ hasText: /health.*red/i }).first()).toBeVisible();
   });
 
+  test('KPI card Total Projects clears filters', async ({ page }) => {
+    await page.goto('/projects');
+    await page.waitForLoadState('networkidle');
+
+    // Set a filter first, then click Total Projects to clear it
+    await page.getByTitle('Status filter').selectOption('prospect');
+    await page.locator('[role="button"]').filter({ hasText: /total projects/i }).first().click();
+
+    await expect(page.getByTitle('Status filter')).toHaveValue('');
+  });
+
   test('KPI card Active filters to production projects', async ({ page }) => {
     await page.goto('/projects');
     await page.waitForLoadState('networkidle');
 
-    // Click the "Active" KPI card — its onClick sets statusFilter to 'production'
     await page.locator('[role="button"]').filter({ hasText: /^active/i }).first().click();
 
-    // The status filter <select> has title="Status filter"
     const statusSelect = page.getByTitle('Status filter');
     await expect(statusSelect).toBeVisible();
-
-    // The select value should now be "in_progress" (set by the KPI card onClick)
     await expect(statusSelect).toHaveValue('in_progress');
   });
 
   test('KPI card Health Red filters projects', async ({ page }) => {
     await page.goto('/projects');
 
-    // Click the "Health: Red" KPI card — its onClick sets healthFilter to 'red'
     await page.locator('[role="button"]').filter({ hasText: /health.*red/i }).first().click();
 
-    // The health filter <select> has title="Health filter"
     const healthSelect = page.getByTitle('Health filter');
     await expect(healthSelect).toBeVisible();
-
-    // The select value should now be "red"
     await expect(healthSelect).toHaveValue('red');
-  });
-
-  test('can open create project modal', async ({ page }) => {
-    await page.goto('/projects');
-
-    // Click the "+ New Project" button
-    await page.getByRole('button', { name: /\+ new project/i }).click();
-
-    // The ProjectModal renders a heading "New Project"
-    await expect(page.getByRole('heading', { name: /new project/i })).toBeVisible();
-
-    // Field uses label without htmlFor; match by placeholder
-    await expect(page.getByPlaceholder(/johnson kitchen/i)).toBeVisible();
   });
 
   test('subnav shows Scheduling and Documents links', async ({ page }) => {
     await page.goto('/projects');
 
-    // SubNav renders NavLink components which produce <a> elements
     await expect(page.getByRole('link', { name: 'Scheduling' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Documents' })).toBeVisible();
   });
@@ -73,20 +58,162 @@ test.describe('Projects page', () => {
     const statusSelect = page.getByTitle('Status filter');
     await expect(statusSelect).toBeVisible();
 
-    // Change to a non-empty status value
     await statusSelect.selectOption('prospect');
     await expect(statusSelect).toHaveValue('prospect');
 
-    // After filtering, the page should show either a project grid or an empty state —
-    // no error banner should be visible.
-    await expect(
-      page.locator('.rounded-lg.border.border-red-200'),
-    ).not.toBeVisible();
-
-    // The page should settle into one of: project cards, or the empty-state message.
-    const projectsOrEmpty = page.locator(
-      '.grid.gap-4, p:has-text("No projects found")',
-    );
+    await expect(page.locator('.rounded-lg.border.border-red-200')).not.toBeVisible();
+    const projectsOrEmpty = page.locator('.grid.gap-4, p:has-text("No projects found")');
     await expect(projectsOrEmpty.first()).toBeVisible();
+  });
+
+  test('can filter by health status', async ({ page }) => {
+    await page.goto('/projects');
+    await page.waitForLoadState('networkidle');
+
+    const healthSelect = page.getByTitle('Health filter');
+    await healthSelect.selectOption('green');
+    await expect(healthSelect).toHaveValue('green');
+
+    await expect(page.locator('.rounded-lg.border.border-red-200')).not.toBeVisible();
+  });
+
+  test('search input is visible and accepts text', async ({ page }) => {
+    await page.goto('/projects');
+
+    const search = page.getByPlaceholder('Search projects…');
+    await expect(search).toBeVisible();
+
+    await search.fill('test');
+    await expect(search).toHaveValue('test');
+
+    await expect(page.locator('.rounded-lg.border.border-red-200')).not.toBeVisible();
+  });
+
+  test('can open create project modal', async ({ page }) => {
+    await page.goto('/projects');
+
+    await page.getByRole('button', { name: /\+ new project/i }).click();
+
+    await expect(page.getByRole('heading', { name: /new project/i })).toBeVisible();
+    await expect(page.getByPlaceholder(/johnson kitchen/i)).toBeVisible();
+  });
+
+  test('create project modal has required fields', async ({ page }) => {
+    await page.goto('/projects');
+    await page.getByRole('button', { name: /\+ new project/i }).click();
+
+    await expect(page.getByRole('heading', { name: /new project/i })).toBeVisible();
+    await expect(page.getByPlaceholder(/johnson kitchen/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /save|create/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /cancel/i })).toBeVisible();
+  });
+
+  test('create project modal closes on cancel', async ({ page }) => {
+    await page.goto('/projects');
+    await page.getByRole('button', { name: /\+ new project/i }).click();
+
+    await expect(page.getByRole('heading', { name: /new project/i })).toBeVisible();
+
+    await page.getByRole('button', { name: /cancel/i }).click();
+
+    await expect(page.getByRole('heading', { name: /new project/i })).not.toBeVisible();
+  });
+
+  test('can create and delete a project', async ({ page }) => {
+    await page.goto('/projects');
+    await page.waitForLoadState('networkidle');
+
+    const projectName = `E2E Project ${Date.now()}`;
+
+    await page.getByRole('button', { name: /\+ new project/i }).click();
+    await expect(page.getByRole('heading', { name: /new project/i })).toBeVisible();
+
+    await page.getByPlaceholder(/johnson kitchen/i).fill(projectName);
+    await page.getByTitle('Project type').selectOption('residential_remodel');
+    await page.getByPlaceholder('0', { exact: true }).fill('100000');
+
+    await page.getByRole('button', { name: /save|create/i }).click();
+
+    await expect(page.getByRole('heading', { name: /new project/i })).not.toBeVisible();
+    await expect(page.getByText(projectName)).toBeVisible({ timeout: 10000 });
+
+    // Hover the card to reveal the delete button
+    const card = page.locator('a').filter({ hasText: projectName });
+    await card.hover();
+    await card.getByTitle('Delete project').click();
+
+    await expect(page.getByRole('heading', { name: /delete project/i })).toBeVisible();
+    await page.getByRole('button', { name: /^delete$/i }).click();
+
+    // Wait for the confirm modal to close, then check the card is gone
+    await expect(page.getByRole('heading', { name: /delete project/i })).not.toBeVisible({ timeout: 10000 });
+    await expect(page.locator('a').filter({ hasText: projectName })).not.toBeVisible({ timeout: 10000 });
+  });
+
+  test('can edit a project name', async ({ page }) => {
+    await page.goto('/projects');
+    await page.waitForLoadState('networkidle');
+
+    const projectName = `Edit Test ${Date.now()}`;
+
+    // Create
+    await page.getByRole('button', { name: /\+ new project/i }).click();
+    await page.getByPlaceholder(/johnson kitchen/i).fill(projectName);
+    await page.getByTitle('Project type').selectOption('kitchen_bath');
+    await page.getByPlaceholder('0', { exact: true }).fill('50000');
+    await page.getByRole('button', { name: /save|create/i }).click();
+    await expect(page.getByText(projectName)).toBeVisible({ timeout: 10000 });
+
+    // Edit
+    const card = page.locator('a').filter({ hasText: projectName });
+    await card.hover();
+    await card.getByTitle('Edit project').click();
+
+    await expect(page.getByRole('heading', { name: /edit project/i })).toBeVisible();
+    const nameInput = page.getByPlaceholder(/johnson kitchen/i);
+    await nameInput.clear();
+    const updatedName = `${projectName} UPDATED`;
+    await nameInput.fill(updatedName);
+
+    await page.getByRole('button', { name: /save|update/i }).click();
+    await expect(page.getByRole('heading', { name: /edit project/i })).not.toBeVisible();
+    await expect(page.getByText(updatedName)).toBeVisible({ timeout: 10000 });
+
+    // Cleanup
+    const updatedCard = page.locator('a').filter({ hasText: updatedName });
+    await updatedCard.hover();
+    await updatedCard.getByTitle('Delete project').click();
+    await page.getByRole('button', { name: /^delete$/i }).click();
+    await expect(page.getByRole('heading', { name: /delete project/i })).not.toBeVisible({ timeout: 10000 });
+  });
+
+  test('Kanban View link navigates to kanban page', async ({ page }) => {
+    await page.goto('/projects');
+
+    await expect(page.getByRole('link', { name: /kanban view/i })).toBeVisible();
+    await page.getByRole('link', { name: /kanban view/i }).click();
+    await expect(page).toHaveURL(/\/projects\/kanban/);
+  });
+
+  test('project card links to project detail', async ({ page }) => {
+    await page.goto('/projects');
+    await page.waitForLoadState('networkidle');
+
+    const firstCard = page.locator('a[href^="/projects/"]').first();
+    if ((await firstCard.count()) === 0) return; // no projects to click
+
+    const href = await firstCard.getAttribute('href');
+    await firstCard.click();
+    await expect(page).toHaveURL(new RegExp(href!.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  });
+
+  test('status chart renders when projects exist', async ({ page }) => {
+    await page.goto('/projects');
+    await page.waitForLoadState('networkidle');
+
+    const hasProjects = await page.locator('a[href^="/projects/"]').count();
+    if (hasProjects === 0) return;
+
+    await expect(page.getByText(/projects by status/i)).toBeVisible();
   });
 });
