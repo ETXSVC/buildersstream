@@ -2,9 +2,9 @@ import { apiClient } from './client';
 
 export interface TeamMember {
   id: string;
-  user: string;
-  user_full_name: string;
-  user_email: string;
+  employee: string;
+  employee_name: string;
+  employee_trade: string;
   role: 'lead' | 'member';
   created_at: string;
 }
@@ -34,8 +34,8 @@ export const updateTeam = (id: string, data: { name?: string; description?: stri
 export const deleteTeam = (id: string): Promise<void> =>
   apiClient.delete(`/api/v1/teams/${id}/`).then(() => undefined);
 
-export const addTeamMember = (teamId: string, userId: string, role: 'lead' | 'member' = 'member'): Promise<TeamMember> =>
-  apiClient.post(`/api/v1/teams/${teamId}/add-member/`, { user_id: userId, role }).then((r) => r.data);
+export const addTeamMember = (teamId: string, employeeId: string, role: 'lead' | 'member' = 'member'): Promise<TeamMember> =>
+  apiClient.post(`/api/v1/teams/${teamId}/add-member/`, { employee_id: employeeId, role }).then((r) => r.data);
 
-export const removeTeamMember = (teamId: string, userId: string): Promise<void> =>
-  apiClient.delete(`/api/v1/teams/${teamId}/remove-member/${userId}/`).then(() => undefined);
+export const removeTeamMember = (teamId: string, employeeId: string): Promise<void> =>
+  apiClient.delete(`/api/v1/teams/${teamId}/remove-member/${employeeId}/`).then(() => undefined);

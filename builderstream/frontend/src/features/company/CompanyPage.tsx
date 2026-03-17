@@ -246,9 +246,14 @@ function TeamsTab() {
   const [pendingUserId, setPendingUserId] = useState('');
   const [pendingRole, setPendingRole] = useState<'lead' | 'member'>('member');
 
-  // fetchTeams now returns TeamSerializer (includes members[]) for every team
+  // fetchTeams returns TeamSerializer (includes members[]) for every team
   const { data: teams = [], isLoading } = useQuery({ queryKey: ['teams'], queryFn: fetchTeams });
-  const { data: members = [] } = useQuery({ queryKey: ['members'], queryFn: fetchMembers });
+  // Dropdown pulls from all employees (W-2 + contractors), not platform login accounts
+  const { data: employeesData } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => fetchEmployees({ page_size: '500' }),
+  });
+  const allEmployees = employeesData?.results ?? [];
 
   const refetchTeams = () => qc.invalidateQueries({ queryKey: ['teams'] });
 
@@ -263,15 +268,15 @@ function TeamsTab() {
   });
 
   const addMut = useMutation({
-    mutationFn: ({ teamId, userId, role }: { teamId: string; userId: string; role: 'lead' | 'member' }) =>
-      addTeamMember(teamId, userId, role),
+    mutationFn: ({ teamId, employeeId, role }: { teamId: string; employeeId: string; role: 'lead' | 'member' }) =>
+      addTeamMember(teamId, employeeId, role),
     onSuccess: () => { refetchTeams(); setAddingTo(null); setPendingUserId(''); setPendingRole('member'); },
   });
 
-  // Update an existing team member's role
+  // Update an existing team member's role (upsert)
   const updateRoleMut = useMutation({
     mutationFn: ({ teamId, userId, role }: { teamId: string; userId: string; role: 'lead' | 'member' }) =>
-      addTeamMember(teamId, userId, role), // add-member does upsert
+      addTeamMember(teamId, userId, role),
     onSuccess: refetchTeams,
   });
 
@@ -364,7 +369,7 @@ function TeamsTab() {
               {/* Expanded members */}
               {isExpanded && (() => {
                 const teamMembers = team.members ?? [];
-                const memberIdsInTeam = new Set(teamMembers.map((m) => m.user));
+                const memberIdsInTeam = new Set(teamMembers.map((m) => m.employee));
                 return (
                   <div className="border-t border-slate-100 px-4 py-3 space-y-2 bg-slate-50">
                     {teamMembers.length === 0 && (
@@ -372,19 +377,22 @@ function TeamsTab() {
                     )}
                     {teamMembers.map((m) => (
                       <div key={m.id} className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm border border-slate-100">
-                        <span className="font-medium text-slate-800">{m.user_full_name || m.user_email}</span>
+                        <div>
+                          <span className="font-medium text-slate-800">{m.employee_name}</span>
+                          <span className="ml-1.5 text-xs text-slate-400">{m.employee_trade}</span>
+                        </div>
                         <div className="flex items-center gap-2">
                           {/* Role selector — inline toggle */}
                           <select
                             value={m.role}
-                            onChange={(e) => updateRoleMut.mutate({ teamId: team.id, userId: m.user, role: e.target.value as 'lead' | 'member' })}
+                            onChange={(e) => updateRoleMut.mutate({ teamId: team.id, userId: m.employee, role: e.target.value as 'lead' | 'member' })}
                             className="rounded-full border border-slate-200 px-2 py-0.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white cursor-pointer"
                           >
                             <option value="member">Member</option>
                             <option value="lead">Team Lead</option>
                           </select>
                           <button type="button"
-                            onClick={() => removeMut.mutate({ teamId: team.id, userId: m.user })}
+                            onClick={() => removeMut.mutate({ teamId: team.id, userId: m.employee })}
                             className="text-slate-300 hover:text-red-500"><X size={14} /></button>
                         </div>
                       </div>
@@ -399,9 +407,9 @@ function TeamsTab() {
                             onChange={(e) => setPendingUserId(e.target.value)}
                             className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
                           >
-                            <option value="">— Select person —</option>
-                            {members.filter((m) => !memberIdsInTeam.has(m.user)).map((m) => (
-                              <option key={m.id} value={m.user}>{m.user_full_name || m.user_email}</option>
+                            <option value="">— Select employee —</option>
+                            {allEmployees.filter((e) => !memberIdsInTeam.has(e.id)).map((e) => (
+                              <option key={e.id} value={e.id}>{e.full_name} ({TRADE_LABELS[e.trade]})</option>
                             ))}
                           </select>
                           <select
@@ -417,7 +425,7 @@ function TeamsTab() {
                           <button
                             type="button"
                             disabled={!pendingUserId || addMut.isPending}
-                            onClick={() => addMut.mutate({ teamId: team.id, userId: pendingUserId, role: pendingRole })}
+                            onClick={() => addMut.mutate({ teamId: team.id, employeeId: pendingUserId, role: pendingRole })}
                             className="px-3 py-1.5 text-xs bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50 font-medium"
                           >
                             {addMut.isPending ? 'Adding…' : 'Add'}
@@ -708,7 +716,7 @@ export function CompanyPage() {
         <KpiCard label="Total Workforce" value={all.length} icon="🏗️" onClick={() => setTab('employees')} />
         <KpiCard label="Team Members" value={members.length} icon="🔑" accent="green"
           sub={`${activeMembers} active`} onClick={() => setTab('team-members')} />
-        <KpiCard label="Teams" value={teamsData?.length ?? 0} icon="👥" accent="purple"
+        <KpiCard label="Teams" value={teamsData?.length ?? 0} icon="👥" accent="indigo"
           onClick={() => setTab('teams')} />
       </div>
 

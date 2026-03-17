@@ -1,22 +1,19 @@
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from .models import Team, TeamMember
 
-User = get_user_model()
-
 
 class TeamMemberSerializer(serializers.ModelSerializer):
-    user_full_name = serializers.SerializerMethodField()
-    user_email = serializers.EmailField(source="user.email", read_only=True)
+    employee_name = serializers.SerializerMethodField()
+    employee_trade = serializers.CharField(source="employee.trade", read_only=True)
 
     class Meta:
         model = TeamMember
-        fields = ["id", "user", "user_full_name", "user_email", "role", "created_at"]
+        fields = ["id", "employee", "employee_name", "employee_trade", "role", "created_at"]
         read_only_fields = ["id", "created_at"]
 
-    def get_user_full_name(self, obj):
-        return obj.user.get_full_name() or obj.user.email
+    def get_employee_name(self, obj):
+        return obj.employee.full_name
 
 
 class TeamSerializer(serializers.ModelSerializer):
@@ -45,5 +42,5 @@ class TeamListSerializer(serializers.ModelSerializer):
 
 
 class AddMemberSerializer(serializers.Serializer):
-    user_id = serializers.UUIDField()
+    employee_id = serializers.UUIDField()
     role = serializers.ChoiceField(choices=TeamMember.Role.choices, default=TeamMember.Role.MEMBER)

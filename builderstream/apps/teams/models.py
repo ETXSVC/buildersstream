@@ -1,7 +1,6 @@
-"""Teams — reusable named groups of users assignable to projects."""
+"""Teams — reusable named groups of employees assignable to projects."""
 import uuid
 
-from django.conf import settings
 from django.db import models
 
 from apps.core.models import TenantModel, TimeStampedModel
@@ -22,23 +21,23 @@ class Team(TenantModel):
 
 
 class TeamMember(TimeStampedModel):
-    """Through model linking a User to a Team with an optional role."""
+    """Through model linking an Employee to a Team with an optional role."""
 
     class Role(models.TextChoices):
         LEAD = "lead", "Team Lead"
         MEMBER = "member", "Member"
 
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="members")
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+    employee = models.ForeignKey(
+        "payroll.Employee",
         on_delete=models.CASCADE,
         related_name="team_memberships",
     )
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.MEMBER)
 
     class Meta:
-        unique_together = [["team", "user"]]
+        unique_together = [["team", "employee"]]
         ordering = ["role", "created_at"]
 
     def __str__(self):
-        return f"{self.user} → {self.team} ({self.role})"
+        return f"{self.employee} → {self.team} ({self.role})"
