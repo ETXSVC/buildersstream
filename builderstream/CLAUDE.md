@@ -7,7 +7,7 @@ Project-specific instructions for BuilderStream Django SaaS platform.
 ✅ **Platform is feature-complete.** All sections and sprints are done.
 
 **Core Sections:**
-- ✅ Sections 1–11: Full backend (18 Django apps, 100+ models, 200+ API endpoints)
+- ✅ Sections 1–11: Full backend (19 Django apps, 100+ models, 200+ API endpoints)
 - ✅ Sections 12–18: Field ops, quality/safety, payroll, service, analytics, integrations, PWA
 - ✅ Dashboard UI: React 18 + TypeScript frontend with all module pages wired
 
@@ -23,10 +23,10 @@ Project-specific instructions for BuilderStream Django SaaS platform.
 - ✅ Sprint 4 / Phase 8.3: Client Payment Portal (PayInvoicePage at /pay/:token, Stripe CDN)
 - ✅ Sprint 4 / Phase 14.1: Custom Fields Engine (apps.custom_fields, GenericFK values, /settings/custom-fields)
 - ✅ UX: Clickable KPI cards on all 11 module pages (CRM, Projects, Financials, Field Ops, Estimating, Q&S, Documents, Payroll, Service, Scheduling, Company) — click navigates to relevant tab/filter
-- ✅ QA: Playwright E2E test suite — 44 tests, all passing (auth, dashboard, CRM, projects, navigation, collaboration, financials, field-ops)
+- ✅ QA: Playwright E2E test suite — 74 tests, all passing (auth, dashboard, CRM, projects, navigation, collaboration, financials, field-ops, company, teams)
 
-**Active Django apps (18):**
-core, tenants, accounts, billing, projects, crm, estimating, scheduling, financials, clients, documents, field_ops, quality_safety, payroll, service, analytics, issue_tracking, custom_fields
+**Active Django apps (19):**
+core, tenants, accounts, billing, projects, crm, estimating, scheduling, financials, clients, documents, field_ops, quality_safety, payroll, service, analytics, issue_tracking, custom_fields, teams
 
 **All migrations applied.** Run `docker compose exec web python manage.py migrate` after pulling new changes.
 
@@ -503,6 +503,10 @@ def authenticated_client(user, org):
 - **FRONTEND_URL for email links**: Set `FRONTEND_URL=http://<vps-ip>:5173` in `.env` so password reset and verification emails link to the correct host.
 - **KPI card onClick pattern**: `KpiCard` accepts `onClick?: () => void`. When provided, adds `role="button"` + hover styles. Parent page passes `onNavigate(tab)` → `handleNavigate` sets state + calls `window.scrollTo` to `id="xxx-list"` anchor on the tab bar. `ProjectStatus` values in `ProjectsPage` are: `prospect`, `site_survey`, `proposal`, `acceptance`, `in_progress`, `milestones`, `finish_project`, `billing`, `paid_complete`, `canceled` — NOT the CLAUDE.md lifecycle values.
 - **CRMPage stagesData**: `fetchPipelineStages` returns `PipelineStage[]` directly (not a paginated object). Use `stagesData ?? []`, not `stagesData?.results`.
+- **TeamMember FK**: Points to `payroll.Employee`, NOT `AUTH_USER_MODEL`. Do not add platform login accounts to teams — employees have no login by design.
+- **apps.teams container restart**: After adding the app to `LOCAL_APPS` and `config/urls.py`, the web container must be restarted before new URLs register. `docker compose restart web`.
+- **Channel archive queryset**: `ChannelViewSet.get_queryset()` uses `?is_archived=true` param to toggle. Default is `is_archived=False`. The `unarchive` action uses `get_object_or_404` directly to bypass the base queryset filter.
+- **apiClient 401 interceptor**: Does NOT check `hydrating` flag — early API calls that 401 due to missing org header are benign and React Query handles them. The interceptor catches all 401s post-hydration and attempts token refresh.
 
 ## E2E Testing (Playwright)
 
@@ -532,21 +536,74 @@ npm run test:e2e:report    # open HTML report
 | `auth.spec.ts` | Login page, sign-in, wrong password, logout |
 | `dashboard.spec.ts` | Widgets visible, refresh button, analytics link |
 | `crm.spec.ts` | KPI nav, create contact, search, subnav |
-| `projects.spec.ts` | KPI nav, create project, status filter, subnav |
-| `navigation.spec.ts` | Sidebar links, section routing, Company, Team/collab |
-| `collaboration.spec.ts` | Channels, create channel, DM modal, subnav |
+| `projects.spec.ts` | KPI nav, create/edit/delete project, filter, search, Kanban, detail link (17 tests) |
+| `navigation.spec.ts` | All 8 sidebar links, header elements, command palette, direct URLs, sign out (26 tests) |
+| `collaboration.spec.ts` | Channels, create channel, DM modal, archive/restore UI |
 | `financials.spec.ts` | KPI nav, tab switching, create invoice modal, subnav |
 | `field-ops.spec.ts` | KPI nav, tab switching, clock-in button, subnav |
+| `company.spec.ts` | KPI cards, tabs, Team Members tab, Add Employee modal |
+| `teams.spec.ts` | Teams KPI card, tab, create team, expand members, project team selector |
 
-**Test count:** 44 tests, all passing (as of 2026-03-16).
+**Test count:** 74 tests, all passing (as of 2026-03-17).
+
+## Teams App (apps.teams)
+
+**Pattern:** Crew grouping separate from platform login accounts
+
+**Models:**
+- `Team(TenantModel)`: name, description, unique_together=[organization, name]
+- `TeamMember(TimeStampedModel)`: team FK, employee FK → `payroll.Employee`, role (lead/member), unique_together=[team, employee]
+
+**Key design decision:** `TeamMember.employee` FK points to `payroll.Employee`, NOT `AUTH_USER_MODEL`. Construction workers typically have no platform login. This means both W-2 employees and 1099 contractors can be team members.
+
+**Endpoints:**
+- `GET/POST /api/v1/teams/` — list/create (always returns `TeamSerializer` with `members[]` inline)
+- `GET/PUT/DELETE /api/v1/teams/{pk}/` — detail
+- `POST /api/v1/teams/{pk}/add-member/` — upsert: `{employee_id, role}` (same endpoint handles add + role change)
+- `DELETE /api/v1/teams/{pk}/remove-member/{employee_id}/`
+
+**Single-query pattern:** `TeamViewSet` always returns `TeamSerializer` (includes `members[]`) for all actions. No separate detail query — avoids React Query cache sync race conditions.
+
+**Project integration:** `Project.team` FK (nullable) → `teams.Team`. Added in migration `0007_project_team.py`.
+
+**Pitfall:** After adding `apps.teams` to `LOCAL_APPS` and `config/urls.py`, the web container must be restarted (`docker compose restart web`) for the new URLs to register.
+
+## Collaboration — Archive/Restore
+
+**Backend (`apps/collaboration/views.py`):**
+- `get_queryset()` reads `?is_archived=true` to serve archived channels: `Channel.objects.filter(is_archived=want_archived)`
+- `POST /api/v1/collaboration/channels/{pk}/archive/` — sets `is_archived=True`
+- `POST /api/v1/collaboration/channels/{pk}/unarchive/` — uses `get_object_or_404` directly (bypasses the base queryset filter)
+
+**Frontend (`ChatSidebar.tsx`):**
+- Hover any channel/DM → `•••` (`MoreHorizontal`) button appears (opacity-0 → group-hover:opacity-100)
+- `ChannelMenu` component: dropdown with Archive/Close or Restore option
+- Archived section at the bottom (collapsed); `enabled: showArchived` prevents fetching until expanded
+- DMs show "Close" label (not "Archive") since `channel.channel_type === 'direct'`
+
+## Session Security
+
+**30-minute idle logout:**
+- `hydrate()` in `src/stores/auth.ts` uses `rawClient` (no axios interceptors)
+- On page load after 30+ min: `rawClient.get('/api/v1/users/me/profile/')` returns 401 → catch sets `isAuthenticated: false` → app redirects to login
+- No silent refresh on page load — user must re-authenticate
+
+**Active session refresh:**
+- `apiClient` response interceptor in `src/api/client.ts` catches 401 during normal use
+- Attempts `rawClient.post('/api/v1/auth/token/refresh/')` (bs_refresh HttpOnly cookie sent automatically)
+- If refresh succeeds: retries original request seamlessly
+- If refresh fails (7-day refresh token expired): redirects to `/login`
+- Uses `isRefreshing` flag + `failedQueue` to coalesce concurrent 401s into a single refresh
+
+**Pitfall:** Do NOT use `hydrating` flag check in the interceptor — early API calls during hydration that 401 due to missing `X-Organization-ID` would bypass the redirect, but legitimate post-hydration 401s must still trigger logout.
 
 ## Next Steps
 
-The platform is feature-complete. All 18 sections, 4 sprints, and E2E tests are done.
+The platform is feature-complete. All 19 Django apps, 4 sprints, and 74 E2E tests are done.
 
 **Potential next work:**
 - Production deployment — Coolify (self-hosted, auto-SSL) or AWS ECS / Railway / Render
-- Add Django unit tests for `apps.issue_tracking`, `apps.custom_fields`
+- Add Django unit tests for `apps.issue_tracking`, `apps.custom_fields`, `apps.teams`
 - Stripe webhook handler for invoice payment success (mark invoice paid)
 - Expand Playwright coverage: estimating, scheduling, quality-safety, service, payroll, issues pages
 - Seed demo org with issue tracking and custom field examples
