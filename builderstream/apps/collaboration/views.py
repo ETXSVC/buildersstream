@@ -25,7 +25,9 @@ class ChannelViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
     ordering = ["name"]
 
     def get_queryset(self):
-        qs = Channel.objects.filter(is_archived=False)
+        # Allow ?is_archived=true to list archived channels for the restore UI.
+        want_archived = self.request.query_params.get("is_archived", "false").lower() == "true"
+        qs = Channel.objects.filter(is_archived=want_archived)
         user = self.request.user
         from apps.tenants.models import OrganizationMembership
         org = getattr(self.request, "organization", None)
@@ -96,6 +98,16 @@ class ChannelViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
         channel.is_archived = True
         channel.save(update_fields=["is_archived"])
         return Response({"detail": "Archived."})
+
+    @action(detail=True, methods=["post"], url_path="unarchive")
+    def unarchive(self, request, pk=None):
+        # get_object() only searches is_archived=False by default; bypass that.
+        from django.shortcuts import get_object_or_404
+        org = getattr(request, "organization", None)
+        channel = get_object_or_404(Channel, pk=pk, organization=org, is_archived=True)
+        channel.is_archived = False
+        channel.save(update_fields=["is_archived"])
+        return Response({"detail": "Restored."})
 
     @action(detail=True, methods=["post"], url_path="mark-read")
     def mark_read(self, request, pk=None):

@@ -81,3 +81,18 @@ export async function joinChannel(channelId: string): Promise<void> {
 export async function leaveChannel(channelId: string): Promise<void> {
   await apiClient.post(`/api/v1/collaboration/channels/${channelId}/leave/`);
 }
+
+export async function archiveChannel(channelId: string): Promise<void> {
+  await apiClient.post(`/api/v1/collaboration/channels/${channelId}/archive/`);
+}
+
+export async function unarchiveChannel(channelId: string): Promise<void> {
+  await apiClient.post(`/api/v1/collaboration/channels/${channelId}/unarchive/`);
+}
+
+export async function listArchivedChannels(): Promise<Channel[]> {
+  const { data } = await apiClient.get<{ results: Channel[] }>(
+    '/api/v1/collaboration/channels/?is_archived=true'
+  );
+  return data.results ?? (data as unknown as Channel[]);
+}
