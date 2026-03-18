@@ -3,8 +3,8 @@ import type { Contact, ContactListResponse, Lead, LeadListResponse, PipelineStag
 
 // ── Contacts ──────────────────────────────────────────────────────────────────
 
-export async function fetchContacts(search?: string, page = 1): Promise<ContactListResponse> {
-  const params = new URLSearchParams({ page: String(page) });
+export async function fetchContacts(search?: string, page = 1, pageSize = 500): Promise<ContactListResponse> {
+  const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
   if (search) params.set('search', search);
   const { data } = await apiClient.get<ContactListResponse>('/api/v1/crm/contacts/', { params });
   return data;

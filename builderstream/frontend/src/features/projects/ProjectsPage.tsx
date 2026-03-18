@@ -382,13 +382,16 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
+  const [clientError, setClientError] = useState('');
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) {
-      setNameError('Project name is required.');
-      return;
-    }
-    setNameError('');
+    let valid = true;
+    if (!form.name.trim()) { setNameError('Project name is required.'); valid = false; }
+    else setNameError('');
+    if (!form.client) { setClientError('Customer contact is required.'); valid = false; }
+    else setClientError('');
+    if (!valid) return;
 
     const payload: Record<string, unknown> = {
       name: form.name.trim(),
@@ -401,7 +404,7 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
       start_date: form.start_date || null,
       estimated_completion: form.estimated_completion || null,
     };
-    if (form.client) payload.client = form.client;
+    payload.client = form.client || null;
     payload.team = form.team || null;
 
     if (isEdit) {
@@ -452,19 +455,20 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
                   ))}
                 </select>
               </Field>
-              <Field label="Client">
+              <Field label="Customer Contact *">
                 <select
                   title="Client"
                   value={form.client}
-                  onChange={set('client')}
+                  onChange={(e) => { set('client')(e); setClientError(''); }}
                   disabled={contactsLoading}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400 disabled:opacity-60"
+                  className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 disabled:opacity-60 ${clientError ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-amber-400 focus:ring-amber-400'}`}
                 >
-                  <option value="">{contactsLoading ? 'Loading contacts…' : '— No client —'}</option>
+                  <option value="">{contactsLoading ? 'Loading contacts…' : '— Select customer —'}</option>
                   {contactsData?.results.map((c) => (
                     <option key={c.id} value={c.id}>{c.full_name}</option>
                   ))}
                 </select>
+                {clientError && <p className="mt-1 text-xs text-red-500">{clientError}</p>}
               </Field>
             </div>
 
