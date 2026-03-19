@@ -7,7 +7,7 @@ function ProgressBar({ value }: { value: number }) {
   return (
     <div className="w-full bg-slate-100 rounded-full h-2.5 mt-1">
       <div
-        className="h-2.5 rounded-full bg-amber-500 transition-all"
+        className="h-2.5 rounded-full bg-blue-500 transition-all"
         style={{ width: `${Math.min(100, value)}%` }}
       />
     </div>
@@ -38,7 +38,7 @@ function ActionCard({
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-slate-700">{label}</p>
         {count > 0 ? (
-          <p className="text-xs text-amber-600 font-semibold">{count} action{count > 1 ? 's' : ''} needed</p>
+          <p className="text-xs text-blue-600 font-semibold">{count} action{count > 1 ? 's' : ''} needed</p>
         ) : (
           <p className="text-xs text-slate-400">All up to date</p>
         )}
@@ -58,7 +58,7 @@ export function PortalDashboard() {
   if (isLoading) {
     return (
       <div className="flex h-60 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
       </div>
     );
   }
@@ -82,7 +82,7 @@ export function PortalDashboard() {
   return (
     <div className="space-y-6">
       {branding?.welcome_message && (
-        <div className="rounded-2xl bg-amber-50 border border-amber-200 px-5 py-4 text-sm text-amber-800">
+        <div className="rounded-2xl bg-blue-50 border border-blue-200 px-5 py-4 text-sm text-blue-800">
           {branding.welcome_message}
         </div>
       )}
@@ -95,7 +95,7 @@ export function PortalDashboard() {
             <h2 className="text-2xl font-bold text-slate-900 mt-0.5">{project.name}</h2>
             <p className="text-sm text-slate-500 mt-0.5">#{project.project_number}</p>
           </div>
-          <span className="rounded-full bg-amber-100 text-amber-700 text-xs font-semibold px-3 py-1">
+          <span className="rounded-full bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1">
             {statusLabel[project.status] ?? project.status}
           </span>
         </div>
@@ -141,7 +141,7 @@ export function PortalDashboard() {
           <ActionCard to="/portal/approvals" icon={CheckSquare} label="Approvals"
             count={pending_approvals} color="bg-blue-100 text-blue-600" />
           <ActionCard to="/portal/selections" icon={Star} label="Selections"
-            count={pending_selections} color="bg-amber-100 text-amber-600" />
+            count={pending_selections} color="bg-blue-100 text-blue-600" />
           <ActionCard to="/portal/messages" icon={MessageCircle} label="Messages"
             count={unread_messages} color="bg-green-100 text-green-600" />
           <ActionCard to="/portal/schedule" icon={Calendar} label="Schedule"

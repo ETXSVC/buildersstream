@@ -38,7 +38,7 @@ export const ProjectDetailPage = () => {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
       </div>
     );
   }
@@ -75,7 +75,7 @@ export const ProjectDetailPage = () => {
     <div className="p-6">
       {/* Breadcrumb */}
       <div className="mb-4 flex items-center gap-2 text-sm text-slate-500">
-        <Link to="/projects" className="hover:text-amber-600">Projects</Link>
+        <Link to="/projects" className="hover:text-blue-600">Projects</Link>
         <span>/</span>
         <span className="text-slate-900">{project.name}</span>
       </div>
@@ -121,7 +121,7 @@ export const ProjectDetailPage = () => {
                       key={s}
                       type="button"
                       onClick={() => handleTransition(s)}
-                      className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-amber-50 first:rounded-t-lg last:rounded-b-lg"
+                      className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-blue-50 first:rounded-t-lg last:rounded-b-lg"
                     >
                       {STATUS_LABELS[s]}
                     </button>
@@ -143,7 +143,7 @@ export const ProjectDetailPage = () => {
       {/* Inline edit form */}
       {editing && (
         <form
-          className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-5"
+          className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-5"
           onSubmit={(e) => {
             e.preventDefault();
             const fd = new FormData(e.currentTarget);
@@ -188,7 +188,7 @@ export const ProjectDetailPage = () => {
             );
           }}
         >
-          <h3 className="mb-4 text-sm font-semibold text-amber-800">Edit Project</h3>
+          <h3 className="mb-4 text-sm font-semibold text-blue-800">Edit Project</h3>
 
           {editError && (
             <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
@@ -203,7 +203,7 @@ export const ProjectDetailPage = () => {
                 name="name"
                 required
                 defaultValue={project.name}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
               />
             </div>
             <div className="sm:col-span-2">
@@ -212,7 +212,7 @@ export const ProjectDetailPage = () => {
                 name="description"
                 rows={3}
                 defaultValue={project.description ?? ''}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
               />
             </div>
             <div>
@@ -223,7 +223,7 @@ export const ProjectDetailPage = () => {
                 min="0"
                 step="0.01"
                 defaultValue={project.estimated_value ?? ''}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
               />
             </div>
             <div>
@@ -232,7 +232,7 @@ export const ProjectDetailPage = () => {
                 name="start_date"
                 type="date"
                 defaultValue={project.start_date ?? ''}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
               />
             </div>
             <div>
@@ -241,7 +241,7 @@ export const ProjectDetailPage = () => {
                 name="estimated_completion"
                 type="date"
                 defaultValue={project.estimated_completion ?? ''}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
               />
             </div>
             <div>
@@ -250,7 +250,7 @@ export const ProjectDetailPage = () => {
                 name="actual_completion"
                 type="date"
                 defaultValue={project.actual_completion ?? ''}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
               />
             </div>
             <div className="sm:col-span-2">
@@ -258,7 +258,7 @@ export const ProjectDetailPage = () => {
               <input
                 name="address"
                 defaultValue={project.address ?? ''}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
               />
             </div>
             <div>
@@ -266,7 +266,7 @@ export const ProjectDetailPage = () => {
               <input
                 name="city"
                 defaultValue={project.city ?? ''}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
               />
             </div>
             <div>
@@ -274,7 +274,7 @@ export const ProjectDetailPage = () => {
               <input
                 name="state"
                 defaultValue={project.state ?? ''}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
               />
             </div>
           </div>
@@ -283,7 +283,7 @@ export const ProjectDetailPage = () => {
             <button
               type="submit"
               disabled={updateProject.isPending}
-              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:opacity-50"
+              className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
             >
               {updateProject.isPending ? 'Saving…' : 'Save Changes'}
             </button>
@@ -318,7 +318,7 @@ export const ProjectDetailPage = () => {
             className={[
               'px-4 py-2 text-sm font-medium capitalize transition-colors',
               tab === t
-                ? 'border-b-2 border-amber-500 text-amber-700'
+                ? 'border-b-2 border-blue-500 text-blue-700'
                 : 'text-slate-500 hover:text-slate-700',
             ].join(' ')}
           >
@@ -360,7 +360,7 @@ export const ProjectDetailPage = () => {
               <div key={m.id} className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4">
                 <div className="flex items-center gap-3">
                   <div className={`h-3 w-3 rounded-full ${
-                    m.status === 'completed' ? 'bg-green-500' : m.is_overdue ? 'bg-red-500' : 'bg-amber-400'
+                    m.status === 'completed' ? 'bg-green-500' : m.is_overdue ? 'bg-red-500' : 'bg-blue-400'
                   }`} />
                   <span className="text-sm font-medium text-slate-900">{m.name}</span>
                 </div>
@@ -381,7 +381,7 @@ export const ProjectDetailPage = () => {
           ) : (
             project.team.map((member) => (
               <div key={member.user_id} className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700 font-semibold text-sm">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold text-sm">
                   {member.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                 </div>
                 <div>
@@ -470,7 +470,7 @@ function ProjectDocumentsTab({ projectId }: { projectId: string }) {
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-600"
+          className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-600"
         >
           + Upload Document
         </button>
@@ -478,7 +478,7 @@ function ProjectDocumentsTab({ projectId }: { projectId: string }) {
 
       {isLoading && (
         <div className="flex h-24 items-center justify-center">
-          <div className="h-6 w-6 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+          <div className="h-6 w-6 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
         </div>
       )}
 
@@ -488,7 +488,7 @@ function ProjectDocumentsTab({ projectId }: { projectId: string }) {
           <button
             type="button"
             onClick={() => setModalOpen(true)}
-            className="mt-3 text-sm font-medium text-amber-600 hover:text-amber-700"
+            className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-700"
           >
             Upload the first document
           </button>
@@ -521,7 +521,7 @@ function ProjectDocumentsTab({ projectId }: { projectId: string }) {
                       <button
                         type="button"
                         onClick={() => handleDownload(doc)}
-                        className="text-xs font-medium text-amber-600 hover:text-amber-700"
+                        className="text-xs font-medium text-blue-600 hover:text-blue-700"
                       >
                         Download
                       </button>
@@ -560,7 +560,7 @@ function ProjectDocumentsTab({ projectId }: { projectId: string }) {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Signed Contract"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
                 />
               </div>
               <div>
@@ -569,7 +569,7 @@ function ProjectDocumentsTab({ projectId }: { projectId: string }) {
                   ref={fileRef}
                   type="file"
                   onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                  className="w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-amber-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-amber-700 hover:file:bg-amber-100"
+                  className="w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-blue-700 hover:file:bg-blue-100"
                 />
               </div>
             </div>
@@ -586,7 +586,7 @@ function ProjectDocumentsTab({ projectId }: { projectId: string }) {
                 type="button"
                 onClick={handleUpload}
                 disabled={!file || !title.trim() || upload.isPending}
-                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-50"
+                className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
               >
                 {upload.isPending ? 'Uploading…' : 'Upload'}
               </button>

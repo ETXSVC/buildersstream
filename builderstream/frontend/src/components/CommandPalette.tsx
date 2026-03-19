@@ -98,7 +98,7 @@ export const CommandPalette = () => {
             placeholder="Search projects, contacts, estimates…"
             className="flex-1 bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none"
           />
-          {loading && <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />}
+          {loading && <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />}
           <kbd className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-400">ESC</kbd>
         </div>
 
@@ -111,7 +111,7 @@ export const CommandPalette = () => {
                 type="button"
                 className={[
                   'flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors',
-                  i === activeIdx ? 'bg-amber-50' : 'hover:bg-slate-50',
+                  i === activeIdx ? 'bg-blue-50' : 'hover:bg-slate-50',
                 ].join(' ')}
                 onClick={() => { navigate(r.url); setOpen(false); }}
               >

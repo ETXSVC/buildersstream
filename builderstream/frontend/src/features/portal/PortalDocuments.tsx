@@ -54,7 +54,7 @@ export function PortalDocuments() {
 
       {isLoading && (
         <div className="flex h-40 items-center justify-center">
-          <div className="h-7 w-7 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+          <div className="h-7 w-7 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
         </div>
       )}
 
@@ -109,7 +109,7 @@ export function PortalDocuments() {
                         <a
                           href={doc.download_url}
                           download={doc.file_name}
-                          className="inline-flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-700 font-medium"
+                          className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium"
                         >
                           <Download size={13} />
                           Download

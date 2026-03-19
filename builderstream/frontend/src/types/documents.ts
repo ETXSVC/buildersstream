@@ -85,7 +85,7 @@ export interface ListResponse<T> {
 
 export const RFI_STATUS_COLORS: Record<RFIStatus, string> = {
   DRAFT: 'bg-slate-100 text-slate-600',
-  OPEN: 'bg-amber-100 text-amber-700',
+  OPEN: 'bg-blue-100 text-blue-700',
   ANSWERED: 'bg-blue-100 text-blue-700',
   CLOSED: 'bg-green-100 text-green-700',
 };

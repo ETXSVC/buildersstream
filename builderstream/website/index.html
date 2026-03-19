@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BuildersStream — Build in Public. Ship Together.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Nav -->
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="/" class="logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <rect width="28" height="28" rx="8" fill="url(#logoGrad)"/>
+          <path d="M8 14 L14 8 L20 14 L14 20 Z" fill="white" opacity="0.9"/>
+          <circle cx="14" cy="14" r="3" fill="white"/>
+          <defs>
+            <linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28">
+              <stop offset="0%" stop-color="#7c3aed"/>
+              <stop offset="100%" stop-color="#2563eb"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span>BuildersStream</span>
+      </a>
+      <nav class="nav-links">
+        <a href="#schedule">Schedule</a>
+        <a href="#features">Features</a>
+        <a href="#community">Community</a>
+        <a href="#projects">Projects</a>
+      </nav>
+      <div class="nav-actions">
+        <a href="#" class="btn-ghost">Sign In</a>
+        <a href="#" class="btn-primary">Watch Live</a>
+      </div>
+      <button class="nav-toggle" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-glow"></div>
+      <div class="hero-glow hero-glow--2"></div>
+      <div class="container">
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          Live Now — Building a real-time collab editor
+        </div>
+        <h1 class="hero-title">
+          Build in Public.<br/>
+          <span class="gradient-text">Ship Together.</span>
+        </h1>
+        <p class="hero-sub">
+          Watch real builders solve real problems — live. Join a community where code gets written, bugs get crushed, and ideas become products in front of your eyes.
+        </p>
+        <div class="hero-actions">
+          <a href="#" class="btn-primary btn-large">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            Join Live Stream
+          </a>
+          <a href="#" class="btn-outline btn-large">View Schedule</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <span class="stat-num">12k+</span>
+            <span class="stat-label">Community members</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-num">340+</span>
+            <span class="stat-label">Streams completed</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-num">80+</span>
+            <span class="stat-label">Projects shipped</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-preview">
+        <div class="stream-window">
+          <div class="stream-toolbar">
+            <div class="toolbar-dots">
+              <span class="dot dot--red"></span>
+              <span class="dot dot--yellow"></span>
+              <span class="dot dot--green"></span>
+            </div>
+            <div class="toolbar-title">builders-stream.live</div>
+            <div class="live-badge">
+              <span class="live-dot"></span> LIVE
+            </div>
+          </div>
+          <div class="stream-body">
+            <div class="stream-code">
+              <div class="code-line"><span class="kw">const</span> <span class="var">stream</span> = <span class="kw">await</span> createLiveSession<span class="punc">({</span></div>
+              <div class="code-line indent"><span class="str">title</span><span class="punc">:</span> <span class="string">"Building a Realtime Editor"</span><span class="punc">,</span></div>
+              <div class="code-line indent"><span class="str">viewers</span><span class="punc">:</span> <span class="num">1847</span><span class="punc">,</span></div>
+              <div class="code-line indent"><span class="str">chat</span><span class="punc">:</span> <span class="kw">true</span><span class="punc">,</span></div>
+              <div class="code-line indent"><span class="str">community</span><span class="punc">:</span> <span class="string">"BuildersStream"</span></div>
+              <div class="code-line"><span class="punc">});</span></div>
+              <div class="code-line">&nbsp;</div>
+              <div class="code-line"><span class="comment">// 👥 1,847 watching now</span></div>
+              <div class="code-cursor"></div>
+            </div>
+            <div class="stream-chat">
+              <div class="chat-header">Live Chat</div>
+              <div class="chat-messages">
+                <div class="chat-msg">
+                  <span class="chat-user" style="color:#a78bfa">devjane</span>
+                  <span>this is so clean</span>
+                </div>
+                <div class="chat-msg">
+                  <span class="chat-user" style="color:#34d399">markos</span>
+                  <span>why not use Yjs here?</span>
+                </div>
+                <div class="chat-msg">
+                  <span class="chat-user" style="color:#60a5fa">sarah_codes</span>
+                  <span>LETS GOOO 🚀</span>
+                </div>
+                <div class="chat-msg">
+                  <span class="chat-user" style="color:#f59e0b">rustboy</span>
+                  <span>good q! explaining now</span>
+                </div>
+                <div class="chat-msg">
+                  <span class="chat-user" style="color:#f472b6">luna_dev</span>
+                  <span>subscribing rn</span>
+                </div>
+              </div>
+              <div class="chat-input">
+                <input type="text" placeholder="Say something..." disabled />
+              </div>
+            </div>
+          </div>
+          <div class="stream-viewers">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+            1,847 watching
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features" id="features">
+      <div class="container">
+        <div class="section-label">Why BuildersStream</div>
+        <h2 class="section-title">Everything you need to build in public</h2>
+        <p class="section-sub">From raw ideas to shipped products — watch every step, ask questions, and follow along.</p>
+        <div class="features-grid">
+          <div class="feature-card feature-card--accent">
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+            </div>
+            <h3>Live Coding Sessions</h3>
+            <p>Real-time streams where experienced builders take ideas from zero to deployed, walking through every decision as it happens.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            </div>
+            <h3>Community Code Reviews</h3>
+            <p>Get your code reviewed live on stream. Submit PRs, watch builders tear them apart and put them back together — better.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </div>
+            <h3>Stream Archives</h3>
+            <p>Every session saved and indexed. Search by tech stack, topic, or project. Jump to the exact moment you need.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+            </div>
+            <h3>Office Hours</h3>
+            <p>Book 1-on-1 time with streamers to pair program, get unstuck, or whiteboard your next big feature.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            </div>
+            <h3>Open Source Projects</h3>
+            <p>Every project built on stream is open sourced. Fork it, contribute to it, or use it as a foundation for your own ideas.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
+            </div>
+            <h3>Progress Tracking</h3>
+            <p>Follow along with multi-session projects. See a GitHub-style journey map of how ideas evolve from concept to product.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Schedule -->
+    <section class="schedule" id="schedule">
+      <div class="container">
+        <div class="section-label">Upcoming Streams</div>
+        <h2 class="section-title">Never miss a build</h2>
+        <div class="schedule-grid">
+          <div class="schedule-card schedule-card--live">
+            <div class="schedule-meta">
+              <span class="schedule-live-badge"><span class="live-dot"></span> LIVE NOW</span>
+              <span class="schedule-viewers">1,847 watching</span>
+            </div>
+            <h3>Building a Real-time Collaborative Editor</h3>
+            <p>CRDTs, Yjs, WebSockets — taking a Notion-style editor from scratch to deployed in one session.</p>
+            <div class="schedule-tags">
+              <span class="tag">TypeScript</span>
+              <span class="tag">Yjs</span>
+              <span class="tag">WebSockets</span>
+            </div>
+            <div class="schedule-streamer">
+              <div class="avatar" style="background: linear-gradient(135deg,#7c3aed,#2563eb)">A</div>
+              <span>Alex Chen</span>
+            </div>
+            <a href="#" class="btn-primary schedule-btn">Join Now</a>
+          </div>
+
+          <div class="schedule-card">
+            <div class="schedule-meta">
+              <span class="schedule-date">Tomorrow · 2:00 PM UTC</span>
+            </div>
+            <h3>Rust from Scratch: Building a CLI Tool</h3>
+            <p>Learning Rust by building a fast file-search CLI. No prior Rust experience needed — just good intentions.</p>
+            <div class="schedule-tags">
+              <span class="tag">Rust</span>
+              <span class="tag">CLI</span>
+              <span class="tag">Beginner-friendly</span>
+            </div>
+            <div class="schedule-streamer">
+              <div class="avatar" style="background: linear-gradient(135deg,#f59e0b,#ef4444)">M</div>
+              <span>Marco Vidal</span>
+            </div>
+            <a href="#" class="btn-outline schedule-btn">Set Reminder</a>
+          </div>
+
+          <div class="schedule-card">
+            <div class="schedule-meta">
+              <span class="schedule-date">Thu · 6:00 PM UTC</span>
+            </div>
+            <h3>Shipping a SaaS in 4 Hours</h3>
+            <p>Full-stack Next.js + Stripe + Auth — from empty repo to paying customers. Watch the chaos unfold.</p>
+            <div class="schedule-tags">
+              <span class="tag">Next.js</span>
+              <span class="tag">Stripe</span>
+              <span class="tag">Supabase</span>
+            </div>
+            <div class="schedule-streamer">
+              <div class="avatar" style="background: linear-gradient(135deg,#10b981,#0891b2)">S</div>
+              <span>Sara Okonkwo</span>
+            </div>
+            <a href="#" class="btn-outline schedule-btn">Set Reminder</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Build in Public banner -->
+    <section class="bip-section">
+      <div class="container">
+        <div class="bip-inner">
+          <div class="bip-content">
+            <h2>Build in public.<br/>Grow together.</h2>
+            <p>The builders who ship fastest are the ones with a community at their back. Join thousands of developers who are learning, failing, iterating, and shipping — out loud.</p>
+            <ul class="bip-list">
+              <li>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Real problems, real code, no tutorial-hell
+              </li>
+              <li>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Ask questions during the stream — get answered live
+              </li>
+              <li>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Watch your stack — filter by language, framework, or topic
+              </li>
+              <li>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                From idea to shipped — follow a project end to end
+              </li>
+            </ul>
+          </div>
+          <div class="bip-visual">
+            <div class="bip-terminal">
+              <div class="terminal-bar">
+                <span class="dot dot--red"></span>
+                <span class="dot dot--yellow"></span>
+                <span class="dot dot--green"></span>
+                <span class="terminal-title">terminal</span>
+              </div>
+              <div class="terminal-body">
+                <div class="t-line"><span class="t-prompt">$</span> git init my-saas-app</div>
+                <div class="t-line t-out">Initialized empty Git repository</div>
+                <div class="t-line"><span class="t-prompt">$</span> npm create next-app .</div>
+                <div class="t-line t-out">✓ TypeScript? Yes</div>
+                <div class="t-line t-out">✓ Tailwind? Yes</div>
+                <div class="t-line t-out">✓ App Router? Yes</div>
+                <div class="t-line"><span class="t-prompt">$</span> npm run dev</div>
+                <div class="t-line t-success">▲ Next.js ready on :3000</div>
+                <div class="t-line">&nbsp;</div>
+                <div class="t-line t-comment"># 👀 1,847 watching you build</div>
+                <div class="t-cursor">_</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Community -->
+    <section class="community" id="community">
+      <div class="container">
+        <div class="section-label">Community</div>
+        <h2 class="section-title">Builders helping builders</h2>
+        <p class="section-sub">From first commit to first customer — our community has seen it all and loves talking about it.</p>
+        <div class="testimonials-grid">
+          <div class="testimonial">
+            <p>"I watched 3 streams and finally understood how WebSockets actually work. Better than any tutorial I've tried."</p>
+            <div class="testimonial-author">
+              <div class="avatar" style="background:linear-gradient(135deg,#7c3aed,#a78bfa)">J</div>
+              <div>
+                <strong>Jamie K.</strong>
+                <span>Frontend dev, Berlin</span>
+              </div>
+            </div>
+          </div>
+          <div class="testimonial">
+            <p>"Shipped my first SaaS after following the 4-hour stream series. Had 3 paying customers within a week."</p>
+            <div class="testimonial-author">
+              <div class="avatar" style="background:linear-gradient(135deg,#10b981,#0891b2)">R</div>
+              <div>
+                <strong>Ravi M.</strong>
+                <span>Indie hacker, India</span>
+              </div>
+            </div>
+          </div>
+          <div class="testimonial">
+            <p>"The office hours feature is insane. Pair programmed with Alex for 30 min and fixed a bug I'd been stuck on for days."</p>
+            <div class="testimonial-author">
+              <div class="avatar" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">P</div>
+              <div>
+                <strong>Priya S.</strong>
+                <span>Full-stack dev, Toronto</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="community-cta">
+          <div class="community-numbers">
+            <div class="community-num">
+              <span>12,000+</span>
+              <label>Discord members</label>
+            </div>
+            <div class="community-num">
+              <span>4.9★</span>
+              <label>Avg session rating</label>
+            </div>
+            <div class="community-num">
+              <span>80+</span>
+              <label>Open source repos</label>
+            </div>
+          </div>
+          <a href="#" class="btn-primary btn-large">Join the Community</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+      <div class="cta-glow"></div>
+      <div class="container">
+        <div class="cta-inner">
+          <h2>Stop watching tutorials.<br/><span class="gradient-text">Start watching builders.</span></h2>
+          <p>Real developers. Real projects. Real shipping. Free to join — forever.</p>
+          <div class="cta-actions">
+            <a href="#" class="btn-primary btn-large">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              Watch Live Now
+            </a>
+            <a href="#" class="btn-ghost btn-large">Browse Archives</a>
+          </div>
+          <p class="cta-note">No credit card. No signup wall for watching.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <a href="/" class="logo">
+            <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+              <rect width="28" height="28" rx="8" fill="url(#logoGrad2)"/>
+              <path d="M8 14 L14 8 L20 14 L14 20 Z" fill="white" opacity="0.9"/>
+              <circle cx="14" cy="14" r="3" fill="white"/>
+              <defs>
+                <linearGradient id="logoGrad2" x1="0" y1="0" x2="28" y2="28">
+                  <stop offset="0%" stop-color="#7c3aed"/>
+                  <stop offset="100%" stop-color="#2563eb"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <span>BuildersStream</span>
+          </a>
+          <p>Build in public. Ship together.</p>
+          <div class="social-links">
+            <a href="#" aria-label="Twitter">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+            <a href="#" aria-label="GitHub">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+            </a>
+            <a href="#" aria-label="YouTube">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            </a>
+            <a href="#" aria-label="Discord">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.03.05a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+            </a>
+          </div>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4>Watch</h4>
+            <a href="#">Live Streams</a>
+            <a href="#">Schedule</a>
+            <a href="#">Archives</a>
+            <a href="#">Projects</a>
+          </div>
+          <div class="footer-col">
+            <h4>Community</h4>
+            <a href="#">Discord</a>
+            <a href="#">Forum</a>
+            <a href="#">Office Hours</a>
+            <a href="#">Showcase</a>
+          </div>
+          <div class="footer-col">
+            <h4>Streamers</h4>
+            <a href="#">Apply to Stream</a>
+            <a href="#">Guidelines</a>
+            <a href="#">Resources</a>
+            <a href="#">Earnings</a>
+          </div>
+          <div class="footer-col">
+            <h4>Company</h4>
+            <a href="#">About</a>
+            <a href="#">Blog</a>
+            <a href="#">Privacy</a>
+            <a href="#">Terms</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 BuildersStream. All rights reserved.</span>
+        <span>Made with ❤️ by builders, for builders.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

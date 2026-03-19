@@ -79,7 +79,7 @@ export const MobileNavigation = () => (
           className={({ isActive }) =>
             [
               'flex flex-col items-center gap-0.5 px-2 py-1 text-xs font-medium transition-colors',
-              isActive ? 'text-amber-600' : 'text-slate-500 hover:text-slate-700',
+              isActive ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700',
             ].join(' ')
           }
           aria-label={tab.label}

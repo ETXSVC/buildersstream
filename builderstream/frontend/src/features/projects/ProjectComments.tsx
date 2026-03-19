@@ -24,7 +24,7 @@ export const ProjectComments = ({ projectId }: Props) => {
 
       {isLoading ? (
         <div className="flex h-16 items-center justify-center">
-          <div className="h-5 w-5 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+          <div className="h-5 w-5 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
         </div>
       ) : comments.length === 0 ? (
         <p className="text-sm text-slate-400">No comments yet. Be the first to add one.</p>
@@ -43,12 +43,12 @@ export const ProjectComments = ({ projectId }: Props) => {
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="Write a comment…"
-          className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none resize-none"
+          className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none resize-none"
         />
         <button
           type="submit"
           disabled={create.isPending || !body.trim()}
-          className="self-end rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-50"
+          className="self-end rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
         >
           Post
         </button>
@@ -91,7 +91,7 @@ function CommentThread({ comment, projectId }: { comment: Comment; projectId: st
       {/* Header */}
       <div className="flex items-center justify-between mb-1.5">
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-[10px] font-bold text-amber-700">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700">
             {comment.author_name?.[0]?.toUpperCase() ?? '?'}
           </div>
           <span className="text-xs font-medium text-slate-700">{comment.author_name}</span>
@@ -117,10 +117,10 @@ function CommentThread({ comment, projectId }: { comment: Comment; projectId: st
             rows={2}
             value={editBody}
             onChange={(e) => setEditBody(e.target.value)}
-            className="flex-1 rounded border border-slate-200 px-2 py-1 text-sm focus:border-amber-400 focus:outline-none resize-none"
+            className="flex-1 rounded border border-slate-200 px-2 py-1 text-sm focus:border-blue-400 focus:outline-none resize-none"
           />
           <div className="flex flex-col gap-1">
-            <button type="submit" className="rounded bg-amber-500 px-2 py-1 text-xs text-white hover:bg-amber-600">Save</button>
+            <button type="submit" className="rounded bg-blue-500 px-2 py-1 text-xs text-white hover:bg-blue-600">Save</button>
             <button type="button" onClick={() => setEditing(false)} className="rounded bg-slate-100 px-2 py-1 text-xs text-slate-600 hover:bg-slate-200">Cancel</button>
           </div>
         </form>
@@ -133,7 +133,7 @@ function CommentThread({ comment, projectId }: { comment: Comment; projectId: st
       {/* Reply button */}
       {!comment.is_deleted && !replying && (
         <button type="button" onClick={() => setReplying(true)}
-          className="mt-1.5 text-[10px] text-amber-600 hover:underline">
+          className="mt-1.5 text-[10px] text-blue-600 hover:underline">
           Reply
         </button>
       )}
@@ -146,10 +146,10 @@ function CommentThread({ comment, projectId }: { comment: Comment; projectId: st
             value={replyBody}
             onChange={(e) => setReplyBody(e.target.value)}
             placeholder="Write a reply…"
-            className="flex-1 rounded border border-slate-200 px-2 py-1 text-sm focus:border-amber-400 focus:outline-none resize-none"
+            className="flex-1 rounded border border-slate-200 px-2 py-1 text-sm focus:border-blue-400 focus:outline-none resize-none"
           />
           <div className="flex flex-col gap-1">
-            <button type="submit" disabled={!replyBody.trim()} className="rounded bg-amber-500 px-2 py-1 text-xs text-white hover:bg-amber-600 disabled:opacity-50">Reply</button>
+            <button type="submit" disabled={!replyBody.trim()} className="rounded bg-blue-500 px-2 py-1 text-xs text-white hover:bg-blue-600 disabled:opacity-50">Reply</button>
             <button type="button" onClick={() => setReplying(false)} className="rounded bg-slate-100 px-2 py-1 text-xs text-slate-600">Cancel</button>
           </div>
         </form>
@@ -157,7 +157,7 @@ function CommentThread({ comment, projectId }: { comment: Comment; projectId: st
 
       {/* Replies */}
       {comment.replies.length > 0 && (
-        <div className="mt-3 space-y-2 border-l-2 border-amber-100 pl-3">
+        <div className="mt-3 space-y-2 border-l-2 border-blue-100 pl-3">
           {comment.replies.map((r) => (
             <ReplyItem key={r.id} reply={r} projectId={projectId} />
           ))}
@@ -193,9 +193,9 @@ function ReplyItem({ reply, projectId }: { reply: Comment; projectId: string }) 
       {editing ? (
         <form onSubmit={(e) => { e.preventDefault(); update.mutate({ id: reply.id, body: editBody }, { onSuccess: () => setEditing(false) }); }} className="flex gap-1.5 mt-1">
           <textarea rows={2} value={editBody} onChange={(e) => setEditBody(e.target.value)}
-            className="flex-1 rounded border border-slate-200 px-2 py-1 text-xs resize-none focus:outline-none focus:border-amber-400" />
+            className="flex-1 rounded border border-slate-200 px-2 py-1 text-xs resize-none focus:outline-none focus:border-blue-400" />
           <div className="flex flex-col gap-1">
-            <button type="submit" className="rounded bg-amber-500 px-2 py-0.5 text-[10px] text-white">Save</button>
+            <button type="submit" className="rounded bg-blue-500 px-2 py-0.5 text-[10px] text-white">Save</button>
             <button type="button" onClick={() => setEditing(false)} className="rounded bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600">Cancel</button>
           </div>
         </form>

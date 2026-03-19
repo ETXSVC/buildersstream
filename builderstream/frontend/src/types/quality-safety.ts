@@ -67,26 +67,26 @@ export const INSPECTION_STATUS_COLORS: Record<InspectionStatus, string> = {
   in_progress: 'bg-purple-100 text-purple-700',
   passed: 'bg-green-100 text-green-700',
   failed: 'bg-red-100 text-red-700',
-  requires_action: 'bg-amber-100 text-amber-700',
+  requires_action: 'bg-blue-100 text-blue-700',
 };
 
 export const DEFICIENCY_STATUS_COLORS: Record<DeficiencyStatus, string> = {
   open: 'bg-red-100 text-red-700',
-  in_progress: 'bg-amber-100 text-amber-700',
+  in_progress: 'bg-blue-100 text-blue-700',
   resolved: 'bg-blue-100 text-blue-700',
   verified: 'bg-green-100 text-green-700',
 };
 
 export const SEVERITY_COLORS: Record<DeficiencySeverity, string> = {
   low: 'bg-slate-100 text-slate-600',
-  medium: 'bg-amber-100 text-amber-700',
+  medium: 'bg-blue-100 text-blue-700',
   high: 'bg-orange-100 text-orange-700',
   critical: 'bg-red-100 text-red-700',
 };
 
 export const INCIDENT_SEVERITY_COLORS: Record<IncidentSeverity, string> = {
   near_miss: 'bg-slate-100 text-slate-600',
-  first_aid: 'bg-amber-100 text-amber-700',
+  first_aid: 'bg-blue-100 text-blue-700',
   recordable: 'bg-orange-100 text-orange-700',
   lost_time: 'bg-red-100 text-red-700',
   fatality: 'bg-red-200 text-red-900',

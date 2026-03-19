@@ -4,8 +4,8 @@ import { SubNav } from '@/components/SubNav';
 const SUBNAV = [{ label: 'Branding', to: '/settings/branding' }, { label: 'Dunning', to: '/settings/dunning' }, { label: 'Custom Fields', to: '/settings/custom-fields' }];
 
 const DEFAULT_COLORS = {
-  primary_color: '#f59e0b',
-  primary_dark: '#d97706',
+  primary_color: '#3B82F6',
+  primary_dark: '#2563EB',
   accent_color: '#1e293b',
   sidebar_bg: '#0f172a',
   sidebar_text: '#f8fafc',
@@ -66,7 +66,7 @@ export const BrandingPage = () => {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-7 w-7 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+        <div className="h-7 w-7 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
       </div>
     );
   }
@@ -83,7 +83,7 @@ export const BrandingPage = () => {
           type="button"
           onClick={handleSave}
           disabled={update.isPending}
-          className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-60"
+          className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-60"
         >
           {update.isPending ? 'Saving…' : saved ? 'Saved!' : 'Save Changes'}
         </button>
@@ -121,7 +121,7 @@ export const BrandingPage = () => {
             value={form.company_name_override}
             onChange={(e) => setForm((f) => ({ ...f, company_name_override: e.target.value }))}
             placeholder={branding?.company_name ?? 'Your Company'}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
           />
         </FormField>
       </Section>
@@ -146,7 +146,7 @@ export const BrandingPage = () => {
           <select
             value={form.font_family}
             onChange={(e) => setForm((f) => ({ ...f, font_family: e.target.value }))}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
           >
             <option value="Inter, sans-serif">Inter (default)</option>
             <option value="Roboto, sans-serif">Roboto</option>
@@ -166,7 +166,7 @@ export const BrandingPage = () => {
               value={form.support_email}
               onChange={(e) => setForm((f) => ({ ...f, support_email: e.target.value }))}
               placeholder="support@yourcompany.com"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
             />
           </FormField>
           <FormField label="Support Phone">
@@ -175,7 +175,7 @@ export const BrandingPage = () => {
               value={form.support_phone}
               onChange={(e) => setForm((f) => ({ ...f, support_phone: e.target.value }))}
               placeholder="+1 (555) 000-0000"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
             />
           </FormField>
           <FormField label="Portal Welcome Message" hint="Shown on the client portal login screen.">
@@ -184,7 +184,7 @@ export const BrandingPage = () => {
               value={form.portal_welcome_message}
               onChange={(e) => setForm((f) => ({ ...f, portal_welcome_message: e.target.value }))}
               placeholder="Welcome to our client portal…"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
             />
           </FormField>
         </div>
@@ -198,7 +198,7 @@ export const BrandingPage = () => {
             value={form.custom_css}
             onChange={(e) => setForm((f) => ({ ...f, custom_css: e.target.value }))}
             placeholder="/* .my-class { color: red; } */"
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 font-mono text-xs focus:border-amber-400 focus:outline-none"
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 font-mono text-xs focus:border-blue-400 focus:outline-none"
           />
         </FormField>
       </Section>
@@ -242,7 +242,7 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="flex-1 rounded-lg border border-slate-200 px-2 py-1.5 font-mono text-xs focus:border-amber-400 focus:outline-none"
+          className="flex-1 rounded-lg border border-slate-200 px-2 py-1.5 font-mono text-xs focus:border-blue-400 focus:outline-none"
         />
       </div>
     </div>
@@ -296,7 +296,7 @@ function LogoUpload({
         type="button"
         onClick={onUpload}
         disabled={loading}
-        className="text-xs text-amber-600 hover:underline disabled:opacity-50"
+        className="text-xs text-blue-600 hover:underline disabled:opacity-50"
       >
         {loading ? 'Uploading…' : 'Upload'}
       </button>

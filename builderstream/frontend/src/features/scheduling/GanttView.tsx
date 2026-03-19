@@ -90,7 +90,7 @@ export const GanttView = () => {
         <select
           value={selectedProjectId}
           onChange={(e) => setSelectedProjectId(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           <option value="">— Select a project —</option>
           {projectList.map((p) => (
@@ -109,7 +109,7 @@ export const GanttView = () => {
               className={[
                 'px-3 py-1.5 font-medium transition-colors',
                 viewMode === m
-                  ? 'bg-amber-500 text-white'
+                  ? 'bg-blue-500 text-white'
                   : 'text-slate-600 hover:bg-slate-50',
               ].join(' ')}
             >
@@ -163,7 +163,7 @@ export const GanttView = () => {
       {ganttData?.tasks?.length ? (
         <div className="flex items-center gap-4 text-xs text-slate-500">
           <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-sm bg-amber-400" />
+            <span className="h-3 w-3 rounded-sm bg-blue-400" />
             Normal task
           </span>
           <span className="flex items-center gap-1.5">

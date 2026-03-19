@@ -124,13 +124,13 @@ export const QualitySafetyPage = () => {
         <h1 className="text-2xl font-bold text-slate-900">Quality &amp; Safety</h1>
         {tab === 'inspections' && (
           <button type="button" onClick={openNewInspection}
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 transition-colors">
+            className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 transition-colors">
             + New Inspection
           </button>
         )}
         {tab === 'incidents' && (
           <button type="button" onClick={openNewIncident}
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 transition-colors">
+            className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 transition-colors">
             + New Incident
           </button>
         )}
@@ -145,7 +145,7 @@ export const QualitySafetyPage = () => {
             onClick={() => setTab(t)}
             className={[
               'rounded-md px-4 py-1.5 text-sm font-medium capitalize transition-colors',
-              tab === t ? 'bg-amber-500 text-white' : 'text-slate-600 hover:text-slate-900',
+              tab === t ? 'bg-blue-500 text-white' : 'text-slate-600 hover:text-slate-900',
             ].join(' ')}
           >
             {t === 'incidents' ? 'Safety Incidents' : t.charAt(0).toUpperCase() + t.slice(1)}
@@ -210,7 +210,7 @@ function InspectionsTable({ onEdit }: { onEdit: (i: Inspection) => void }) {
               </td>
               <td className="px-4 py-3 text-center">
                 {ins.score != null ? (
-                  <span className={`font-semibold ${ins.score >= 80 ? 'text-green-600' : ins.score >= 60 ? 'text-amber-600' : 'text-red-600'}`}>
+                  <span className={`font-semibold ${ins.score >= 80 ? 'text-green-600' : ins.score >= 60 ? 'text-blue-600' : 'text-red-600'}`}>
                     {ins.score}
                   </span>
                 ) : '—'}
@@ -349,7 +349,7 @@ function IncidentsTable({ onEdit }: { onEdit: (i: SafetyIncident) => void }) {
               </td>
               <td className="px-4 py-3">
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
-                  inc.is_resolved ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                  inc.is_resolved ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
                 }`}>
                   {inc.is_resolved ? 'Resolved' : 'Open'}
                 </span>
@@ -422,7 +422,7 @@ function InspectionModal({ record, onClose }: { record: Inspection | null; onClo
         <div className="grid grid-cols-2 gap-4">
           <Field label="Type">
             <select title="Inspection type" value={form.inspection_type} onChange={(e) => set('inspection_type', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
               <option value="quality">Quality</option>
               <option value="safety">Safety</option>
               <option value="framing">Framing</option>
@@ -434,7 +434,7 @@ function InspectionModal({ record, onClose }: { record: Inspection | null; onClo
           </Field>
           <Field label="Status">
             <select title="Inspection status" value={form.status} onChange={(e) => set('status', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
               <option value="scheduled">Scheduled</option>
               <option value="in_progress">In Progress</option>
               <option value="passed">Passed</option>
@@ -445,7 +445,7 @@ function InspectionModal({ record, onClose }: { record: Inspection | null; onClo
         </div>
         <Field label="Project">
           <select title="Project" value={form.project} onChange={(e) => set('project', e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
             <option value="">— No project —</option>
             {projectsData?.results.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
@@ -455,16 +455,16 @@ function InspectionModal({ record, onClose }: { record: Inspection | null; onClo
         <div className="grid grid-cols-2 gap-4">
           <Field label="Scheduled Date">
             <input title="Scheduled date" type="date" value={form.scheduled_date} onChange={(e) => set('scheduled_date', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </Field>
           <Field label="Score (0–100)">
             <input title="Score" type="number" min="0" max="100" value={form.score} onChange={(e) => set('score', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </Field>
         </div>
         <Field label="Notes">
           <textarea title="Notes" rows={3} value={form.notes} onChange={(e) => set('notes', e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
         </Field>
         <ModalActions onClose={onClose} busy={busy} isEdit={isEdit} />
       </form>
@@ -526,7 +526,7 @@ function SafetyIncidentModal({ record, onClose }: { record: SafetyIncident | nul
         <div className="grid grid-cols-2 gap-4">
           <Field label="Incident Type">
             <select title="Incident type" value={form.incident_type} onChange={(e) => set('incident_type', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
               <option value="near_miss">Near Miss</option>
               <option value="injury">Injury</option>
               <option value="property_damage">Property Damage</option>
@@ -537,7 +537,7 @@ function SafetyIncidentModal({ record, onClose }: { record: SafetyIncident | nul
           </Field>
           <Field label="Severity">
             <select title="Severity" value={form.severity} onChange={(e) => set('severity', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
               <option value="near_miss">Near Miss</option>
               <option value="first_aid">First Aid</option>
               <option value="recordable">Recordable</option>
@@ -548,7 +548,7 @@ function SafetyIncidentModal({ record, onClose }: { record: SafetyIncident | nul
         </div>
         <Field label="Project">
           <select title="Project" value={form.project} onChange={(e) => set('project', e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
             <option value="">— No project —</option>
             {projectsData?.results.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
@@ -557,20 +557,20 @@ function SafetyIncidentModal({ record, onClose }: { record: SafetyIncident | nul
         </Field>
         <Field label="Incident Date *">
           <input title="Incident date" required type="date" value={form.incident_date} onChange={(e) => set('incident_date', e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
         </Field>
         <Field label="Description *">
           <textarea title="Description" required rows={3} value={form.description} onChange={(e) => set('description', e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Injuries Count">
             <input title="Injuries count" type="number" min="0" value={form.injuries_count} onChange={(e) => set('injuries_count', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </Field>
           <Field label="OSHA Recordable">
             <select title="OSHA recordable" value={form.osha_recordable} onChange={(e) => set('osha_recordable', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
               <option value="false">No</option>
               <option value="true">Yes</option>
             </select>
@@ -614,7 +614,7 @@ function ModalActions({ onClose, busy, isEdit }: { onClose: () => void; busy: bo
         Cancel
       </button>
       <button type="submit" disabled={busy}
-        className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-60">
+        className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-60">
         {busy ? 'Saving…' : isEdit ? 'Save Changes' : 'Create'}
       </button>
     </div>
@@ -632,7 +632,7 @@ function Th({ children }: { children: React.ReactNode }) {
 function Spinner() {
   return (
     <div className="flex h-40 items-center justify-center">
-      <div className="h-7 w-7 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+      <div className="h-7 w-7 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
     </div>
   );
 }

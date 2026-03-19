@@ -126,7 +126,7 @@ export const CRMPage = () => {
             onClick={() => { setView(v); setUrgencyFilter(''); }}
             className={[
               'rounded-md px-4 py-1.5 text-sm font-medium capitalize transition-colors',
-              view === v ? 'bg-amber-500 text-white' : 'text-slate-600 hover:text-slate-900',
+              view === v ? 'bg-blue-500 text-white' : 'text-slate-600 hover:text-slate-900',
             ].join(' ')}
           >
             {v}
@@ -140,7 +140,7 @@ export const CRMPage = () => {
           placeholder={`Search ${view}…`}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm w-full max-w-xs text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+          className="rounded-lg border border-slate-200 px-3 py-2 text-sm w-full max-w-xs text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
         />
         {urgencyFilter && (
           <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
@@ -182,7 +182,7 @@ function LeadsView({ search, urgencyFilter }: { search: string; urgencyFilter: s
         <button
           type="button"
           onClick={() => setShowCreate(true)}
-          className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
+          className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600"
         >
           + New Lead
         </button>
@@ -221,7 +221,7 @@ function LeadsView({ search, urgencyFilter }: { search: string; urgencyFilter: s
                     onChange={(e) =>
                       updateLead.mutate({ id: lead.id, payload: { pipeline_stage: e.target.value || null } as Partial<Lead> })
                     }
-                    className="rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 focus:border-amber-400 focus:outline-none"
+                    className="rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 focus:border-blue-400 focus:outline-none"
                   >
                     <option value="">— No stage —</option>
                     {stages?.map((s) => (
@@ -314,7 +314,7 @@ function ContactsView({ search }: { search: string }) {
         <button
           type="button"
           onClick={() => setShowCreate(true)}
-          className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
+          className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600"
         >
           + New Contact
         </button>
@@ -345,7 +345,7 @@ function ContactsView({ search }: { search: string }) {
               <tr key={contact.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold text-amber-700">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-700">
                       {contact.first_name[0]}{contact.last_name[0]}
                     </div>
                     <span className="font-medium text-slate-900">{contact.full_name}</span>
@@ -514,7 +514,7 @@ function ContactModal({ contact, onClose }: ContactModalProps) {
             onChange={set('notes')}
             rows={3}
             placeholder="Additional notes…"
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
           />
         </Field>
         <ModalFooter onCancel={onClose} isPending={isPending} submitLabel={isEdit ? 'Save Changes' : 'Create Contact'} />
@@ -609,7 +609,7 @@ function LeadModal({ lead, stages, onClose }: LeadModalProps) {
             title="Contact"
             value={form.contact}
             onChange={(e) => { set('contact')(e); setContactError(''); }}
-            className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 ${contactError ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-amber-400 focus:ring-amber-400'}`}
+            className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 ${contactError ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-blue-400 focus:ring-blue-400'}`}
           >
             <option value="">— Select contact —</option>
             {contactsData?.results.map((c) => (
@@ -623,7 +623,7 @@ function LeadModal({ lead, stages, onClose }: LeadModalProps) {
             title="Pipeline stage"
             value={form.pipeline_stage}
             onChange={(e) => { set('pipeline_stage')(e); setStageError(''); }}
-            className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 ${stageError ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-amber-400 focus:ring-amber-400'}`}
+            className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 ${stageError ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-blue-400 focus:ring-blue-400'}`}
           >
             <option value="">— No stage —</option>
             {stages.map((s) => (
@@ -637,7 +637,7 @@ function LeadModal({ lead, stages, onClose }: LeadModalProps) {
             title="Project type"
             value={form.project_type}
             onChange={set('project_type')}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
           >
             <option value="">— Select type —</option>
             {Object.entries(PROJECT_TYPE_LABELS).map(([val, label]) => (
@@ -654,7 +654,7 @@ function LeadModal({ lead, stages, onClose }: LeadModalProps) {
               title="Urgency"
               value={form.urgency}
               onChange={set('urgency')}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
             >
               <option value="hot">Hot – Immediate</option>
               <option value="warm">Warm – 1–3 Months</option>
@@ -675,7 +675,7 @@ function LeadModal({ lead, stages, onClose }: LeadModalProps) {
             value={form.description}
             onChange={set('description')}
             rows={3}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
             placeholder="Project details, scope of work…"
           />
         </Field>
@@ -716,7 +716,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
     />
   );
 }
@@ -734,7 +734,7 @@ function ModalFooter({ onCancel, isPending, submitLabel }: { onCancel: () => voi
       <button
         type="submit"
         disabled={isPending}
-        className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:opacity-50"
+        className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
       >
         {isPending ? 'Saving…' : submitLabel}
       </button>
@@ -798,7 +798,7 @@ function Th({ children }: { children?: React.ReactNode }) {
 function Spinner() {
   return (
     <div className="flex h-40 items-center justify-center">
-      <div className="h-7 w-7 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+      <div className="h-7 w-7 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
     </div>
   );
 }

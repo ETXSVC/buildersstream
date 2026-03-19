@@ -6,7 +6,7 @@ export const AuthLayout = () => {
       {/* Branding */}
       <div className="mb-8 text-center">
         <div className="mb-2 flex items-center justify-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500">
             <svg
               className="h-6 w-6 text-white"
               fill="none"

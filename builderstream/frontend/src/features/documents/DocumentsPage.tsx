@@ -118,7 +118,7 @@ export const DocumentsPage = () => {
             <button
               type="button"
               onClick={() => setRfiModal({ open: true })}
-              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-600"
+              className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-600"
             >
               + New RFI
             </button>
@@ -127,7 +127,7 @@ export const DocumentsPage = () => {
             <button
               type="button"
               onClick={() => setSubmModal({ open: true })}
-              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-600"
+              className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-600"
             >
               + New Submittal
             </button>
@@ -144,7 +144,7 @@ export const DocumentsPage = () => {
             onClick={() => setTab(t.key)}
             className={[
               'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
-              tab === t.key ? 'bg-amber-500 text-white' : 'text-slate-600 hover:text-slate-900',
+              tab === t.key ? 'bg-blue-500 text-white' : 'text-slate-600 hover:text-slate-900',
             ].join(' ')}
           >
             {t.label}
@@ -159,7 +159,7 @@ export const DocumentsPage = () => {
           placeholder={`Search ${tab}…`}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-xs rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+          className="w-full max-w-xs rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
         />
       </div>
 
@@ -730,7 +730,7 @@ function ModalActions({ onClose, busy, isEdit }: { onClose: () => void; busy: bo
       <button
         type="submit"
         disabled={busy}
-        className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-50"
+        className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
       >
         {busy ? 'Saving…' : isEdit ? 'Save Changes' : 'Create'}
       </button>
@@ -746,7 +746,7 @@ function ActionBtn({ children, onClick, danger }: { children: React.ReactNode; o
       className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
         danger
           ? 'text-red-600 hover:bg-red-50'
-          : 'text-amber-700 hover:bg-amber-50'
+          : 'text-blue-700 hover:bg-blue-50'
       }`}
     >
       {children}
@@ -765,8 +765,8 @@ function FileIcon({ type }: { type: string | null }) {
   };
   const colors: Record<string, string> = {
     pdf: 'text-red-500', xlsx: 'text-green-600', xls: 'text-green-600',
-    docx: 'text-blue-600', doc: 'text-blue-600', jpg: 'text-amber-500',
-    jpeg: 'text-amber-500', png: 'text-amber-500', gif: 'text-amber-500', webp: 'text-amber-500',
+    docx: 'text-blue-600', doc: 'text-blue-600', jpg: 'text-blue-500',
+    jpeg: 'text-blue-500', png: 'text-blue-500', gif: 'text-blue-500', webp: 'text-blue-500',
   };
   const ext = type ? (MIME_EXT[type] ?? type.split('/').pop() ?? '') : '';
   const color = colors[ext.toLowerCase()] ?? 'text-slate-400';
@@ -789,7 +789,7 @@ function Th({ children }: { children: React.ReactNode }) {
 function Spinner() {
   return (
     <div className="flex h-40 items-center justify-center">
-      <div className="h-7 w-7 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+      <div className="h-7 w-7 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
     </div>
   );
 }
@@ -803,5 +803,5 @@ function Pagination({ count, shown, label }: { count?: number; shown?: number; l
   );
 }
 
-const inputCls = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400';
-const selectCls = 'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400';
+const inputCls = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400';
+const selectCls = 'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400';

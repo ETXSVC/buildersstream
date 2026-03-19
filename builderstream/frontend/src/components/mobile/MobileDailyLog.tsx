@@ -114,7 +114,7 @@ export const MobileDailyLog = ({
           onChange={(e) => setNotes(e.target.value)}
           placeholder="What happened on site today? (or use voice)"
           rows={6}
-          className="w-full rounded-xl border border-slate-200 p-4 pr-12 text-base text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200"
+          className="w-full rounded-xl border border-slate-200 p-4 pr-12 text-base text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200"
         />
         {hasSpeechRecognition && (
           <button
@@ -155,7 +155,7 @@ export const MobileDailyLog = ({
           type="button"
           onClick={handleSubmit}
           disabled={status === 'saving' || !notes.trim()}
-          className="flex-1 rounded-xl bg-amber-500 py-3 text-sm font-medium text-white hover:bg-amber-600 disabled:opacity-50"
+          className="flex-1 rounded-xl bg-blue-500 py-3 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
         >
           {status === 'saving' ? 'Submitting…' : navigator.onLine ? 'Submit' : 'Queue Offline'}
         </button>

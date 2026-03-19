@@ -73,7 +73,7 @@ export interface ListResponse<T> {
 export const SERVICE_STATUS_COLORS: Record<ServiceRequestStatus, string> = {
   new: 'bg-blue-100 text-blue-700',
   assigned: 'bg-purple-100 text-purple-700',
-  in_progress: 'bg-amber-100 text-amber-700',
+  in_progress: 'bg-blue-100 text-blue-700',
   on_hold: 'bg-slate-100 text-slate-600',
   completed: 'bg-green-100 text-green-700',
   closed: 'bg-slate-100 text-slate-500',
@@ -82,13 +82,13 @@ export const SERVICE_STATUS_COLORS: Record<ServiceRequestStatus, string> = {
 export const SERVICE_PRIORITY_COLORS: Record<ServiceRequestPriority, string> = {
   low: 'bg-slate-100 text-slate-600',
   medium: 'bg-blue-100 text-blue-700',
-  high: 'bg-amber-100 text-amber-700',
+  high: 'bg-blue-100 text-blue-700',
   urgent: 'bg-red-100 text-red-700',
 };
 
 export const WARRANTY_STATUS_COLORS: Record<WarrantyStatus, string> = {
   active: 'bg-green-100 text-green-700',
   expired: 'bg-slate-100 text-slate-500',
-  claimed: 'bg-amber-100 text-amber-700',
+  claimed: 'bg-blue-100 text-blue-700',
   void: 'bg-red-100 text-red-500',
 };

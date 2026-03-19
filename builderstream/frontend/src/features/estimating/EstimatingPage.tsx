@@ -125,7 +125,7 @@ export const EstimatingPage = () => {
         <h1 className="text-2xl font-bold text-slate-900">Estimating</h1>
         {tab === 'estimates' && (
           <button type="button" onClick={openNewEstimate}
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 transition-colors">
+            className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 transition-colors">
             + New Estimate
           </button>
         )}
@@ -140,7 +140,7 @@ export const EstimatingPage = () => {
             onClick={() => setTab(t)}
             className={[
               'rounded-md px-4 py-1.5 text-sm font-medium capitalize transition-colors',
-              tab === t ? 'bg-amber-500 text-white' : 'text-slate-600 hover:text-slate-900',
+              tab === t ? 'bg-blue-500 text-white' : 'text-slate-600 hover:text-slate-900',
             ].join(' ')}
           >
             {t}
@@ -155,7 +155,7 @@ export const EstimatingPage = () => {
           placeholder={`Search ${tab}…`}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-xs rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+          className="w-full max-w-xs rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
         />
       </div>
 
@@ -426,7 +426,7 @@ function EstimateModal({ record, onClose }: { record: Estimate | null; onClose: 
             value={form.name}
             onChange={(e) => set('name', e.target.value)}
             placeholder="e.g. Kitchen Remodel — Phase 1"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </Field>
         <Field label="Status">
@@ -434,7 +434,7 @@ function EstimateModal({ record, onClose }: { record: Estimate | null; onClose: 
             title="Status"
             value={form.status}
             onChange={(e) => set('status', e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
             <option value="draft">Draft</option>
             <option value="in_review">In Review</option>
@@ -448,7 +448,7 @@ function EstimateModal({ record, onClose }: { record: Estimate | null; onClose: 
             title="Project"
             value={form.project}
             onChange={(e) => set('project', e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
             <option value="">— No project —</option>
             {projectsData?.results.map((p) => (
@@ -466,7 +466,7 @@ function EstimateModal({ record, onClose }: { record: Estimate | null; onClose: 
               max="100"
               value={form.tax_rate}
               onChange={(e) => set('tax_rate', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           </Field>
           <Field label="Valid Until">
@@ -475,7 +475,7 @@ function EstimateModal({ record, onClose }: { record: Estimate | null; onClose: 
               type="date"
               value={form.valid_until}
               onChange={(e) => set('valid_until', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           </Field>
         </div>
@@ -487,7 +487,7 @@ function EstimateModal({ record, onClose }: { record: Estimate | null; onClose: 
               value={form.notes}
               onChange={(e) => set('notes', e.target.value)}
               placeholder="Internal notes…"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           </Field>
         )}
@@ -533,7 +533,7 @@ function GenerateProposalModal({ estimate, onClose }: { estimate: Estimate; onCl
             title="Client"
             value={clientId}
             onChange={(e) => { setClientId(e.target.value); setClientError(''); }}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
             <option value="">— Select a contact —</option>
             {contactsData?.results.map((c) => (
@@ -550,7 +550,7 @@ function GenerateProposalModal({ estimate, onClose }: { estimate: Estimate; onCl
             type="date"
             value={validUntil}
             onChange={(e) => setValidUntil(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </Field>
         {generate.isError && (
@@ -587,7 +587,7 @@ function SendProposalModal({ proposal, onClose }: { proposal: Proposal; onClose:
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder={`${proposal.client_name.toLowerCase().replace(/\s+/, '.')}@example.com`}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </Field>
         <ModalActions onClose={onClose} busy={send.isPending} isEdit={false} submitLabel="Send Proposal" />
@@ -638,7 +638,7 @@ function ModalActions({
         Cancel
       </button>
       <button type="submit" disabled={busy}
-        className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-60">
+        className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-60">
         {busy ? 'Saving…' : submitLabel ?? (isEdit ? 'Save Changes' : 'Create')}
       </button>
     </div>
@@ -656,7 +656,7 @@ function Th({ children }: { children: React.ReactNode }) {
 function Spinner() {
   return (
     <div className="flex h-40 items-center justify-center">
-      <div className="h-7 w-7 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+      <div className="h-7 w-7 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
     </div>
   );
 }

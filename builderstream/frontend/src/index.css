@@ -10,8 +10,8 @@
 
 /* ── Branding CSS variable defaults ─────────────────────────────── */
 :root {
-  --color-primary: #f59e0b;
-  --color-primary-dark: #d97706;
+  --color-primary: #3B82F6;
+  --color-primary-dark: #2563EB;
   --color-accent: #1e293b;
   --color-sidebar-bg: #0f172a;
   --color-sidebar-text: #f8fafc;
@@ -25,12 +25,12 @@
 }
 
 .bs-sidebar-link-active {
-  background-color: rgba(var(--color-primary-rgb, 245 158 11), 0.15);
+  background-color: rgba(var(--color-primary-rgb, 59 130 246), 0.15);
   color: var(--color-primary);
 }
 
 .bs-sidebar-link-active:hover {
-  background-color: rgba(var(--color-primary-rgb, 245 158 11), 0.22);
+  background-color: rgba(var(--color-primary-rgb, 59 130 246), 0.22);
 }
 
 .bs-primary-icon {
@@ -48,13 +48,13 @@
 
 /* ── Frappe Gantt overrides ─────────────────────────────────────── */
 .gantt-container .bar-wrapper .bar {
-  fill: #f59e0b; /* amber-400 */
+  fill: #3B82F6; /* blue-500 */
 }
 .gantt-container .bar-wrapper.gantt-critical .bar {
   fill: #ef4444; /* red-500 */
 }
 .gantt-container .bar-progress {
-  fill: #d97706; /* amber-600 */
+  fill: #2563EB; /* blue-600 */
 }
 .gantt-container .bar-wrapper.gantt-critical .bar-progress {
   fill: #dc2626; /* red-600 */

@@ -10,7 +10,7 @@ import {
 
 const STATUS_STYLES: Record<string, string> = {
   PENDING: 'bg-slate-100 text-slate-600',
-  CLIENT_REVIEW: 'bg-amber-100 text-amber-700',
+  CLIENT_REVIEW: 'bg-blue-100 text-blue-700',
   APPROVED: 'bg-green-100 text-green-700',
   ORDERED: 'bg-blue-100 text-blue-700',
   INSTALLED: 'bg-teal-100 text-teal-700',
@@ -34,8 +34,8 @@ function OptionCard({
       onClick={onClick}
       className={`text-left w-full rounded-xl border-2 p-4 transition-all ${
         selected
-          ? 'border-amber-500 bg-amber-50'
-          : 'border-slate-200 bg-white hover:border-amber-300 hover:bg-amber-50/30'
+          ? 'border-blue-500 bg-blue-50'
+          : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/30'
       } ${disabled && !selected ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
       {option.image_url && (
@@ -56,7 +56,7 @@ function OptionCard({
             </p>
           )}
         </div>
-        {selected && <CheckCircle size={18} className="text-amber-500 shrink-0" />}
+        {selected && <CheckCircle size={18} className="text-blue-500 shrink-0" />}
       </div>
       {option.price && (
         <p className="text-sm font-semibold text-slate-800 mt-2">
@@ -69,7 +69,7 @@ function OptionCard({
         </p>
       )}
       {option.is_recommended && (
-        <span className="inline-block mt-2 bg-amber-100 text-amber-700 text-xs font-medium px-2 py-0.5 rounded-full">
+        <span className="inline-block mt-2 bg-blue-100 text-blue-700 text-xs font-medium px-2 py-0.5 rounded-full">
           ⭐ Recommended
         </span>
       )}
@@ -104,7 +104,7 @@ function SelectionCard({ selection }: { selection: PortalSelection }) {
             {selection.status.replace('_', ' ')}
           </span>
           {selection.due_date && (
-            <span className="text-xs text-amber-600 flex items-center gap-1">
+            <span className="text-xs text-blue-600 flex items-center gap-1">
               <Clock size={11} />
               Due {new Date(selection.due_date).toLocaleDateString()}
             </span>
@@ -131,7 +131,7 @@ function SelectionCard({ selection }: { selection: PortalSelection }) {
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add any notes or questions (optional)"
             rows={2}
-            className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+            className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
           />
           {mutation.isError && (
             <p className="text-xs text-red-500">Failed to submit. Please try again.</p>
@@ -143,7 +143,7 @@ function SelectionCard({ selection }: { selection: PortalSelection }) {
             type="button"
             disabled={!chosen || mutation.isPending}
             onClick={() => mutation.mutate()}
-            className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-medium disabled:opacity-50"
+            className="px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium disabled:opacity-50"
           >
             {mutation.isPending ? 'Submitting…' : 'Submit My Choice'}
           </button>
@@ -178,7 +178,7 @@ export function PortalSelections() {
 
       {isLoading && (
         <div className="flex h-40 items-center justify-center">
-          <div className="h-7 w-7 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+          <div className="h-7 w-7 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
         </div>
       )}
 
@@ -192,7 +192,7 @@ export function PortalSelections() {
         <>
           {pending.length > 0 && (
             <section>
-              <h2 className="text-sm font-semibold text-amber-600 mb-3">
+              <h2 className="text-sm font-semibold text-blue-600 mb-3">
                 ⏳ Awaiting Your Choice ({pending.length})
               </h2>
               <div className="space-y-4">

@@ -73,7 +73,7 @@ export interface LeadListResponse {
 
 export const URGENCY_COLORS: Record<Urgency, string> = {
   hot: 'bg-red-100 text-red-700',
-  warm: 'bg-amber-100 text-amber-700',
+  warm: 'bg-blue-100 text-blue-700',
   cold: 'bg-blue-100 text-blue-700',
 };
 

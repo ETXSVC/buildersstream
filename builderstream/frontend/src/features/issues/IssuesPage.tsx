@@ -28,7 +28,7 @@ const STATUS_COLORS: Record<string, string> = {
   new: 'bg-slate-100 text-slate-700',
   open: 'bg-blue-100 text-blue-700',
   in_progress: 'bg-indigo-100 text-indigo-700',
-  pending: 'bg-amber-100 text-amber-700',
+  pending: 'bg-blue-100 text-blue-700',
   resolved: 'bg-green-100 text-green-700',
   closed: 'bg-slate-100 text-slate-500',
 };
@@ -208,12 +208,12 @@ function IssueDetailPanel({
           </h3>
           <div className="space-y-3">
             {issue.comments.map(c => (
-              <div key={c.id} className={`rounded-lg p-3 text-sm ${c.is_internal ? 'bg-amber-50 border border-amber-100' : 'bg-slate-50'}`}>
+              <div key={c.id} className={`rounded-lg p-3 text-sm ${c.is_internal ? 'bg-blue-50 border border-blue-100' : 'bg-slate-50'}`}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-medium text-slate-700">{c.author_name ?? 'Unknown'}</span>
                   <div className="flex items-center gap-2">
                     {c.is_internal && (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">Internal</span>
+                      <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700">Internal</span>
                     )}
                     <span className="text-xs text-slate-400">{new Date(c.created_at).toLocaleString()}</span>
                   </div>

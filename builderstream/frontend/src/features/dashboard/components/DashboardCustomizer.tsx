@@ -129,7 +129,7 @@ export const DashboardCustomizer = ({
                 className={[
                   'flex items-center justify-between rounded-lg border bg-white p-3 transition-all',
                   dragOverIndex === index && dragIndex.current !== index
-                    ? 'border-amber-400 bg-amber-50 shadow-md'
+                    ? 'border-blue-400 bg-blue-50 shadow-md'
                     : dragIndex.current === index
                     ? 'border-slate-300 opacity-50'
                     : 'border-slate-200 hover:border-slate-300',
@@ -147,7 +147,7 @@ export const DashboardCustomizer = ({
                   <div
                     className={`flex h-9 w-9 items-center justify-center rounded-lg text-lg ${
                       widget.isVisible
-                        ? 'bg-amber-50 text-amber-600'
+                        ? 'bg-blue-50 text-blue-600'
                         : 'bg-slate-100 text-slate-300'
                     }`}
                   >
@@ -169,7 +169,7 @@ export const DashboardCustomizer = ({
                   onClick={() => handleToggleVisibility(widget.id)}
                   aria-label={widget.isVisible ? 'Hide widget' : 'Show widget'}
                   className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${
-                    widget.isVisible ? 'bg-amber-500' : 'bg-slate-200'
+                    widget.isVisible ? 'bg-blue-500' : 'bg-slate-200'
                   }`}
                 >
                   <span
@@ -195,7 +195,7 @@ export const DashboardCustomizer = ({
           <button
             type="button"
             onClick={handleSave}
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
+            className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600"
           >
             Save Changes
           </button>

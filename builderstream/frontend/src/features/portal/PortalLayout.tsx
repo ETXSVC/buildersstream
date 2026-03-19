@@ -40,7 +40,7 @@ export function PortalLayout() {
     navigate('/portal/login', { replace: true });
   };
 
-  const primaryColor = branding?.primary_color ?? '#f59e0b';
+  const primaryColor = branding?.primary_color ?? '#3B82F6';
   const companyName = branding?.company_name ?? 'BuilderStream';
 
   return (

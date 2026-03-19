@@ -39,7 +39,7 @@ export function PortalMessages() {
 
       {isLoading && (
         <div className="flex h-40 items-center justify-center">
-          <div className="h-7 w-7 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+          <div className="h-7 w-7 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
         </div>
       )}
 
@@ -61,15 +61,15 @@ export function PortalMessages() {
           return (
             <div key={msg.id} className={`flex ${isClient ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-lg rounded-2xl px-4 py-3 ${
-                isClient ? 'bg-amber-500 text-white' : 'bg-white border border-slate-200 text-slate-900'
+                isClient ? 'bg-blue-500 text-white' : 'bg-white border border-slate-200 text-slate-900'
               }`}>
-                <div className={`flex items-center gap-2 mb-1 text-xs ${isClient ? 'text-amber-100' : 'text-slate-500'}`}>
+                <div className={`flex items-center gap-2 mb-1 text-xs ${isClient ? 'text-blue-100' : 'text-slate-500'}`}>
                   <span className="font-medium">{isClient ? 'You' : (msg.sender_name ?? 'Contractor')}</span>
                   <span>·</span>
                   <span>{new Date(msg.created_at).toLocaleString()}</span>
                 </div>
                 {msg.subject && (
-                  <p className={`text-xs font-semibold mb-1 ${isClient ? 'text-amber-100' : 'text-slate-600'}`}>
+                  <p className={`text-xs font-semibold mb-1 ${isClient ? 'text-blue-100' : 'text-slate-600'}`}>
                     Re: {msg.subject}
                   </p>
                 )}
@@ -88,7 +88,7 @@ export function PortalMessages() {
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           placeholder="Subject (optional)"
-          className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+          className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
         <textarea
           required
@@ -96,7 +96,7 @@ export function PortalMessages() {
           onChange={(e) => setBody(e.target.value)}
           placeholder="Write your message…"
           rows={4}
-          className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+          className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
         />
         {mutation.isError && (
           <p className="text-xs text-red-500">Failed to send. Please try again.</p>
@@ -105,7 +105,7 @@ export function PortalMessages() {
           <button
             type="submit"
             disabled={!body.trim() || mutation.isPending}
-            className="flex items-center gap-2 px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-medium disabled:opacity-50"
+            className="flex items-center gap-2 px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium disabled:opacity-50"
           >
             <Send size={14} />
             {mutation.isPending ? 'Sending…' : 'Send'}

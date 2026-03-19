@@ -82,7 +82,7 @@ export const MobileExpenseCapture = ({ projectId = '', onSaved }: Props) => {
       <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
-        className="flex h-32 w-full items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 text-slate-500 hover:border-amber-400 transition-colors"
+        className="flex h-32 w-full items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 text-slate-500 hover:border-blue-400 transition-colors"
       >
         {receiptPreview ? (
           <img src={receiptPreview} alt="Receipt" className="h-full w-full rounded-xl object-cover" />
@@ -113,7 +113,7 @@ export const MobileExpenseCapture = ({ projectId = '', onSaved }: Props) => {
           id="expense-category"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="w-full rounded-xl border border-slate-200 px-4 py-3 text-base focus:border-amber-400 focus:outline-none"
+          className="w-full rounded-xl border border-slate-200 px-4 py-3 text-base focus:border-blue-400 focus:outline-none"
         >
           {CATEGORIES.map((c) => (
             <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>
@@ -132,7 +132,7 @@ export const MobileExpenseCapture = ({ projectId = '', onSaved }: Props) => {
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0.00"
-          className="w-full rounded-xl border border-slate-200 px-4 py-3 text-base focus:border-amber-400 focus:outline-none"
+          className="w-full rounded-xl border border-slate-200 px-4 py-3 text-base focus:border-blue-400 focus:outline-none"
         />
       </div>
 
@@ -144,7 +144,7 @@ export const MobileExpenseCapture = ({ projectId = '', onSaved }: Props) => {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="What was this expense for?"
-          className="w-full rounded-xl border border-slate-200 px-4 py-3 text-base focus:border-amber-400 focus:outline-none"
+          className="w-full rounded-xl border border-slate-200 px-4 py-3 text-base focus:border-blue-400 focus:outline-none"
         />
       </div>
 
@@ -157,7 +157,7 @@ export const MobileExpenseCapture = ({ projectId = '', onSaved }: Props) => {
             value={mileage}
             onChange={(e) => setMileage(e.target.value)}
             placeholder="Miles driven"
-            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-base focus:border-amber-400 focus:outline-none"
+            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-base focus:border-blue-400 focus:outline-none"
           />
         </div>
       )}
@@ -175,7 +175,7 @@ export const MobileExpenseCapture = ({ projectId = '', onSaved }: Props) => {
         type="button"
         onClick={handleSave}
         disabled={status === 'saving' || !amount || parseFloat(amount) <= 0}
-        className="w-full rounded-xl bg-amber-500 py-3 text-base font-semibold text-white hover:bg-amber-600 disabled:opacity-50"
+        className="w-full rounded-xl bg-blue-500 py-3 text-base font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
       >
         {status === 'saving' ? 'Saving…' : navigator.onLine ? 'Save Expense' : 'Queue Offline'}
       </button>

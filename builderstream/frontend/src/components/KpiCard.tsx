@@ -11,7 +11,7 @@ const ACCENT_CLASSES: Record<NonNullable<KpiCardProps['accent']>, string> = {
   default: 'border-slate-100',
   green: 'border-green-200 bg-green-50',
   red: 'border-red-200 bg-red-50',
-  amber: 'border-amber-200 bg-amber-50',
+  amber: 'border-blue-200 bg-blue-50',
   blue: 'border-blue-200 bg-blue-50',
   indigo: 'border-indigo-200 bg-indigo-50',
 };
@@ -20,7 +20,7 @@ const VALUE_CLASSES: Record<NonNullable<KpiCardProps['accent']>, string> = {
   default: 'text-slate-900',
   green: 'text-green-700',
   red: 'text-red-700',
-  amber: 'text-amber-700',
+  amber: 'text-blue-700',
   blue: 'text-blue-700',
   indigo: 'text-indigo-700',
 };

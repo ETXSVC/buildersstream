@@ -18,7 +18,7 @@ export function PortalSchedule() {
 
       {isLoading && (
         <div className="flex h-40 items-center justify-center">
-          <div className="h-7 w-7 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+          <div className="h-7 w-7 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
         </div>
       )}
 
@@ -46,7 +46,7 @@ export function PortalSchedule() {
             )}
             <div>
               <p className="text-xs text-slate-400">Progress</p>
-              <p className="font-semibold text-amber-600">{data.project.percent_complete}% complete</p>
+              <p className="font-semibold text-blue-600">{data.project.percent_complete}% complete</p>
             </div>
           </div>
 
@@ -88,7 +88,7 @@ export function PortalSchedule() {
                         )}
                       </div>
                       {m.due_date && !m.is_complete && (
-                        <p className={`text-xs font-medium shrink-0 ${isOverdue ? 'text-red-500' : isUpcoming ? 'text-amber-600' : 'text-slate-400'}`}>
+                        <p className={`text-xs font-medium shrink-0 ${isOverdue ? 'text-red-500' : isUpcoming ? 'text-blue-600' : 'text-slate-400'}`}>
                           {isOverdue ? '⚠ ' : ''}
                           {new Date(m.due_date).toLocaleDateString()}
                         </p>

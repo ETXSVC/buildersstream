@@ -121,13 +121,13 @@ export const ServicePage = () => {
         <h1 className="text-2xl font-bold text-slate-900">Service &amp; Warranty</h1>
         {tab === 'requests' && (
           <button type="button" onClick={openNewRequest}
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 transition-colors">
+            className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 transition-colors">
             + New Request
           </button>
         )}
         {tab === 'warranties' && (
           <button type="button" onClick={openNewWarranty}
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 transition-colors">
+            className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 transition-colors">
             + New Warranty
           </button>
         )}
@@ -146,7 +146,7 @@ export const ServicePage = () => {
             onClick={() => setTab(key)}
             className={[
               'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
-              tab === key ? 'bg-amber-500 text-white' : 'text-slate-600 hover:text-slate-900',
+              tab === key ? 'bg-blue-500 text-white' : 'text-slate-600 hover:text-slate-900',
             ].join(' ')}
           >
             {label}
@@ -281,14 +281,14 @@ function WarrantiesTable({ onEdit }: { onEdit: (w: Warranty) => void }) {
                 <td className="px-4 py-3 text-slate-600 text-xs">{w.provider ?? '—'}</td>
                 <td className="px-4 py-3 text-slate-600">{fmtDate(w.start_date)}</td>
                 <td className="px-4 py-3">
-                  <span className={isExpiringSoon ? 'text-amber-600 font-medium' : 'text-slate-600'}>
+                  <span className={isExpiringSoon ? 'text-blue-600 font-medium' : 'text-slate-600'}>
                     {fmtDate(w.expiry_date)}
                     {isExpiringSoon && <span className="ml-1 text-xs">(soon)</span>}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-center">
                   {w.claim_count > 0 ? (
-                    <span className="text-amber-600 font-medium">{w.claim_count}</span>
+                    <span className="text-blue-600 font-medium">{w.claim_count}</span>
                   ) : (
                     <span className="text-slate-300">0</span>
                   )}
@@ -353,7 +353,7 @@ function WarrantyClaimsTable() {
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
                   claim.status === 'resolved' ? 'bg-green-100 text-green-700' :
                   claim.status === 'denied' ? 'bg-red-100 text-red-700' :
-                  'bg-amber-100 text-amber-700'
+                  'bg-blue-100 text-blue-700'
                 }`}>
                   {claim.status}
                 </span>
@@ -422,16 +422,16 @@ function ServiceRequestModal({ record, onClose }: { record: ServiceRequest | nul
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Title *">
           <input required title="Title" value={form.title} onChange={(e) => set('title', e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
         </Field>
         <Field label="Description">
           <textarea title="Description" rows={3} value={form.description} onChange={(e) => set('description', e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Priority">
             <select title="Priority" value={form.priority} onChange={(e) => set('priority', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
               <option value="low">Low</option>
               <option value="medium">Medium</option>
               <option value="high">High</option>
@@ -440,7 +440,7 @@ function ServiceRequestModal({ record, onClose }: { record: ServiceRequest | nul
           </Field>
           <Field label="Status">
             <select title="Status" value={form.status} onChange={(e) => set('status', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
               <option value="new">New</option>
               <option value="assigned">Assigned</option>
               <option value="in_progress">In Progress</option>
@@ -452,7 +452,7 @@ function ServiceRequestModal({ record, onClose }: { record: ServiceRequest | nul
         </div>
         <Field label="Project">
           <select title="Project" value={form.project} onChange={(e) => set('project', e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
             <option value="">— No project —</option>
             {projectsData?.results.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
@@ -462,11 +462,11 @@ function ServiceRequestModal({ record, onClose }: { record: ServiceRequest | nul
         <div className="grid grid-cols-2 gap-4">
           <Field label="Scheduled Date">
             <input title="Scheduled date" type="date" value={form.scheduled_date} onChange={(e) => set('scheduled_date', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </Field>
           <Field label="Est. Hours">
             <input title="Estimated hours" type="number" step="0.5" min="0" value={form.estimated_hours} onChange={(e) => set('estimated_hours', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </Field>
         </div>
         <ModalActions onClose={onClose} busy={busy} isEdit={isEdit} />
@@ -527,12 +527,12 @@ function WarrantyModal({ record, onClose }: { record: Warranty | null; onClose: 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Item Description *">
           <input required title="Item description" value={form.item_description} onChange={(e) => set('item_description', e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Warranty Type">
             <select title="Warranty type" value={form.warranty_type} onChange={(e) => set('warranty_type', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
               <option value="workmanship">Workmanship</option>
               <option value="materials">Materials</option>
               <option value="manufacturer">Manufacturer</option>
@@ -541,7 +541,7 @@ function WarrantyModal({ record, onClose }: { record: Warranty | null; onClose: 
           </Field>
           <Field label="Status">
             <select title="Status" value={form.status} onChange={(e) => set('status', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
               <option value="active">Active</option>
               <option value="expired">Expired</option>
               <option value="claimed">Claimed</option>
@@ -551,7 +551,7 @@ function WarrantyModal({ record, onClose }: { record: Warranty | null; onClose: 
         </div>
         <Field label="Project">
           <select title="Project" value={form.project} onChange={(e) => set('project', e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
             <option value="">— No project —</option>
             {projectsData?.results.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
@@ -560,16 +560,16 @@ function WarrantyModal({ record, onClose }: { record: Warranty | null; onClose: 
         </Field>
         <Field label="Provider">
           <input title="Provider" value={form.provider} onChange={(e) => set('provider', e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Start Date *">
             <input title="Start date" required type="date" value={form.start_date} onChange={(e) => set('start_date', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </Field>
           <Field label="Expiry Date *">
             <input title="Expiry date" required type="date" value={form.expiry_date} onChange={(e) => set('expiry_date', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </Field>
         </div>
         <ModalActions onClose={onClose} busy={busy} isEdit={isEdit} />
@@ -610,7 +610,7 @@ function ModalActions({ onClose, busy, isEdit }: { onClose: () => void; busy: bo
         Cancel
       </button>
       <button type="submit" disabled={busy}
-        className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-60">
+        className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-60">
         {busy ? 'Saving…' : isEdit ? 'Save Changes' : 'Create'}
       </button>
     </div>
@@ -628,7 +628,7 @@ function Th({ children }: { children: React.ReactNode }) {
 function Spinner() {
   return (
     <div className="flex h-40 items-center justify-center">
-      <div className="h-7 w-7 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+      <div className="h-7 w-7 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
     </div>
   );
 }

@@ -39,7 +39,7 @@ export const ROLE_COLORS: Record<MemberRole, string> = {
   project_manager: 'bg-blue-100 text-blue-700',
   estimator: 'bg-indigo-100 text-indigo-700',
   accountant: 'bg-green-100 text-green-700',
-  field_worker: 'bg-amber-100 text-amber-700',
+  field_worker: 'bg-blue-100 text-blue-700',
   read_only: 'bg-slate-100 text-slate-500',
 };
 

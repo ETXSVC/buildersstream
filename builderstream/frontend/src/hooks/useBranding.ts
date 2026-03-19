@@ -25,7 +25,7 @@ export function useApplyBranding() {
     });
 
     // Derive --color-primary-rgb (space-separated R G B) for rgba() usage in CSS
-    const primaryHex = (vars['--color-primary'] ?? '#f59e0b').replace('#', '');
+    const primaryHex = (vars['--color-primary'] ?? '#3B82F6').replace('#', '');
     const r = parseInt(primaryHex.substring(0, 2), 16);
     const g = parseInt(primaryHex.substring(2, 4), 16);
     const b = parseInt(primaryHex.substring(4, 6), 16);

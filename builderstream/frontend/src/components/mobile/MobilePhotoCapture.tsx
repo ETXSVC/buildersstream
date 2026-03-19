@@ -56,7 +56,7 @@ export const MobilePhotoCapture = ({ projectId = '', albumId, onCapture }: Props
       <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
-        className="flex h-48 w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 text-slate-500 hover:border-amber-400 hover:bg-amber-50 hover:text-amber-600 transition-colors"
+        className="flex h-48 w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 text-slate-500 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
       >
         {preview ? (
           <img src={preview} alt="Preview" className="h-full w-full rounded-xl object-cover" />
@@ -89,13 +89,13 @@ export const MobilePhotoCapture = ({ projectId = '', albumId, onCapture }: Props
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Add a description (optional)"
-            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-base focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200"
+            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-base focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200"
           />
 
           <button
             type="button"
             onClick={handleQueue}
-            className="w-full rounded-xl bg-amber-500 py-3 text-base font-semibold text-white hover:bg-amber-600"
+            className="w-full rounded-xl bg-blue-500 py-3 text-base font-semibold text-white hover:bg-blue-600"
           >
             {navigator.onLine ? 'Upload Photo' : 'Queue for Upload'}
           </button>

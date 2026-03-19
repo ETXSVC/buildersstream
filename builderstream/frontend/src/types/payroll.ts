@@ -85,7 +85,7 @@ export const EMPLOYMENT_TYPE_LABELS: Record<EmploymentType, string> = {
 export const EMPLOYMENT_TYPE_COLORS: Record<EmploymentType, string> = {
   w2_full_time: 'bg-blue-100 text-blue-700',
   w2_part_time: 'bg-sky-100 text-sky-700',
-  '1099_contractor': 'bg-amber-100 text-amber-700',
+  '1099_contractor': 'bg-blue-100 text-blue-700',
 };
 
 export const TRADE_LABELS: Record<EmployeeTrade, string> = {

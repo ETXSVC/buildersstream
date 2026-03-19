@@ -73,7 +73,7 @@ export function MessageComposer({ channelId, editingMessage, onCancelEdit }: Pro
   return (
     <div className="px-4 pb-4">
       {editingMessage && (
-        <div className="flex items-center gap-2 mb-1 text-xs text-amber-400">
+        <div className="flex items-center gap-2 mb-1 text-xs text-blue-400">
           <span>Editing message</span>
           <button
             type="button"

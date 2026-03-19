@@ -65,6 +65,12 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
+            <a
+              href="https://app.buildersstream.online/login"
+              className="text-sm font-medium text-neutral-gray hover:text-primary transition-colors"
+            >
+              Login
+            </a>
             <Link
               to="/contact"
               className="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all hover:shadow-lg hover:shadow-primary/20"
@@ -110,7 +116,13 @@ const Navbar = () => {
                   {link.name}
                 </Link>
               ))}
-              <div className="pt-4">
+              <div className="pt-4 space-y-2">
+                <a
+                  href="https://app.buildersstream.online/login"
+                  className="block w-full text-center border border-primary text-primary px-5 py-3 rounded-lg text-base font-medium transition-all hover:bg-primary/5"
+                >
+                  Login
+                </a>
                 <Link
                   to="/contact"
                   onClick={() => setIsOpen(false)}

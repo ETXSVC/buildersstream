@@ -15,7 +15,7 @@ const COLUMN_HEADER: Record<string, string> = {
   purple: 'border-purple-400 bg-purple-50',
   indigo: 'border-indigo-400 bg-indigo-50',
   cyan: 'border-cyan-400 bg-cyan-50',
-  amber: 'border-amber-400 bg-amber-50',
+  amber: 'border-blue-400 bg-blue-50',
   orange: 'border-orange-400 bg-orange-50',
   teal: 'border-teal-400 bg-teal-50',
   lime: 'border-lime-400 bg-lime-50',
@@ -68,7 +68,7 @@ export const KanbanPage = () => {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
       </div>
     );
   }
@@ -145,7 +145,7 @@ function KanbanColumn({ column, isDragOver, onDragOver, onDragLeave, onDrop, onC
     <div
       className={[
         'flex w-64 flex-shrink-0 flex-col rounded-xl border-2 transition-colors',
-        isDragOver ? 'border-amber-400 bg-amber-50/40' : 'border-slate-200 bg-slate-50',
+        isDragOver ? 'border-blue-400 bg-blue-50/40' : 'border-slate-200 bg-slate-50',
       ].join(' ')}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
@@ -200,7 +200,7 @@ function KanbanCard({ project, onDragStart }: KanbanCardProps) {
       <div className="mb-1 flex items-start justify-between gap-1">
         <Link
           to={`/projects/${project.id}`}
-          className="text-sm font-medium text-slate-900 hover:text-amber-700 line-clamp-2"
+          className="text-sm font-medium text-slate-900 hover:text-blue-700 line-clamp-2"
           draggable={false}
         >
           {project.name}

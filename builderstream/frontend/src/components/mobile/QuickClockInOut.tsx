@@ -107,7 +107,7 @@ export const QuickClockInOut = ({ projectId = '', projectName = 'No project sele
       <p className="text-sm font-medium text-slate-500">{projectName}</p>
 
       {warning && (
-        <p className="rounded-lg bg-amber-50 px-4 py-2 text-center text-sm text-amber-700">
+        <p className="rounded-lg bg-blue-50 px-4 py-2 text-center text-sm text-blue-700">
           {warning}
         </p>
       )}
@@ -152,7 +152,7 @@ export const QuickClockInOut = ({ projectId = '', projectName = 'No project sele
       )}
 
       {!navigator.onLine && (
-        <p className="text-xs text-amber-600">Offline — will sync when connected</p>
+        <p className="text-xs text-blue-600">Offline — will sync when connected</p>
       )}
     </div>
   );

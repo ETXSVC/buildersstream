@@ -133,7 +133,7 @@ export const FinancialsPage = () => {
             onClick={() => setTab(t.key)}
             className={[
               'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
-              tab === t.key ? 'bg-amber-500 text-white' : 'text-slate-600 hover:text-slate-900',
+              tab === t.key ? 'bg-blue-500 text-white' : 'text-slate-600 hover:text-slate-900',
             ].join(' ')}
           >
             {t.label}
@@ -148,7 +148,7 @@ export const FinancialsPage = () => {
           placeholder={`Search ${tab.replace('-', ' ')}…`}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-xs rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+          className="w-full max-w-xs rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
         />
       </div>
 
@@ -170,7 +170,7 @@ function NewInvoiceButton({ search }: { search: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 transition-colors"
+        className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 transition-colors"
       >
         <span className="text-lg leading-none">+</span> New Invoice
       </button>
@@ -186,7 +186,7 @@ function NewExpenseButton({ search: _ }: { search: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 transition-colors"
+        className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 transition-colors"
       >
         <span className="text-lg leading-none">+</span> New Expense
       </button>
@@ -202,7 +202,7 @@ function NewChangeOrderButton({ search: _ }: { search: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 transition-colors"
+        className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 transition-colors"
       >
         <span className="text-lg leading-none">+</span> New Change Order
       </button>
@@ -218,7 +218,7 @@ function NewPurchaseOrderButton({ search: _ }: { search: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 transition-colors"
+        className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 transition-colors"
       >
         <span className="text-lg leading-none">+</span> New Purchase Order
       </button>
@@ -342,7 +342,7 @@ function ExpensesTable({ search }: { search: string }) {
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
                     exp.status === 'approved' ? 'bg-green-100 text-green-700' :
                     exp.status === 'rejected' ? 'bg-red-100 text-red-600' :
-                    'bg-amber-100 text-amber-700'
+                    'bg-blue-100 text-blue-700'
                   }`}>
                     {exp.status}
                   </span>
@@ -978,7 +978,7 @@ function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => 
   );
 }
 
-const inputCls = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400';
+const inputCls = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400';
 const selectCls = inputCls + ' bg-white';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -1026,7 +1026,7 @@ function ModalActions({ onClose, isPending, isEdit }: { onClose: () => void; isP
       <button
         type="submit"
         disabled={isPending}
-        className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:opacity-50"
+        className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
       >
         {isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Create'}
       </button>
@@ -1045,7 +1045,7 @@ function Th({ children }: { children: React.ReactNode }) {
 function Spinner() {
   return (
     <div className="flex h-40 items-center justify-center">
-      <div className="h-7 w-7 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+      <div className="h-7 w-7 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { CheckCircle, XCircle, Clock, ChevronDown, ChevronUp } from 'lucide-reac
 import { fetchPortalApprovals, respondToApproval, type PortalApproval } from '@/api/portal';
 
 const STATUS_STYLES: Record<string, string> = {
-  PENDING: 'bg-amber-100 text-amber-700',
+  PENDING: 'bg-blue-100 text-blue-700',
   APPROVED: 'bg-green-100 text-green-700',
   REJECTED: 'bg-red-100 text-red-700',
   EXPIRED: 'bg-slate-100 text-slate-500',
@@ -74,7 +74,7 @@ function ApprovalCard({ approval }: { approval: PortalApproval }) {
           <div className="flex gap-4 text-xs text-slate-500">
             <span>Submitted: {new Date(approval.created_at).toLocaleDateString()}</span>
             {approval.expires_at && !isExpired && (
-              <span className="text-amber-600 font-medium flex items-center gap-1">
+              <span className="text-blue-600 font-medium flex items-center gap-1">
                 <Clock size={12} />
                 Expires: {new Date(approval.expires_at).toLocaleDateString()}
               </span>
@@ -110,7 +110,7 @@ function ApprovalCard({ approval }: { approval: PortalApproval }) {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Notes (optional)"
                 rows={2}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
               />
               {mutation.isError && (
                 <p className="text-xs text-red-500">Something went wrong. Please try again.</p>
@@ -158,7 +158,7 @@ export function PortalApprovals() {
 
       {isLoading && (
         <div className="flex h-40 items-center justify-center">
-          <div className="h-7 w-7 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+          <div className="h-7 w-7 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
         </div>
       )}
 
@@ -172,7 +172,7 @@ export function PortalApprovals() {
         <>
           {pending.length > 0 && (
             <section>
-              <h2 className="text-sm font-semibold text-amber-600 mb-3">
+              <h2 className="text-sm font-semibold text-blue-600 mb-3">
                 ⏳ Needs Your Response ({pending.length})
               </h2>
               <div className="space-y-3">

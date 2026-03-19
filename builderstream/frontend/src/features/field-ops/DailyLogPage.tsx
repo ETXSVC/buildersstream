@@ -25,7 +25,7 @@ export const DailyLogPage = () => {
           value={selectedDate}
           max={today}
           onChange={(e) => setSelectedDate(e.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-900 focus:border-amber-400 focus:outline-none"
+          className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-900 focus:border-blue-400 focus:outline-none"
         />
       </div>
 
@@ -34,7 +34,7 @@ export const DailyLogPage = () => {
         <div className={`rounded-lg px-4 py-2 text-sm font-medium ${
           todayLog.status === 'approved'
             ? 'bg-green-50 text-green-700'
-            : 'bg-amber-50 text-amber-700'
+            : 'bg-blue-50 text-blue-700'
         }`}>
           Log {todayLog.status === 'approved' ? 'approved' : 'submitted'} — read only
         </div>

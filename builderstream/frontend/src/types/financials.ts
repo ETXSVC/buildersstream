@@ -113,7 +113,7 @@ export const INVOICE_STATUS_COLORS: Record<InvoiceStatus, string> = {
   draft: 'bg-slate-100 text-slate-600',
   sent: 'bg-blue-100 text-blue-700',
   viewed: 'bg-purple-100 text-purple-700',
-  partial: 'bg-amber-100 text-amber-700',
+  partial: 'bg-blue-100 text-blue-700',
   paid: 'bg-green-100 text-green-700',
   overdue: 'bg-red-100 text-red-700',
   void: 'bg-slate-100 text-slate-400',
@@ -129,7 +129,7 @@ export const CO_STATUS_COLORS: Record<ChangeOrderStatus, string> = {
 export const PO_STATUS_COLORS: Record<POStatus, string> = {
   draft: 'bg-slate-100 text-slate-600',
   sent: 'bg-blue-100 text-blue-700',
-  partial: 'bg-amber-100 text-amber-700',
+  partial: 'bg-blue-100 text-blue-700',
   received: 'bg-green-100 text-green-700',
   closed: 'bg-slate-100 text-slate-500',
 };

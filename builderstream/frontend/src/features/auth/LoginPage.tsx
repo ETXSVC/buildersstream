@@ -79,7 +79,7 @@ export const LoginPage = () => {
           autoComplete="email"
           required
           placeholder="you@company.com"
-          className="min-h-11 w-full rounded-lg border border-slate-300 px-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+          className="min-h-11 w-full rounded-lg border border-slate-300 px-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
         />
       </div>
 
@@ -99,7 +99,7 @@ export const LoginPage = () => {
           autoComplete="current-password"
           required
           placeholder="Enter your password"
-          className="min-h-11 w-full rounded-lg border border-slate-300 px-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+          className="min-h-11 w-full rounded-lg border border-slate-300 px-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
         />
       </div>
 
@@ -107,7 +107,7 @@ export const LoginPage = () => {
       <div className="flex items-center justify-end">
         <Link
           to="/forgot-password"
-          className="text-sm font-medium text-amber-600 hover:text-amber-700"
+          className="text-sm font-medium text-blue-600 hover:text-blue-700"
         >
           Forgot your password?
         </Link>
@@ -117,7 +117,7 @@ export const LoginPage = () => {
       <button
         type="submit"
         disabled={isLoading}
-        className="min-h-11 w-full rounded-lg bg-amber-500 px-4 py-2.5 text-base font-semibold text-white shadow-sm transition-colors hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        className="min-h-11 w-full rounded-lg bg-blue-500 px-4 py-2.5 text-base font-semibold text-white shadow-sm transition-colors hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isLoading ? (
           <span className="inline-flex items-center gap-2">
@@ -152,7 +152,7 @@ export const LoginPage = () => {
         Don&apos;t have an account?{' '}
         <Link
           to="/register"
-          className="font-medium text-amber-600 hover:text-amber-700"
+          className="font-medium text-blue-600 hover:text-blue-700"
         >
           Sign up
         </Link>

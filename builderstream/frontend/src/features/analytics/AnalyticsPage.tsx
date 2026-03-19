@@ -86,7 +86,7 @@ export const AnalyticsPage = () => {
 
       {isLoading && (
         <div className="flex h-40 items-center justify-center">
-          <div className="h-7 w-7 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+          <div className="h-7 w-7 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
         </div>
       )}
 
@@ -132,7 +132,7 @@ export const AnalyticsPage = () => {
                       <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-35} textAnchor="end" interval={0} />
                       <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                       <Tooltip />
-                      <Bar dataKey="value" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="value" fill="#3B82F6" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>

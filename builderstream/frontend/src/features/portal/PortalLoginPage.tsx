@@ -65,7 +65,7 @@ export function PortalLoginPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500 border-t-transparent mx-auto mb-4" />
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-500 border-t-transparent mx-auto mb-4" />
           <p className="text-slate-500 text-sm">Signing you in…</p>
         </div>
       </div>
@@ -95,11 +95,11 @@ export function PortalLoginPage() {
               value={pin}
               onChange={(e) => setPin(e.target.value)}
               placeholder="Enter PIN"
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-center text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-center text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
             <button
               type="submit"
-              className="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium py-3 rounded-xl text-sm"
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 rounded-xl text-sm"
             >
               Access Portal
             </button>

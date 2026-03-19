@@ -112,7 +112,7 @@ export const PayrollPage = () => {
           <button
             type="button"
             onClick={() => setCreateModal(true)}
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-600"
+            className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-600"
           >
             + New Pay Run
           </button>
@@ -121,7 +121,7 @@ export const PayrollPage = () => {
           <button
             type="button"
             onClick={() => setEmployeeModal('new')}
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-600"
+            className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-600"
           >
             + Add Employee / Contractor
           </button>
@@ -142,7 +142,7 @@ export const PayrollPage = () => {
             onClick={() => setTab(key)}
             className={[
               'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
-              tab === key ? 'bg-amber-500 text-white' : 'text-slate-600 hover:text-slate-900',
+              tab === key ? 'bg-blue-500 text-white' : 'text-slate-600 hover:text-slate-900',
             ].join(' ')}
           >
             {label}
@@ -211,7 +211,7 @@ function PayRunsTable({ onMarkPaid }: { onMarkPaid: (run: PayRun) => void }) {
                 <td className="px-4 py-3 text-slate-700">{regHours.toFixed(1)} h</td>
                 <td className="px-4 py-3 text-slate-700">
                   {otHours > 0 ? (
-                    <span className="text-amber-600 font-medium">{otHours.toFixed(1)} h</span>
+                    <span className="text-blue-600 font-medium">{otHours.toFixed(1)} h</span>
                   ) : (
                     <span className="text-slate-400">—</span>
                   )}
@@ -461,7 +461,7 @@ function WorkforcePanel() {
     { label: 'Total Workers', value: String(data.total_workers), color: 'text-slate-900' },
     { label: 'Active This Week', value: String(data.active_this_week), color: 'text-green-600' },
     { label: 'Total Hours (wk)', value: data.total_hours_this_week.toFixed(0), color: 'text-slate-900' },
-    { label: 'Overtime Hours (wk)', value: data.overtime_hours_this_week.toFixed(0), color: data.overtime_hours_this_week > 0 ? 'text-amber-600' : 'text-slate-400' },
+    { label: 'Overtime Hours (wk)', value: data.overtime_hours_this_week.toFixed(0), color: data.overtime_hours_this_week > 0 ? 'text-blue-600' : 'text-slate-400' },
     { label: 'Avg Hourly Rate', value: data.avg_hourly_rate != null ? `$${data.avg_hourly_rate.toFixed(2)}` : '—', color: 'text-slate-900' },
     { label: 'Labor Cost (wk)', value: fmt(data.labor_cost_this_week), color: 'text-slate-900' },
   ];
@@ -499,13 +499,13 @@ function EmployeesTable({ onEdit }: { onEdit: (emp: Employee) => void }) {
           placeholder="Search by name or email…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-400 w-64"
+          className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 w-64"
         />
         <select
           title="Filter by employment type"
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-400"
+          className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           <option value="">All Types</option>
           <option value="w2_full_time">W-2 Full Time</option>
@@ -777,7 +777,7 @@ function ModalActions({ onClose, busy, submitLabel }: { onClose: () => void; bus
       <button
         type="submit"
         disabled={busy}
-        className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-50"
+        className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
       >
         {busy ? 'Saving…' : (submitLabel ?? 'Create')}
       </button>
@@ -791,7 +791,7 @@ function ActionBtn({ children, onClick, danger }: { children: React.ReactNode; o
       type="button"
       onClick={onClick}
       className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
-        danger ? 'text-red-600 hover:bg-red-50' : 'text-amber-700 hover:bg-amber-50'
+        danger ? 'text-red-600 hover:bg-red-50' : 'text-blue-700 hover:bg-blue-50'
       }`}
     >
       {children}
@@ -810,7 +810,7 @@ function Th({ children }: { children: React.ReactNode }) {
 function Spinner() {
   return (
     <div className="flex h-40 items-center justify-center">
-      <div className="h-7 w-7 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+      <div className="h-7 w-7 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
     </div>
   );
 }
@@ -831,4 +831,4 @@ function fmt(val: number | string | null | undefined) {
   return `$${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
-const inputCls = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400';
+const inputCls = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400';

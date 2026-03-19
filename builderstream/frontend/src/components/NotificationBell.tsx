@@ -31,7 +31,7 @@ export const NotificationBell = () => {
             d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white leading-none">
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500 px-1 text-[10px] font-bold text-white leading-none">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -45,7 +45,7 @@ export const NotificationBell = () => {
               <button
                 type="button"
                 onClick={markAllRead}
-                className="text-xs text-amber-600 hover:underline"
+                className="text-xs text-blue-600 hover:underline"
               >
                 Mark all read
               </button>
@@ -61,14 +61,14 @@ export const NotificationBell = () => {
                   key={n.id}
                   className={[
                     'flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-slate-50',
-                    !n.is_read ? 'bg-amber-50/50' : '',
+                    !n.is_read ? 'bg-blue-50/50' : '',
                   ].join(' ')}
                   onClick={() => {
                     if (!n.is_read) markRead(n.id);
                     if (n.action_url) window.location.href = n.action_url;
                   }}
                 >
-                  <span className={`mt-0.5 h-2 w-2 flex-shrink-0 rounded-full ${!n.is_read ? 'bg-amber-500' : 'bg-transparent'}`} />
+                  <span className={`mt-0.5 h-2 w-2 flex-shrink-0 rounded-full ${!n.is_read ? 'bg-blue-500' : 'bg-transparent'}`} />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-slate-800 truncate">{n.title}</p>
                     <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{n.message}</p>

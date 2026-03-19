@@ -74,7 +74,7 @@ function TeamsTab() {
   });
 
   if (isLoading) {
-    return <div className="flex h-40 items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" /></div>;
+    return <div className="flex h-40 items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" /></div>;
   }
 
   return (
@@ -88,26 +88,26 @@ function TeamsTab() {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Team name (e.g. Framing Crew)"
-            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           <input
             value={newDesc}
             onChange={(e) => setNewDesc(e.target.value)}
             placeholder="Description (optional)"
-            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           {createMut.isError && <p className="text-xs text-red-500">Failed — name may already exist.</p>}
           <div className="flex gap-2 justify-end">
             <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
             <button type="button" disabled={!newName.trim() || createMut.isPending} onClick={() => createMut.mutate()}
-              className="px-3 py-1.5 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50 font-medium">
+              className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 font-medium">
               {createMut.isPending ? 'Creating…' : 'Create'}
             </button>
           </div>
         </div>
       ) : (
         <button type="button" onClick={() => setShowCreate(true)}
-          className="flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-700 font-medium">
+          className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium">
           <Plus size={14} /> New Team
         </button>
       )}
@@ -131,7 +131,7 @@ function TeamsTab() {
                 className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-slate-50"
               >
                 <div className="flex items-center gap-3">
-                  <Users size={16} className="text-amber-500 shrink-0" />
+                  <Users size={16} className="text-blue-500 shrink-0" />
                   <div>
                     <p className="text-sm font-semibold text-slate-900">{team.name}</p>
                     {team.description && <p className="text-xs text-slate-400">{team.description}</p>}
@@ -173,7 +173,7 @@ function TeamsTab() {
                           <select
                             value={m.role}
                             onChange={(e) => updateRoleMut.mutate({ teamId: team.id, userId: m.employee, role: e.target.value as 'lead' | 'member' })}
-                            className="rounded-full border border-slate-200 px-2 py-0.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white cursor-pointer"
+                            className="rounded-full border border-slate-200 px-2 py-0.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white cursor-pointer"
                           >
                             <option value="member">Member</option>
                             <option value="lead">Team Lead</option>
@@ -192,7 +192,7 @@ function TeamsTab() {
                           <select
                             value={pendingUserId}
                             onChange={(e) => setPendingUserId(e.target.value)}
-                            className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                            className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                           >
                             <option value="">— Select employee —</option>
                             {allEmployees.filter((e) => !memberIdsInTeam.has(e.id)).map((e) => (
@@ -202,7 +202,7 @@ function TeamsTab() {
                           <select
                             value={pendingRole}
                             onChange={(e) => setPendingRole(e.target.value as 'lead' | 'member')}
-                            className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                            className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                           >
                             <option value="member">Member</option>
                             <option value="lead">Team Lead</option>
@@ -213,7 +213,7 @@ function TeamsTab() {
                             type="button"
                             disabled={!pendingUserId || addMut.isPending}
                             onClick={() => addMut.mutate({ teamId: team.id, employeeId: pendingUserId, role: pendingRole })}
-                            className="px-3 py-1.5 text-xs bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50 font-medium"
+                            className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 font-medium"
                           >
                             {addMut.isPending ? 'Adding…' : 'Add'}
                           </button>
@@ -222,7 +222,7 @@ function TeamsTab() {
                       </div>
                     ) : (
                       <button type="button" onClick={() => setAddingTo(team.id)}
-                        className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium pt-1">
+                        className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium pt-1">
                         <UserPlus size={12} /> Add member
                       </button>
                     )}
@@ -330,12 +330,12 @@ function EmployeeModal({
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">First Name *</label>
             <input required value={form.first_name} onChange={(e) => set('first_name', e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Last Name *</label>
             <input required value={form.last_name} onChange={(e) => set('last_name', e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </div>
         </div>
 
@@ -343,12 +343,12 @@ function EmployeeModal({
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
             <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Phone</label>
             <input value={form.phone} onChange={(e) => set('phone', e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </div>
         </div>
 
@@ -356,7 +356,7 @@ function EmployeeModal({
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Type *</label>
             <select value={form.employment_type} onChange={(e) => set('employment_type', e.target.value as EmploymentType)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
               {Object.entries(EMPLOYMENT_TYPE_LABELS).map(([v, l]) => (
                 <option key={v} value={v}>{l}</option>
               ))}
@@ -365,7 +365,7 @@ function EmployeeModal({
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Trade *</label>
             <select value={form.trade} onChange={(e) => set('trade', e.target.value as EmployeeTrade)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
               {TRADES.map((t) => <option key={t} value={t}>{TRADE_LABELS[t]}</option>)}
             </select>
           </div>
@@ -375,13 +375,13 @@ function EmployeeModal({
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Hire Date *</label>
             <input required type="date" value={form.hire_date} onChange={(e) => set('hire_date', e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Hourly Rate ($) *</label>
             <input required type="number" min="0" step="0.01" value={form.base_hourly_rate}
               onChange={(e) => set('base_hourly_rate', e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </div>
         </div>
 
@@ -393,7 +393,7 @@ function EmployeeModal({
           <button type="button" onClick={onClose}
             className="px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100">Cancel</button>
           <button type="submit" disabled={mutation.isPending}
-            className="px-4 py-2 rounded-lg text-sm bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 font-medium">
+            className="px-4 py-2 rounded-lg text-sm bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 font-medium">
             {mutation.isPending ? 'Saving…' : 'Save'}
           </button>
         </div>
@@ -508,7 +508,7 @@ export function CompanyPage() {
                 onClick={() => setTab(t)}
                 className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
                   tab === t
-                    ? 'bg-white border border-b-white border-slate-200 text-amber-600 -mb-px'
+                    ? 'bg-white border border-b-white border-slate-200 text-blue-600 -mb-px'
                     : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
@@ -527,7 +527,7 @@ export function CompanyPage() {
             <button
               type="button"
               onClick={() => setModal({ open: true })}
-              className="mb-2 flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600"
+              className="mb-2 flex items-center gap-1.5 rounded-lg bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-600"
             >
               <Plus size={14} />
               Add Employee
@@ -536,7 +536,7 @@ export function CompanyPage() {
             <button
               type="button"
               onClick={() => setModal({ open: true })}
-              className="mb-2 flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600"
+              className="mb-2 flex items-center gap-1.5 rounded-lg bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-600"
             >
               <Plus size={14} />
               {tab === 'contractors' ? 'Add Contractor' : 'Add Employee'}
@@ -549,14 +549,14 @@ export function CompanyPage() {
         ) : tab === 'team-members' ? (
           isLoading ? (
             <div className="flex h-40 items-center justify-center">
-              <div className="h-6 w-6 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+              <div className="h-6 w-6 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
             </div>
           ) : (
             <EmployeeTable employees={all} onEdit={(e) => setModal({ open: true, editing: e })} />
           )
         ) : isLoading ? (
           <div className="flex h-40 items-center justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+            <div className="h-6 w-6 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
           </div>
         ) : (
           <EmployeeTable employees={shown} onEdit={(e) => setModal({ open: true, editing: e })} />

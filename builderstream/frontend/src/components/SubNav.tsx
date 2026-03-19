@@ -15,7 +15,7 @@ export function SubNav({ items }: { items: SubNavItem[] }) {
           className={({ isActive }) =>
             `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
               isActive
-                ? 'border-amber-500 text-amber-600'
+                ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`
           }

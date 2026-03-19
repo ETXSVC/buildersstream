@@ -57,7 +57,7 @@ export interface Project {
 
 export interface ProjectDetail extends Project {
   milestones: ProjectMilestone[];
-  team: ProjectTeamMember[];
+  team_members: ProjectTeamMember[];   // platform users assigned via ProjectTeamMember
   action_items_count: number;
   open_rfis_count: number;
   pending_submittals_count: number;
@@ -95,7 +95,7 @@ export const STATUS_COLORS: Record<ProjectStatus, string> = {
   site_survey: 'bg-purple-100 text-purple-700',
   proposal: 'bg-indigo-100 text-indigo-700',
   acceptance: 'bg-cyan-100 text-cyan-700',
-  in_progress: 'bg-amber-100 text-amber-700',
+  in_progress: 'bg-blue-100 text-blue-700',
   milestones: 'bg-orange-100 text-orange-700',
   finish_project: 'bg-teal-100 text-teal-700',
   billing: 'bg-lime-100 text-lime-700',

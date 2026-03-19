@@ -49,7 +49,7 @@ export function PortalPhotos() {
 
       {isLoading && (
         <div className="flex h-40 items-center justify-center">
-          <div className="h-7 w-7 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+          <div className="h-7 w-7 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
         </div>
       )}
 
@@ -71,7 +71,7 @@ export function PortalPhotos() {
                   onClick={() => setActiveCategory(cat)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                     activeCategory === cat
-                      ? 'bg-amber-500 text-white'
+                      ? 'bg-blue-500 text-white'
                       : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
@@ -126,7 +126,7 @@ export function PortalPhotos() {
             <button
               type="button"
               onClick={() => setLightbox(null)}
-              className="absolute -top-10 right-0 text-white hover:text-amber-400"
+              className="absolute -top-10 right-0 text-white hover:text-blue-400"
             >
               <X size={24} />
             </button>
@@ -157,7 +157,7 @@ export function PortalPhotos() {
                 <a
                   href={lightbox.download_url}
                   download
-                  className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 font-medium"
+                  className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 font-medium"
                 >
                   <Download size={13} /> Download
                 </a>

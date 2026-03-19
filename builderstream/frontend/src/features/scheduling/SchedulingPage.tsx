@@ -124,7 +124,7 @@ export const SchedulingPage = () => {
             onClick={() => setTab(t)}
             className={[
               'rounded-md px-4 py-1.5 text-sm font-medium capitalize transition-colors',
-              tab === t ? 'bg-amber-500 text-white' : 'text-slate-600 hover:text-slate-900',
+              tab === t ? 'bg-blue-500 text-white' : 'text-slate-600 hover:text-slate-900',
             ].join(' ')}
           >
             {t}
@@ -139,7 +139,7 @@ export const SchedulingPage = () => {
             placeholder={`Search ${tab}…`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full max-w-xs rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+            className="w-full max-w-xs rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
           />
         </div>
       )}
@@ -226,7 +226,7 @@ function TasksTable({ search }: { search: string }) {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     {task.task_type === 'milestone' && (
-                      <svg className="h-3.5 w-3.5 flex-shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-3.5 w-3.5 flex-shrink-0 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
                       </svg>
                     )}
@@ -247,7 +247,7 @@ function TasksTable({ search }: { search: string }) {
                   <div className="flex items-center gap-2">
                     <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100">
                       <div
-                        className="h-full rounded-full bg-amber-500 [width:var(--p)]"
+                        className="h-full rounded-full bg-blue-500 [width:var(--p)]"
                         style={{ '--p': `${task.completion_percentage}%` } as React.CSSProperties}
                       />
                     </div>
@@ -381,7 +381,7 @@ function EquipmentTable({ search }: { search: string }) {
                   {eq.current_book_value ? `$${parseFloat(eq.current_book_value).toLocaleString()}` : '—'}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${eq.is_available ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${eq.is_available ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
                     {eq.is_available ? 'Available' : 'In Use'}
                   </span>
                 </td>
@@ -715,7 +715,7 @@ function CrewModal({ crew, onClose }: { crew?: Crew; onClose: () => void }) {
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleMember(m.user)}
-                      className="h-4 w-4 flex-shrink-0 rounded border-slate-300 accent-amber-500"
+                      className="h-4 w-4 flex-shrink-0 rounded border-slate-300 accent-blue-500"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-slate-800">{m.user_full_name}</p>
@@ -942,8 +942,8 @@ function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => 
   );
 }
 
-const btnCls = 'flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 transition-colors';
-const inputCls = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400';
+const btnCls = 'flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 transition-colors';
+const inputCls = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400';
 const selectCls = inputCls + ' bg-white';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -991,7 +991,7 @@ function ModalActions({ onClose, isPending, isEdit }: { onClose: () => void; isP
       <button
         type="submit"
         disabled={isPending}
-        className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:opacity-50"
+        className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
       >
         {isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Create'}
       </button>
@@ -1010,7 +1010,7 @@ function Th({ children }: { children: React.ReactNode }) {
 function Spinner() {
   return (
     <div className="flex h-40 items-center justify-center">
-      <div className="h-7 w-7 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+      <div className="h-7 w-7 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
     </div>
   );
 }

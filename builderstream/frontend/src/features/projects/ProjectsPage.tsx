@@ -112,7 +112,7 @@ export const ProjectsPage = () => {
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-35} textAnchor="end" interval={0} />
                   <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="count" fill="#3B82F6" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -153,7 +153,7 @@ export const ProjectsPage = () => {
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
+            className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600"
           >
             + New Project
           </button>
@@ -167,13 +167,13 @@ export const ProjectsPage = () => {
           placeholder="Search projects…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+          className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
         />
         <select
           title="Status filter"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as ProjectStatus | '')}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+          className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
         >
           {STATUS_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -183,7 +183,7 @@ export const ProjectsPage = () => {
           title="Health filter"
           value={healthFilter}
           onChange={(e) => setHealthFilter(e.target.value as HealthStatus | '')}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+          className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
         >
           <option value="">All Health</option>
           <option value="green">Healthy</option>
@@ -195,7 +195,7 @@ export const ProjectsPage = () => {
       {/* Loading */}
       {isLoading && (
         <div className="flex h-40 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
         </div>
       )}
 
@@ -217,7 +217,7 @@ export const ProjectsPage = () => {
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="mt-3 text-sm text-amber-600 hover:underline"
+            className="mt-3 text-sm text-blue-600 hover:underline"
           >
             Create your first project
           </button>
@@ -436,7 +436,7 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
                 value={form.name}
                 onChange={(e) => { set('name')(e); setNameError(''); }}
                 required
-                className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 ${nameError ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-amber-400 focus:ring-amber-400'}`}
+                className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 ${nameError ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-blue-400 focus:ring-blue-400'}`}
                 placeholder="e.g. Johnson Kitchen Remodel"
               />
               {nameError && <p className="mt-1 text-xs text-red-600">{nameError}</p>}
@@ -448,7 +448,7 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
                   title="Project type"
                   value={form.project_type}
                   onChange={set('project_type')}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
                 >
                   {PROJECT_TYPE_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
@@ -461,7 +461,7 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
                   value={form.client}
                   onChange={(e) => { set('client')(e); setClientError(''); }}
                   disabled={contactsLoading}
-                  className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 disabled:opacity-60 ${clientError ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-amber-400 focus:ring-amber-400'}`}
+                  className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 disabled:opacity-60 ${clientError ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-blue-400 focus:ring-blue-400'}`}
                 >
                   <option value="">{contactsLoading ? 'Loading contacts…' : '— Select customer —'}</option>
                   {contactsData?.results.map((c) => (
@@ -477,7 +477,7 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
                 title="Assigned team"
                 value={form.team}
                 onChange={set('team')}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
               >
                 <option value="">— No team —</option>
                 {(teamsData ?? []).map((t) => (
@@ -492,7 +492,7 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
                 value={form.address}
                 onChange={set('address')}
                 placeholder="Street address"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
               />
             </Field>
             <div className="grid grid-cols-2 gap-4">
@@ -503,7 +503,7 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
                   placeholder="City"
                   value={form.city}
                   onChange={set('city')}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
                 />
               </Field>
               <Field label="State">
@@ -513,7 +513,7 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
                   value={form.state}
                   onChange={set('state')}
                   placeholder="e.g. TX"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
                 />
               </Field>
             </div>
@@ -526,7 +526,7 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
                 value={form.estimated_value}
                 onChange={set('estimated_value')}
                 placeholder="0"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
               />
             </Field>
 
@@ -537,7 +537,7 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
                   title="Start date"
                   value={form.start_date}
                   onChange={set('start_date')}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
                 />
               </Field>
               <Field label="Target Completion">
@@ -546,7 +546,7 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
                   title="Target completion date"
                   value={form.estimated_completion}
                   onChange={set('estimated_completion')}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
                 />
               </Field>
             </div>
@@ -558,7 +558,7 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
                 onChange={set('description')}
                 rows={3}
                 placeholder="Project scope and details…"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
               />
             </Field>
 
@@ -573,7 +573,7 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
               <button
                 type="submit"
                 disabled={isPending}
-                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:opacity-50"
+                className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
               >
                 {isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Project'}
               </button>

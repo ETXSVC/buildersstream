@@ -58,7 +58,7 @@ export const ClockPage = () => {
               <p className="text-xs text-slate-500 mt-1">Regular hrs</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-amber-600">{Number(summary.overtime_hours).toFixed(1)}</p>
+              <p className="text-2xl font-bold text-blue-600">{Number(summary.overtime_hours).toFixed(1)}</p>
               <p className="text-xs text-slate-500 mt-1">Overtime hrs</p>
             </div>
             <div>
