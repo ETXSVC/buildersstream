@@ -516,6 +516,133 @@ class ReportService:
         }
 
 
+class ForecastService:
+    """Cash flow and pipeline revenue forecasting."""
+
+    @staticmethod
+    def get_forecast(organization, months: int = 6) -> dict:
+        """
+        Return a combined forecast for the next `months` months:
+          - cash_flow: monthly inflows (receivables) and outflows (budgeted expenses)
+          - pipeline: expected revenue from active CRM leads by close month
+        """
+        today = timezone.now().date()
+        cash_flow = ForecastService._cash_flow_forecast(organization, today, months)
+        pipeline = ForecastService._pipeline_forecast(organization, today, months)
+        return {
+            "forecast_months": months,
+            "generated_at": today.isoformat(),
+            "cash_flow": cash_flow,
+            "pipeline": pipeline,
+        }
+
+    # ------------------------------------------------------------------ #
+    # Cash flow
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _cash_flow_forecast(org, today: date, months: int) -> list:
+        from apps.financials.models import Invoice, Expense, Budget
+
+        results = []
+        for i in range(months):
+            # Month window
+            if today.month + i <= 12:
+                month_date = today.replace(month=today.month + i, day=1)
+            else:
+                overflow = today.month + i - 12
+                month_date = today.replace(year=today.year + 1, month=overflow, day=1)
+
+            month_label = month_date.strftime("%Y-%m")
+            # Last day of the month
+            if month_date.month == 12:
+                month_end = month_date.replace(year=month_date.year + 1, month=1, day=1) - timedelta(days=1)
+            else:
+                month_end = month_date.replace(month=month_date.month + 1, day=1) - timedelta(days=1)
+
+            # Expected inflows: invoices due in this month (unpaid)
+            inflows = (
+                Invoice.objects.filter(
+                    organization=org,
+                    due_date__gte=month_date,
+                    due_date__lte=month_end,
+                    status__in=["draft", "sent", "overdue", "partially_paid"],
+                ).aggregate(total=Sum("total"))["total"] or Decimal("0")
+            )
+
+            # Expected outflows: budgeted expenses for this month
+            # Use historical average from the same month last year if no budget
+            outflows = ForecastService._budgeted_outflows(org, month_date, month_end)
+
+            results.append({
+                "month": month_label,
+                "inflows": float(inflows),
+                "outflows": float(outflows),
+                "net": float(inflows - outflows),
+            })
+        return results
+
+    @staticmethod
+    def _budgeted_outflows(org, month_start: date, month_end: date) -> Decimal:
+        from apps.financials.models import Expense
+
+        # Use prior 3-month average as a proxy for outflows
+        three_months_ago = month_start - timedelta(days=90)
+        avg = (
+            Expense.objects.filter(
+                organization=org,
+                expense_date__gte=three_months_ago,
+                expense_date__lt=month_start,
+            ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+        )
+        return (avg / Decimal("3")).quantize(Decimal("0.01"))
+
+    # ------------------------------------------------------------------ #
+    # Pipeline forecast
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _pipeline_forecast(org, today: date, months: int) -> list:
+        from apps.crm.models import Lead
+
+        # Get active leads with an estimated value and expected close
+        leads = Lead.objects.filter(
+            organization=org,
+            pipeline_stage__is_won_stage=False,
+            pipeline_stage__is_lost_stage=False,
+            estimated_value__isnull=False,
+            next_follow_up__isnull=False,
+        ).select_related("pipeline_stage")
+
+        # Bucket by expected close month (use next_follow_up as proxy)
+        buckets: dict[str, Decimal] = {}
+        cutoff = today + timedelta(days=30 * months)
+
+        for lead in leads:
+            follow_up_date = lead.next_follow_up.date() if hasattr(lead.next_follow_up, 'date') else lead.next_follow_up
+            if follow_up_date < today or follow_up_date > cutoff:
+                continue
+            month_key = follow_up_date.strftime("%Y-%m")
+            # Weight by lead score (0-100) as a probability proxy
+            probability = Decimal(str(lead.lead_score or 50)) / Decimal("100")
+            weighted = (lead.estimated_value or Decimal("0")) * probability
+            buckets[month_key] = buckets.get(month_key, Decimal("0")) + weighted
+
+        results = []
+        for i in range(months):
+            if today.month + i <= 12:
+                month_date = today.replace(month=today.month + i, day=1)
+            else:
+                overflow = today.month + i - 12
+                month_date = today.replace(year=today.year + 1, month=overflow, day=1)
+            month_label = month_date.strftime("%Y-%m")
+            results.append({
+                "month": month_label,
+                "expected_revenue": float(buckets.get(month_label, Decimal("0"))),
+            })
+        return results
+
+
 class ExportService:
     """Export report results and KPI data to CSV."""
 

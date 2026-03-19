@@ -50,10 +50,39 @@ function processQueue(error: unknown) {
   failedQueue = [];
 }
 
+// --- Plan limit exceeded (402) — emit a custom event caught by UpgradeModal ---
+// The backend returns { detail, upgrade_required: true, limit_type, current, limit }
+// when a Starter/Trial org hits their resource cap. We surface this in the UI
+// via a global event rather than inside individual components.
+export type UpgradeRequiredPayload = {
+  detail: string;
+  limit_type: 'projects' | 'crm_leads' | string;
+  current: number;
+  limit: number;
+};
+
+export function emitUpgradeRequired(payload: UpgradeRequiredPayload) {
+  window.dispatchEvent(new CustomEvent('upgrade-required', { detail: payload }));
+}
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    // 402 Payment Required → plan limit hit
+    if (error.response?.status === 402) {
+      const data = error.response.data ?? {};
+      if (data.upgrade_required) {
+        emitUpgradeRequired({
+          detail: data.detail ?? 'Plan limit reached.',
+          limit_type: data.limit_type ?? 'unknown',
+          current: data.current ?? 0,
+          limit: data.limit ?? 0,
+        });
+      }
+      return Promise.reject(error);
+    }
 
     if (error.response?.status !== 401 || originalRequest._retry) {
       return Promise.reject(error);

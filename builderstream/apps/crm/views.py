@@ -2,6 +2,7 @@
 from collections import defaultdict
 
 from django.db import models as db_models
+from apps.core.exceptions import PlanLimitExceeded
 from django.db.models import Avg, Count, F, Q
 from django.db.models.deletion import ProtectedError
 from django.utils import timezone
@@ -183,6 +184,26 @@ class LeadViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
         elif self.action in ["create", "update", "partial_update"]:
             return LeadCreateSerializer
         return LeadDetailSerializer
+
+    def perform_create(self, serializer):
+        org = getattr(self.request, "organization", None)
+        if org:
+            limits = org.plan_limits
+            max_leads = limits.get("max_crm_leads")
+            if max_leads is not None:
+                active_count = Lead.objects.filter(organization=org).count()
+                if active_count >= max_leads:
+                    raise PlanLimitExceeded(
+                        detail=(
+                            f"Your {org.get_subscription_plan_display()} plan allows "
+                            f"a maximum of {max_leads} CRM leads. "
+                            "Upgrade to Professional or Enterprise for unlimited leads."
+                        ),
+                        limit_type="crm_leads",
+                        current=active_count,
+                        limit=max_leads,
+                    )
+        super().perform_create(serializer)
 
     @action(detail=True, methods=["post"], url_path="move-stage")
     def move_stage(self, request, pk=None):

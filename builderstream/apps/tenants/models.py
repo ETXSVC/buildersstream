@@ -87,6 +87,33 @@ class Organization(TimeStampedModel):
     def __str__(self):
         return self.name
 
+    # ---------------------------------------------------------------------------
+    # Plan limits — keyed by subscription_plan value.
+    # None means unlimited. Limits apply to active (non-canceled) records.
+    # ---------------------------------------------------------------------------
+    _PLAN_LIMITS = {
+        SubscriptionPlan.TRIAL:        {"max_projects": 25,   "max_crm_leads": 100,  "has_api_access": False, "has_sso": False},
+        SubscriptionPlan.STARTER:      {"max_projects": 25,   "max_crm_leads": 100,  "has_api_access": False, "has_sso": False},
+        SubscriptionPlan.PROFESSIONAL: {"max_projects": None, "max_crm_leads": None, "has_api_access": False, "has_sso": False},
+        SubscriptionPlan.ENTERPRISE:   {"max_projects": None, "max_crm_leads": None, "has_api_access": True,  "has_sso": True},
+    }
+
+    @property
+    def plan_limits(self) -> dict:
+        """Return the resource limits for this org's current subscription plan."""
+        return self._PLAN_LIMITS.get(
+            self.subscription_plan,
+            self._PLAN_LIMITS[self.SubscriptionPlan.STARTER],
+        )
+
+    @property
+    def has_api_access(self) -> bool:
+        return self.plan_limits["has_api_access"]
+
+    @property
+    def has_sso(self) -> bool:
+        return self.plan_limits["has_sso"]
+
     @property
     def member_count(self):
         return self.memberships.filter(is_active=True).count()

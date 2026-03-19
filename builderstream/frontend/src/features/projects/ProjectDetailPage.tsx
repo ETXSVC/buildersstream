@@ -376,10 +376,10 @@ export const ProjectDetailPage = () => {
 
       {tab === 'team' && (
         <div className="space-y-3">
-          {(!project.team || project.team.length === 0) ? (
+          {(!project.team_members || project.team_members.length === 0) ? (
             <p className="text-sm text-slate-400">No team members assigned.</p>
           ) : (
-            project.team.map((member) => (
+            project.team_members.map((member) => (
               <div key={member.user_id} className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold text-sm">
                   {member.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}

@@ -7,6 +7,7 @@ Exports two url pattern lists:
 from django.urls import path
 from . import views
 from apps.core.views import UserSessionListView, UserSessionRevokeView
+from .sso import SSOInitView, SSOACSView, SSOMetadataView
 
 # Auth endpoints (/api/v1/auth/)
 auth_urlpatterns = [
@@ -23,6 +24,10 @@ auth_urlpatterns = [
     # OAuth
     path("oauth/google/", views.GoogleOAuthCallbackView.as_view(), name="oauth-google"),
     path("oauth/github/", views.GitHubOAuthCallbackView.as_view(), name="oauth-github"),
+    # SSO (SAML 2.0 — Enterprise)
+    path("sso/init/", SSOInitView.as_view(), name="sso-init"),
+    path("sso/acs/", SSOACSView.as_view(), name="sso-acs"),
+    path("sso/metadata/<uuid:org_id>/", SSOMetadataView.as_view(), name="sso-metadata"),
 ]
 
 # User endpoints (/api/v1/users/)

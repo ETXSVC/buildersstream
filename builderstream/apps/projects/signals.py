@@ -73,3 +73,9 @@ def on_project_save(sender, instance, created, **kwargs):
             description=f"Status changed from '{old_status}' to '{instance.status}'.",
             metadata={"from_status": old_status, "to_status": instance.status},
         )
+        # Slack notification (fire-and-forget, ignore errors)
+        try:
+            from apps.integrations.services import SlackNotificationService
+            SlackNotificationService.notify_project_status_changed(instance, old_status, instance.status)
+        except Exception:
+            pass

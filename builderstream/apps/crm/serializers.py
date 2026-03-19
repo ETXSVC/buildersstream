@@ -257,8 +257,16 @@ class LeadListSerializer(serializers.ModelSerializer):
     stage_name = serializers.CharField(source="pipeline_stage.name", read_only=True)
     stage_color = serializers.CharField(source="pipeline_stage.color", read_only=True)
     assigned_to_name = serializers.CharField(source="assigned_to.get_full_name", read_only=True)
-    # Return date-only string so <input type="date"> can display existing values
-    next_follow_up = serializers.DateField(allow_null=True, read_only=True)
+    # Return date-only string so <input type="date"> can display existing values.
+    # Use SerializerMethodField because the model stores DateTimeField but the
+    # UI only needs the date portion — DateField would raise AssertionError.
+    next_follow_up = serializers.SerializerMethodField()
+
+    def get_next_follow_up(self, obj):
+        if obj.next_follow_up is None:
+            return None
+        v = obj.next_follow_up
+        return v.date().isoformat() if hasattr(v, 'date') else str(v)
 
     class Meta:
         model = Lead

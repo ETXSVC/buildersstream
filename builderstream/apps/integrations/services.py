@@ -387,3 +387,130 @@ class APIKeyAuthBackend:
 
     def authenticate_header(self, request):
         return self.KEYWORD
+
+
+class SlackNotificationService:
+    """Send notifications to Slack via Incoming Webhooks or Bot API.
+
+    Requires SLACK_BOT_TOKEN in settings (for Bot API) or uses the
+    webhook_url stored in the org's SlackConnection (IntegrationConnection).
+    """
+
+    SLACK_API_POST = "https://slack.com/api/chat.postMessage"
+
+    @staticmethod
+    def _get_connection(organization):
+        """Return the active Slack connection for the org, or None."""
+        from apps.integrations.models import IntegrationConnection
+        try:
+            return IntegrationConnection.objects.get(
+                organization=organization,
+                integration_type=IntegrationConnection.IntegrationType.SLACK,
+                status=IntegrationConnection.Status.CONNECTED,
+            )
+        except IntegrationConnection.DoesNotExist:
+            return None
+
+    @staticmethod
+    def send(organization, text: str, channel: str | None = None, blocks: list | None = None) -> bool:
+        """Post a message to Slack. Returns True on success.
+
+        Uses the webhook_url stored in sync_config['webhook_url'] if present,
+        otherwise falls back to the Bot token in settings.
+        """
+        conn = SlackNotificationService._get_connection(organization)
+        if not conn:
+            logger.debug("Slack not connected for org %s — skipping notification", organization)
+            return False
+
+        webhook_url = conn.sync_config.get("webhook_url", "")
+        bot_token = conn.access_token_encrypted
+
+        payload: dict = {"text": text}
+        if channel:
+            payload["channel"] = channel
+        if blocks:
+            payload["blocks"] = blocks
+
+        try:
+            if webhook_url:
+                # Incoming Webhook (no auth header needed)
+                resp = requests.post(webhook_url, json=payload, timeout=5)
+                success = resp.status_code == 200 and resp.text == "ok"
+            elif bot_token:
+                # Bot API (requires channel)
+                payload.setdefault("channel", conn.sync_config.get("default_channel", "#general"))
+                resp = requests.post(
+                    SlackNotificationService.SLACK_API_POST,
+                    headers={"Authorization": f"Bearer {bot_token}", "Content-Type": "application/json; charset=utf-8"},
+                    json=payload,
+                    timeout=5,
+                )
+                data = resp.json()
+                success = data.get("ok", False)
+            else:
+                logger.warning("Slack connection has no webhook_url or access_token for org %s", organization)
+                return False
+
+            if not success:
+                logger.warning("Slack notification failed for org %s", organization)
+            return success
+
+        except requests.RequestException as exc:
+            logger.error("Slack notification error for org %s: %s", organization, exc)
+            return False
+
+    @staticmethod
+    def notify_project_status_changed(project, old_status: str, new_status: str):
+        """Notify #projects when a project changes status."""
+        text = (
+            f":construction: *{project.name}* status changed: "
+            f"`{old_status}` → `{new_status}`"
+            f"\nProject #{project.project_number}"
+        )
+        SlackNotificationService.send(
+            project.organization, text,
+            channel=project.organization.settings.get("slack_projects_channel", "#projects"),
+        )
+
+    @staticmethod
+    def notify_new_lead(lead):
+        """Notify #crm when a new lead is created."""
+        contact = lead.contact
+        name = f"{contact.first_name} {contact.last_name}" if contact else "Unknown"
+        text = (
+            f":star: New lead: *{name}*"
+            f"\nEstimated value: ${float(lead.estimated_value or 0):,.0f}"
+            f" | Urgency: {lead.urgency}"
+        )
+        SlackNotificationService.send(
+            lead.organization, text,
+            channel=lead.organization.settings.get("slack_crm_channel", "#crm"),
+        )
+
+    @staticmethod
+    def notify_invoice_overdue(invoice):
+        """Notify #finance when an invoice becomes overdue."""
+        text = (
+            f":warning: Invoice *{invoice.invoice_number}* is OVERDUE"
+            f"\nProject: {invoice.project.name if invoice.project else '—'}"
+            f" | Amount: ${float(invoice.balance_due or 0):,.2f}"
+        )
+        SlackNotificationService.send(
+            invoice.organization, text,
+            channel=invoice.organization.settings.get("slack_finance_channel", "#finance"),
+        )
+
+    @staticmethod
+    def notify_safety_incident(incident):
+        """Notify #safety when a safety incident is reported."""
+        text = (
+            f":rotating_light: Safety Incident Reported"
+            f"\nProject: {incident.project.name if incident.project else '—'}"
+            f" | Type: {incident.incident_type}"
+            f" | Severity: {incident.severity}"
+        )
+        SlackNotificationService.send(
+            incident.organization, text,
+            channel=incident.organization.settings.get("slack_safety_channel", "#safety"),
+        )

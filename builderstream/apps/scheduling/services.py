@@ -333,3 +333,107 @@ class GanttDataService:
             "total_estimated_hours": round(total_est_hours, 2),
             "total_actual_hours": round(total_actual_hours, 2),
         }
+
+
+class ScheduleCascadeService:
+    """
+    Propagate a date delay from a task to all downstream dependents.
+
+    Uses a topological sort (BFS from the changed task) over the
+    Finish-to-Start dependency graph to cascade new start/end dates
+    without circular loops.
+    """
+
+    @staticmethod
+    def propagate_delay(task: Task, new_end_date: date) -> list[dict]:
+        """
+        Given a task whose end_date has shifted to `new_end_date`,
+        calculate the updated dates for all downstream tasks.
+
+        Returns a list of impact records (does NOT save to DB):
+            [{"task_id", "task_name", "old_start", "old_end", "new_start", "new_end", "days_shifted"}]
+        """
+        if not new_end_date or new_end_date <= (task.end_date or new_end_date):
+            return []  # No delay
+
+        delay_days = (new_end_date - (task.end_date or new_end_date)).days
+        if delay_days <= 0:
+            return []
+
+        # Load all tasks and FS dependencies for this project
+        all_tasks = {
+            t.id: t
+            for t in Task.objects.filter(project=task.project)
+            .exclude(status=Task.Status.CANCELED)
+        }
+        deps = list(
+            TaskDependency.objects.filter(
+                predecessor__project=task.project,
+                dependency_type=TaskDependency.DependencyType.FINISH_TO_START,
+            ).values("predecessor_id", "successor_id", "lag_days")
+        )
+
+        # Build successor map
+        successor_map: dict = defaultdict(list)  # predecessor_id → [(successor_id, lag_days)]
+        for dep in deps:
+            successor_map[dep["predecessor_id"]].append((dep["successor_id"], dep["lag_days"]))
+
+        # BFS from the changed task
+        queue = [(task.id, delay_days)]
+        visited: set = set()
+        impact: list[dict] = []
+
+        while queue:
+            current_id, shift = queue.pop(0)
+            for succ_id, lag in successor_map[current_id]:
+                if succ_id in visited:
+                    continue
+                visited.add(succ_id)
+                succ = all_tasks.get(succ_id)
+                if not succ or not succ.start_date or not succ.end_date:
+                    continue
+                new_start = succ.start_date + timedelta(days=shift)
+                new_end = succ.end_date + timedelta(days=shift)
+                impact.append({
+                    "task_id": str(succ.id),
+                    "task_name": succ.name,
+                    "old_start": succ.start_date.isoformat(),
+                    "old_end": succ.end_date.isoformat(),
+                    "new_start": new_start.isoformat(),
+                    "new_end": new_end.isoformat(),
+                    "days_shifted": shift,
+                    "is_critical_path": succ.is_critical_path,
+                })
+                queue.append((succ_id, shift))
+
+        return impact
+
+    @staticmethod
+    def apply_cascade(task: Task, new_end_date: date) -> list[dict]:
+        """
+        Apply the cascade — shift all downstream tasks by the computed delay.
+        Saves affected tasks to the database.
+        Returns the same impact list as `propagate_delay`.
+        """
+        impact = ScheduleCascadeService.propagate_delay(task, new_end_date)
+        if not impact:
+            return []
+
+        task_ids = [entry["task_id"] for entry in impact]
+        tasks_by_id = {
+            str(t.id): t
+            for t in Task.objects.filter(id__in=task_ids)
+        }
+
+        for entry in impact:
+            t = tasks_by_id.get(entry["task_id"])
+            if not t:
+                continue
+            t.start_date = date.fromisoformat(entry["new_start"])
+            t.end_date = date.fromisoformat(entry["new_end"])
+
+        Task.objects.bulk_update(
+            list(tasks_by_id.values()),
+            ["start_date", "end_date", "updated_at"],
+        )
+        return impact

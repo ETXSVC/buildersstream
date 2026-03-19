@@ -20,7 +20,7 @@ from .serializers import (
     ReportDetailSerializer,
     ReportListSerializer,
 )
-from .services import ExportService, KPIService, ReportService
+from .services import ExportService, ForecastService, KPIService, ReportService
 
 logger = logging.getLogger(__name__)
 
@@ -170,3 +170,31 @@ class AnalyticsSummaryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         return Response(summary)
+
+
+class ForecastView(APIView):
+    """Cash flow and pipeline revenue forecast for the next N months."""
+    permission_classes = [IsOrganizationMember]
+
+    def get(self, request):
+        from apps.tenants.context import get_current_organization
+
+        org = get_current_organization()
+        if org is None:
+            return Response(
+                {"detail": "Organization context not resolved."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            months = min(int(request.query_params.get("months", 6)), 24)
+        except (ValueError, TypeError):
+            months = 6
+        try:
+            data = ForecastService.get_forecast(org, months=months)
+        except Exception as exc:
+            logger.error("Forecast generation failed: %s", exc)
+            return Response(
+                {"detail": "Forecast generation failed."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        return Response(data)

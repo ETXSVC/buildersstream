@@ -4,6 +4,18 @@ from rest_framework.permissions import BasePermission
 from .models import ActiveModule
 
 
+class HasApiAccess(BasePermission):
+    """Require Enterprise plan for API key / external API access."""
+
+    message = "API access requires the Enterprise plan. Please upgrade to continue."
+
+    def has_permission(self, request, view):
+        org = getattr(request, "organization", None)
+        if org is None:
+            return False
+        return org.has_api_access
+
+
 class HasModuleAccess(BasePermission):
     """Check if the request's organization has a specific module active.
 

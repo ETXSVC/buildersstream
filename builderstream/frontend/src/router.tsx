@@ -15,7 +15,7 @@ import { AnalyticsPage } from '@/features/analytics';
 import { QualitySafetyPage } from '@/features/quality-safety';
 import { PayrollPage } from '@/features/payroll';
 import { ServicePage } from '@/features/service';
-import { BrandingPage, DunningPage, CustomFieldsPage } from '@/features/settings';
+import { BrandingPage, DunningPage, CustomFieldsPage, IntegrationsPage } from '@/features/settings';
 import { CollaborationPage } from '@/features/collaboration';
 import { IssuesPage } from '@/features/issues';
 import { CompanyPage } from '@/features/company/CompanyPage';
@@ -135,6 +135,7 @@ export const router = createBrowserRouter(
             { path: '/settings/branding', element: <BrandingPage /> },
             { path: '/settings/dunning', element: <DunningPage /> },
             { path: '/settings/custom-fields', element: <CustomFieldsPage /> },
+            { path: '/settings/integrations', element: <IntegrationsPage /> },
           ],
         },
       ],

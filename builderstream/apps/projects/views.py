@@ -32,6 +32,8 @@ from .serializers import (
     ProjectTeamMemberSerializer,
     StageTransitionLogSerializer,
 )
+from apps.core.exceptions import PlanLimitExceeded
+
 from .services import DashboardService, ProjectLifecycleService
 
 
@@ -55,6 +57,28 @@ class ProjectViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
         if self.action == "create":
             return ProjectCreateSerializer
         return ProjectDetailSerializer
+
+    def perform_create(self, serializer):
+        org = getattr(self.request, "organization", None)
+        if org:
+            limits = org.plan_limits
+            max_projects = limits.get("max_projects")
+            if max_projects is not None:
+                active_count = Project.objects.filter(
+                    organization=org
+                ).exclude(status="canceled").count()
+                if active_count >= max_projects:
+                    raise PlanLimitExceeded(
+                        detail=(
+                            f"Your {org.get_subscription_plan_display()} plan allows "
+                            f"a maximum of {max_projects} active projects. "
+                            "Upgrade to Professional or Enterprise for unlimited projects."
+                        ),
+                        limit_type="projects",
+                        current=active_count,
+                        limit=max_projects,
+                    )
+        super().perform_create(serializer)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

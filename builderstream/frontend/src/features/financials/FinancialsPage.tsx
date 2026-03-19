@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
+import { FileDown } from 'lucide-react';
 import { fmtDate } from '@/utils/date';
 import { SubNav } from '@/components/SubNav';
+import { downloadAiaPdf, downloadInvoicePdf } from '@/api/financials';
 const SUBNAV = [{ label: 'Financials', to: '/financials' }, { label: 'Payroll', to: '/payroll' }];
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -284,10 +286,56 @@ function InvoicesTable({ search }: { search: string }) {
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <RowActions
-                    onEdit={() => setEditing(inv)}
-                    onDelete={() => { if (confirm('Delete this invoice?')) deleteInvoice.mutate(inv.id); }}
-                  />
+                  <div className="flex items-center gap-1.5">
+                    {inv.invoice_type === 'progress' ? (
+                      <>
+                        <button
+                          title="Download AIA G702"
+                          onClick={async () => {
+                            const blob = await downloadAiaPdf(inv.id, 'g702');
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url; a.download = `AIA_G702_${inv.invoice_number}.pdf`; a.click();
+                            URL.revokeObjectURL(url);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors"
+                        >
+                          <FileDown className="h-3 w-3" /> G702
+                        </button>
+                        <button
+                          title="Download AIA G703"
+                          onClick={async () => {
+                            const blob = await downloadAiaPdf(inv.id, 'g703');
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url; a.download = `AIA_G703_${inv.invoice_number}.pdf`; a.click();
+                            URL.revokeObjectURL(url);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors"
+                        >
+                          <FileDown className="h-3 w-3" /> G703
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        title="Download PDF"
+                        onClick={async () => {
+                          const blob = await downloadInvoicePdf(inv.id);
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url; a.download = `Invoice_${inv.invoice_number}.pdf`; a.click();
+                          URL.revokeObjectURL(url);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                      >
+                        <FileDown className="h-3 w-3" /> PDF
+                      </button>
+                    )}
+                    <RowActions
+                      onEdit={() => setEditing(inv)}
+                      onDelete={() => { if (confirm('Delete this invoice?')) deleteInvoice.mutate(inv.id); }}
+                    />
+                  </div>
                 </td>
               </tr>
             ))}

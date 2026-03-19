@@ -275,6 +275,39 @@ class TaskViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
         task.save()
         return Response(TaskSerializer(task).data)
 
+    @action(detail=True, methods=["get"], url_path="delay-impact")
+    def delay_impact(self, request, pk=None):
+        """
+        Preview the cascade impact of a date shift on this task.
+
+        Query params:
+          ?new_end_date=YYYY-MM-DD  — the proposed new end date for this task
+
+        Returns a list of affected downstream tasks with their old/new dates.
+        Does NOT modify any data.
+        """
+        task = self.get_object()
+        new_end_str = request.query_params.get("new_end_date")
+        if not new_end_str:
+            return Response({"detail": "new_end_date query param required."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            new_end = date.fromisoformat(new_end_str)
+        except ValueError:
+            return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+        from .services import ScheduleCascadeService
+        impact = ScheduleCascadeService.propagate_delay(task, new_end)
+        return Response({
+            "task_id": str(task.id),
+            "task_name": task.name,
+            "current_end_date": task.end_date.isoformat() if task.end_date else None,
+            "proposed_end_date": new_end_str,
+            "days_delayed": (new_end - task.end_date).days if task.end_date else 0,
+            "affected_tasks": impact,
+            "affected_count": len(impact),
+            "critical_path_affected": any(e["is_critical_path"] for e in impact),
+        })
+
 
 class TaskDependencyViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
     """CRUD for task dependencies."""

@@ -70,6 +70,12 @@ def on_lead_stage_changed(sender, instance, created, **kwargs):
             entity_id=instance.pk,
             description=f"Lead created for '{instance.contact.first_name} {instance.contact.last_name}'",
         )
+        # Slack notification
+        try:
+            from apps.integrations.services import SlackNotificationService
+            SlackNotificationService.notify_new_lead(instance)
+        except Exception:
+            pass
         return
 
     # Detect stage change

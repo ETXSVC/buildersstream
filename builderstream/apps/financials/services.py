@@ -544,6 +544,288 @@ class InvoiceExportService:
         )
 
 
+class AIABillingService:
+    """AIA G702 Application for Payment + G703 Continuation Sheet PDF generation.
+
+    The AIA (American Institute of Architects) G702/G703 is the standard form
+    used in the construction industry for progress billing on contracts.
+
+    Fields used from Invoice:
+        scheduled_value            — Original contract amount
+        work_completed_previous    — Work completed through previous applications
+        work_completed_this_period — Work completed this billing period
+        retainage_percent          — Retainage percentage held
+        retainage_amount           — Computed retainage held to date
+        total                      — Contract sum to date (stored materials included)
+        amount_paid                — Amount previously certified
+        balance_due                — Current payment due
+        notes                      — Architect's certification notes
+    """
+
+    @staticmethod
+    def _build_aia_computed(invoice) -> dict:
+        """Compute all derived AIA G702 fields from the invoice model fields."""
+        from decimal import Decimal
+
+        scheduled = invoice.scheduled_value or Decimal("0.00")
+        prev = invoice.work_completed_previous or Decimal("0.00")
+        this_period = invoice.work_completed_this_period or Decimal("0.00")
+        stored = Decimal("0.00")  # stored_materials — reserved field
+
+        total_completed = prev + this_period + stored
+        pct_complete = (total_completed / scheduled * 100) if scheduled else Decimal("0.00")
+        retainage = (total_completed * invoice.retainage_percent / 100) if invoice.retainage_percent else invoice.retainage_amount or Decimal("0.00")
+        balance_to_finish = scheduled - total_completed
+        current_due = total_completed - retainage - (invoice.amount_paid or Decimal("0.00"))
+
+        return {
+            "scheduled_value": scheduled,
+            "work_completed_previous": prev,
+            "work_completed_this_period": this_period,
+            "stored_materials": stored,
+            "total_completed": total_completed,
+            "pct_complete": pct_complete.quantize(Decimal("0.01")),
+            "retainage": retainage,
+            "balance_to_finish": balance_to_finish,
+            "current_due": current_due,
+        }
+
+    @staticmethod
+    def generate_g702(invoice) -> "BytesIO":
+        """Generate AIA G702 Application for Payment PDF. Returns BytesIO."""
+        from io import BytesIO
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+
+        computed = AIABillingService._build_aia_computed(invoice)
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer, pagesize=letter,
+            topMargin=0.5 * inch, bottomMargin=0.5 * inch,
+            leftMargin=0.75 * inch, rightMargin=0.75 * inch,
+        )
+
+        styles = getSampleStyleSheet()
+        header_style = ParagraphStyle("AIA_Header", parent=styles["Heading1"], fontSize=14, spaceAfter=4)
+        label_style = ParagraphStyle("AIA_Label", parent=styles["Normal"], fontSize=8, textColor=colors.grey)
+        value_style = ParagraphStyle("AIA_Value", parent=styles["Normal"], fontSize=10, fontName="Helvetica-Bold")
+        small = ParagraphStyle("small", parent=styles["Normal"], fontSize=8)
+
+        def fmt(val):
+            try:
+                return f"${float(val):,.2f}"
+            except Exception:
+                return str(val)
+
+        story = []
+
+        # ── Header ──
+        story.append(Paragraph("AIA Document G702™", header_style))
+        story.append(Paragraph("Application and Certificate for Payment", styles["Heading2"]))
+        story.append(Spacer(1, 0.15 * inch))
+
+        # ── Project Info ──
+        project = invoice.project
+        org = invoice.organization
+        info_data = [
+            ["Project:", project.name if project else "—", "Application No:", invoice.invoice_number],
+            ["Owner:", str(project.client_name or "—") if project else "—", "Period To:", str(invoice.due_date or "—")],
+            ["Contractor:", org.name if org else "—", "Contract Date:", str(invoice.issue_date or "—")],
+        ]
+        info_table = Table(info_data, colWidths=[1.2*inch, 2.8*inch, 1.2*inch, 2.0*inch])
+        info_table.setStyle(TableStyle([
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+            ("FONTNAME", (2, 0), (2, -1), "Helvetica-Bold"),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ]))
+        story.append(info_table)
+        story.append(Spacer(1, 0.2 * inch))
+
+        # ── Schedule of Values Summary ──
+        story.append(Paragraph("CONTRACTOR'S APPLICATION FOR PAYMENT", styles["Heading3"]))
+        story.append(Spacer(1, 0.08 * inch))
+
+        summary_data = [
+            ["", "Amount"],
+            ["1. Original Contract Sum", fmt(computed["scheduled_value"])],
+            ["2. Work Completed From Previous Applications (D + E)", fmt(computed["work_completed_previous"])],
+            ["3. Work Completed This Period (Column D)", fmt(computed["work_completed_this_period"])],
+            ["4. Stored Materials (Column F)", fmt(computed["stored_materials"])],
+            ["5. Total Completed and Stored to Date (Lines 2+3+4)", fmt(computed["total_completed"])],
+            [f"6. Retainage ({invoice.retainage_percent}%)", fmt(computed["retainage"])],
+            ["7. Total Earned Less Retainage (Line 5 Less Line 6)", fmt(computed["total_completed"] - computed["retainage"])],
+            ["8. Less Previous Certificates for Payment", fmt(invoice.amount_paid or 0)],
+            ["9. CURRENT PAYMENT DUE", fmt(computed["current_due"])],
+            ["10. Balance to Finish, Including Retainage (Line 1 Less Line 7)", fmt(computed["balance_to_finish"] + computed["retainage"])],
+        ]
+        col_w = [5.5 * inch, 1.75 * inch]
+        sum_table = Table(summary_data, colWidths=col_w)
+        sum_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1e3a5f")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+            ("FONTNAME", (0, 9), (1, 9), "Helvetica-Bold"),
+            ("BACKGROUND", (0, 9), (-1, 9), colors.HexColor("#e8f4e8")),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("LEFTPADDING", (0, 0), (0, -1), 6),
+        ]))
+        story.append(sum_table)
+        story.append(Spacer(1, 0.25 * inch))
+
+        # ── Certification block ──
+        story.append(Paragraph("ARCHITECT'S CERTIFICATE FOR PAYMENT", styles["Heading3"]))
+        story.append(Spacer(1, 0.05 * inch))
+        cert_text = (
+            "In accordance with the Contract Documents, based on on-site observations and the data comprising "
+            "the above application, the Architect certifies to the Owner that to the best of the Architect's "
+            "knowledge, information, and belief the Work has progressed as indicated, the quality of the Work "
+            "is in accordance with the Contract Documents, and the Contractor is entitled to payment of the "
+            "AMOUNT CERTIFIED."
+        )
+        story.append(Paragraph(cert_text, small))
+        story.append(Spacer(1, 0.15 * inch))
+
+        cert_data = [
+            ["AMOUNT CERTIFIED", fmt(computed["current_due"])],
+            ["Architect:", ""],
+            ["Date:", ""],
+        ]
+        cert_table = Table(cert_data, colWidths=[2.5 * inch, 4.75 * inch])
+        cert_table.setStyle(TableStyle([
+            ("FONTNAME", (0, 0), (0, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("FONTNAME", (1, 0), (1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (1, 0), (1, 0), 12),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+            ("TOPPADDING", (0, 0), (-1, -1), 10),
+            ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ]))
+        story.append(cert_table)
+
+        if invoice.notes:
+            story.append(Spacer(1, 0.15 * inch))
+            story.append(Paragraph(f"Notes: {invoice.notes}", small))
+
+        doc.build(story)
+        buffer.seek(0)
+        return buffer
+
+    @staticmethod
+    def generate_g703(invoice) -> "BytesIO":
+        """Generate AIA G703 Continuation Sheet PDF. Returns BytesIO.
+
+        G703 breaks down the scheduled value by line item (InvoiceLineItem),
+        showing % complete, work completed, stored materials, and balance.
+        """
+        from io import BytesIO
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import letter, landscape
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer, pagesize=landscape(letter),
+            topMargin=0.5 * inch, bottomMargin=0.5 * inch,
+            leftMargin=0.5 * inch, rightMargin=0.5 * inch,
+        )
+        styles = getSampleStyleSheet()
+        small = ParagraphStyle("small", parent=styles["Normal"], fontSize=7)
+
+        story = []
+        story.append(Paragraph("AIA Document G703™ — Continuation Sheet", styles["Heading2"]))
+        story.append(Paragraph(
+            f"Application No: {invoice.invoice_number}  |  Project: {invoice.project.name if invoice.project else '—'}",
+            styles["Normal"],
+        ))
+        story.append(Spacer(1, 0.15 * inch))
+
+        col_headers = [
+            "A\nItem No.", "B\nDescription of Work", "C\nScheduled\nValue",
+            "D\nWork Completed\nFrom Prev App",
+            "E\nWork Completed\nThis Period",
+            "F\nMaterials\nPresently Stored",
+            "G\nTotal Completed\n& Stored (D+E+F)",
+            "H\n%\n(G/C)",
+            "I\nBalance\nto Finish",
+            "J\nRetainage",
+        ]
+
+        rows = [col_headers]
+        line_items = list(invoice.line_items.all())
+        grand_scheduled = grand_total = grand_bal = grand_ret = 0
+
+        for i, item in enumerate(line_items, 1):
+            sched = float(item.unit_price * item.quantity) if item.unit_price and item.quantity else 0
+            completed_prev = 0
+            completed_this = float(item.total_price or sched)
+            stored = 0
+            total_g = completed_prev + completed_this + stored
+            pct = f"{(total_g / sched * 100):.1f}%" if sched else "0%"
+            balance = sched - total_g
+            ret_rate = float(invoice.retainage_percent or 0) / 100
+            ret = total_g * ret_rate
+
+            grand_scheduled += sched
+            grand_total += total_g
+            grand_bal += balance
+            grand_ret += ret
+
+            rows.append([
+                str(i),
+                item.description[:40] if item.description else "",
+                f"${sched:,.2f}",
+                f"${completed_prev:,.2f}",
+                f"${completed_this:,.2f}",
+                f"${stored:,.2f}",
+                f"${total_g:,.2f}",
+                pct,
+                f"${balance:,.2f}",
+                f"${ret:,.2f}",
+            ])
+
+        # Totals row
+        rows.append([
+            "", "TOTALS",
+            f"${grand_scheduled:,.2f}", "", "",  "",
+            f"${grand_total:,.2f}", "",
+            f"${grand_bal:,.2f}",
+            f"${grand_ret:,.2f}",
+        ])
+
+        col_w = [0.4*inch, 2.8*inch, 1.0*inch, 1.0*inch, 1.0*inch, 1.0*inch, 1.0*inch, 0.55*inch, 1.0*inch, 1.0*inch]
+        t = Table(rows, colWidths=col_w, repeatRows=1)
+        t.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1e3a5f")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 7),
+            ("ALIGN", (2, 0), (-1, -1), "RIGHT"),
+            ("GRID", (0, 0), (-1, -1), 0.3, colors.lightgrey),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+            ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#f0f0f0")),
+        ]))
+        story.append(t)
+
+        doc.build(story)
+        buffer.seek(0)
+        return buffer
+
+
 class QuickBooksSyncService:
     """Stub for QuickBooks / Xero integration hooks (Phase 2 feature)."""
 

@@ -48,6 +48,24 @@ export async function createExpense(payload: Record<string, unknown>): Promise<E
   return data;
 }
 
+/** Download AIA G702 or G703 PDF as a Blob. form = 'g702' | 'g703' */
+export async function downloadAiaPdf(invoiceId: string, form: 'g702' | 'g703' = 'g702'): Promise<Blob> {
+  const { data } = await apiClient.get(
+    `/api/v1/financials/invoices/${invoiceId}/generate-aia/`,
+    { params: { form }, responseType: 'blob' },
+  );
+  return data;
+}
+
+/** Download standard invoice PDF as a Blob. */
+export async function downloadInvoicePdf(invoiceId: string): Promise<Blob> {
+  const { data } = await apiClient.get(
+    `/api/v1/financials/invoices/${invoiceId}/export-pdf/`,
+    { responseType: 'blob' },
+  );
+  return data;
+}
+
 export async function updateExpense(id: string, payload: Record<string, unknown>): Promise<Expense> {
   const { data } = await apiClient.patch<Expense>(`/api/v1/financials/expenses/${id}/`, payload);
   return data;

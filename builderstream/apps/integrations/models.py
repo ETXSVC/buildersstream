@@ -17,6 +17,7 @@ class IntegrationConnection(TenantModel):
         MICROSOFT_365 = "microsoft_365", "Microsoft 365"
         STRIPE_CONNECT = "stripe_connect", "Stripe Connect"
         WEATHER_API = "weather_api", "Weather API"
+        SLACK = "slack", "Slack"
 
     class Status(models.TextChoices):
         CONNECTED = "connected", "Connected"

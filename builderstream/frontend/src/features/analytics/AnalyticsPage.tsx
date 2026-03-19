@@ -4,8 +4,8 @@ import { apiClient } from '@/api/client';
 import { REPORT_TYPE_LABELS } from '@/types/analytics';
 import { KpiCard } from '@/components/KpiCard';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend, CartesianGrid,
 } from 'recharts';
 
 interface OrgSummary {
@@ -43,6 +43,32 @@ interface OrgSummary {
   };
 }
 
+interface ForecastMonth {
+  month: string;
+  inflows?: number;
+  outflows?: number;
+  net?: number;
+  expected_revenue?: number;
+}
+
+interface ForecastData {
+  forecast_months: number;
+  generated_at: string;
+  cash_flow: ForecastMonth[];
+  pipeline: ForecastMonth[];
+}
+
+function useForecast(months = 6) {
+  return useQuery<ForecastData>({
+    queryKey: ['analytics', 'forecast', months],
+    queryFn: async () => {
+      const { data } = await apiClient.get<ForecastData>(`/api/v1/analytics/forecast/?months=${months}`);
+      return data;
+    },
+    staleTime: 300_000,
+  });
+}
+
 function useOrgSummary() {
   return useQuery<OrgSummary>({
     queryKey: ['analytics', 'summary'],
@@ -63,6 +89,7 @@ function fmtCurrency(val: number) {
 export const AnalyticsPage = () => {
   const { data: summary, isLoading, error } = useOrgSummary();
   const { data: reports } = useReports({ page_size: '20' });
+  const { data: forecast } = useForecast(6);
 
   const f = summary?.financial;
   const p = summary?.projects;
@@ -169,6 +196,41 @@ export const AnalyticsPage = () => {
             </div>
           </section>
         </>
+      )}
+
+      {/* Forecast */}
+      {forecast && (
+        <section>
+          <h2 className="mb-3 text-sm font-semibold text-slate-700">6-Month Forecast</h2>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold text-slate-700">Cash Flow Forecast</h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <AreaChart data={forecast.cash_flow} margin={{ top: 4, right: 8, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                  <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
+                  <Legend />
+                  <Area type="monotone" dataKey="inflows" name="Inflows" stroke="#22c55e" fill="#dcfce7" strokeWidth={2} />
+                  <Area type="monotone" dataKey="outflows" name="Outflows" stroke="#ef4444" fill="#fee2e2" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold text-slate-700">Pipeline Revenue Forecast</h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={forecast.pipeline} margin={{ top: 4, right: 8, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                  <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
+                  <Bar dataKey="expected_revenue" name="Expected Revenue" fill="#7C3AED" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </section>
       )}
 
       {/* Saved Reports */}

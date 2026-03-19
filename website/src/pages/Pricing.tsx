@@ -7,7 +7,7 @@ const Pricing = () => {
       name: 'Starter',
       price: 'TBD',
       audience: 'For Solo Remodelers',
-      features: ['Project Command Center', 'CRM (Up to 50 leads)', 'Basic Estimating', 'Mobile App Access', '5 Active Projects'],
+      features: ['Project Command Center', 'CRM (Up to 100 leads)', 'Basic Estimating', 'Mobile-Optimized PWA', '25 Active Projects'],
       cta: 'Coming Soon',
       primary: false
     },
@@ -23,7 +23,7 @@ const Pricing = () => {
       name: 'Enterprise',
       price: 'TBD',
       audience: 'For Large Firms',
-      features: ['Everything in Professional', 'API Access', 'Dedicated Success Manager', 'SSO & Advanced Security', 'Custom Reporting'],
+      features: ['Everything in Professional', 'API Access', 'Dedicated Success Manager', 'SSO (SAML 2.0)', 'Custom Reporting'],
       cta: 'Coming Soon',
       primary: false
     }

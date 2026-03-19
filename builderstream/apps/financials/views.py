@@ -264,6 +264,33 @@ class InvoiceViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
         )
         return response
 
+    @action(detail=True, methods=["get"], url_path="generate-aia")
+    def generate_aia(self, request, pk=None):
+        """GET /invoices/{pk}/generate-aia/?form=g702|g703
+        Download AIA G702 Application for Payment or G703 Continuation Sheet PDF.
+        Only valid for invoice_type='progress' invoices.
+        """
+        from .services import AIABillingService
+
+        invoice = self.get_object()
+        if invoice.invoice_type != "progress":
+            return Response(
+                {"detail": "AIA billing forms are only available for Progress Billing invoices."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        form = request.query_params.get("form", "g702").lower()
+        if form == "g703":
+            pdf_buffer = AIABillingService.generate_g703(invoice)
+            filename = f"AIA_G703_{invoice.invoice_number}.pdf"
+        else:
+            pdf_buffer = AIABillingService.generate_g702(invoice)
+            filename = f"AIA_G702_{invoice.invoice_number}.pdf"
+
+        response = HttpResponse(pdf_buffer.read(), content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
     @action(detail=True, methods=["post"], url_path="send-email")
     def send_email(self, request, pk=None):
         """POST /invoices/{pk}/send-email/ — send invoice PDF to client via email (async)."""

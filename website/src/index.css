@@ -1,37 +1,32 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #3B82F6; /* Electric Blue */
-  --color-primary-light: #60A5FA;
-  --color-primary-dark: #2563EB;
+  --color-primary: #7C3AED;       /* Violet-600 */
+  --color-primary-light: #8B5CF6; /* Violet-500 */
+  --color-primary-dark: #6D28D9;  /* Violet-700 */
 
-  --color-secondary: #F59E0B; /* Amber/Orange for contrast */
+  --color-secondary: #F59E0B;
   --color-secondary-hover: #D97706;
 
-  --color-neutral-slate: #F8FAFC; /* Light Text for Dark Mode */
-  --color-neutral-light: #0F172A; /* Dark Slate Background */
-  --color-neutral-gray: #94A3B8; /* Muted Text */
+  --color-bg: #0D0F1E;
+  --color-surface: #131629;
+  --color-surface-2: #1a1d30;
+  --color-border: rgba(255,255,255,0.08);
+
+  --color-neutral-slate: #F8FAFC;
+  --color-neutral-light: #0D0F1E;
+  --color-neutral-gray: #94A3B8;
 
   --font-sans: Inter, sans-serif;
 
-  --image-grid-pattern: linear-gradient(to right, #3B82F61A 1px, transparent 1px), linear-gradient(to bottom, #3B82F61A 1px, transparent 1px);
+  --image-grid-pattern: linear-gradient(to right, #7C3AED1A 1px, transparent 1px), linear-gradient(to bottom, #7C3AED1A 1px, transparent 1px);
 }
 
 @layer base {
-  html {
-    @apply overflow-x-hidden;
-  }
-
+  html { @apply overflow-x-hidden; }
   body {
-    @apply bg-neutral-light text-neutral-slate antialiased font-sans overflow-x-hidden;
+    background-color: #0D0F1E;
+    @apply text-neutral-slate antialiased font-sans overflow-x-hidden;
   }
-
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply font-bold tracking-tight;
-  }
+  h1, h2, h3, h4, h5, h6 { @apply font-bold tracking-tight; }
 }

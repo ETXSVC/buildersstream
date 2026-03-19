@@ -5,6 +5,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     AnalyticsSummaryView,
     DashboardViewSet,
+    ForecastView,
     KPIViewSet,
     ReportViewSet,
 )
@@ -19,4 +20,5 @@ router.register("kpis", KPIViewSet)
 urlpatterns = [
     path("", include(router.urls)),
     path("summary/", AnalyticsSummaryView.as_view(), name="summary"),
+    path("forecast/", ForecastView.as_view(), name="forecast"),
 ]
