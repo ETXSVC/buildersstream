@@ -2,6 +2,15 @@
  * Desktop Field Ops management view — time entries, daily logs, expenses.
  */
 import { useState, useMemo } from 'react';
+
+function fmtHours(val: string | number | null | undefined): string {
+  const h = parseFloat(String(val ?? 0));
+  if (isNaN(h)) return '—';
+  const totalMins = Math.round(h * 60);
+  const hrs = Math.floor(totalMins / 60);
+  const mins = totalMins % 60;
+  return `${hrs}:${String(mins).padStart(2, '0')}`;
+}
 import { fmtDate } from '@/utils/date';
 import { SubNav } from '@/components/SubNav';
 const SUBNAV = [{ label: 'Field Ops', to: '/field-ops' }, { label: 'Quality & Safety', to: '/quality-safety' }, { label: 'Service', to: '/service' }];
@@ -236,9 +245,9 @@ function TimeEntriesTable() {
                   : <span className="text-green-600 font-medium">Active</span>}
               </td>
               <td className="px-4 py-3 font-semibold text-slate-900">
-                {entry.total_hours ? `${Number(entry.total_hours).toFixed(1)}h` : '—'}
+                {entry.total_hours ? fmtHours(entry.total_hours) : '—'}
                 {Number(entry.overtime_hours) > 0 && (
-                  <span className="ml-1 text-xs text-blue-600">+{Number(entry.overtime_hours).toFixed(1)}OT</span>
+                  <span className="ml-1 text-xs text-blue-600">+{fmtHours(entry.overtime_hours)} OT</span>
                 )}
               </td>
               <td className="px-4 py-3">
