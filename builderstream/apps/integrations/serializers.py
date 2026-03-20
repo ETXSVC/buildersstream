@@ -130,15 +130,15 @@ class PushSubscriptionSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         keys = validated_data.pop("keys")
-        validated_data["p256dh"] = keys["p256dh"]
-        validated_data["auth"] = keys["auth"]
+        p256dh = keys["p256dh"]
+        auth = keys["auth"]
         obj, _ = PushSubscription.objects.update_or_create(
             user=validated_data["user"],
             endpoint=validated_data["endpoint"],
             defaults={
-                "p256dh": validated_data["p256dh"],
-                "auth": validated_data["auth"],
-                "organization": validated_data["organization"],
+                "p256dh": p256dh,
+                "auth": auth,
+                "organization_id": validated_data.get("organization_id") or validated_data.get("organization"),
             },
         )
         return obj
