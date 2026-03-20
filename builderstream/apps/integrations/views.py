@@ -11,13 +11,14 @@ from rest_framework.views import APIView
 from apps.core.mixins import TenantViewSetMixin
 from apps.core.permissions import IsOrganizationAdmin, IsOrganizationMember, IsOrganizationOwner
 
-from .models import APIKey, IntegrationConnection, SyncLog, WebhookEndpoint
+from .models import APIKey, IntegrationConnection, PushSubscription, SyncLog, WebhookEndpoint
 from .serializers import (
     APIKeyCreateSerializer,
     APIKeyDetailSerializer,
     APIKeyListSerializer,
     IntegrationConnectionDetailSerializer,
     IntegrationConnectionListSerializer,
+    PushSubscriptionSerializer,
     SyncLogSerializer,
     WebhookEndpointSerializer,
 )
@@ -269,6 +270,22 @@ class PublicAPIContactListView(APIView):
 
         contacts = Contact.objects.filter(organization=api_key.organization).order_by("-created_at")[:100]
         return Response({"results": ContactListSerializer(contacts, many=True).data})
+
+
+class PushSubscriptionView(APIView):
+    """Register or update a Web Push subscription for the current user."""
+
+    permission_classes = [IsOrganizationMember]
+
+    def post(self, request):
+        org_id = request.headers.get("X-Organization-ID") or request.META.get("HTTP_X_ORGANIZATION_ID")
+        if not org_id:
+            return Response({"detail": "X-Organization-ID header required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = PushSubscriptionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user, organization_id=org_id)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class WeatherForecastView(APIView):

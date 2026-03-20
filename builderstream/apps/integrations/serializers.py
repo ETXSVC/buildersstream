@@ -1,7 +1,7 @@
 """Integration Ecosystem serializers."""
 from rest_framework import serializers
 
-from .models import APIKey, IntegrationConnection, SyncLog, WebhookEndpoint
+from .models import APIKey, IntegrationConnection, PushSubscription, SyncLog, WebhookEndpoint
 
 
 class IntegrationConnectionListSerializer(serializers.ModelSerializer):
@@ -113,3 +113,32 @@ class APIKeyDetailSerializer(serializers.ModelSerializer):
             "id", "key_prefix", "last_used_at",
             "created_at", "updated_at",
         ]
+
+
+class PushSubscriptionSerializer(serializers.ModelSerializer):
+    keys = serializers.DictField(child=serializers.CharField(), write_only=True)
+
+    class Meta:
+        model = PushSubscription
+        fields = ["id", "endpoint", "keys", "created_at"]
+        read_only_fields = ["id", "created_at"]
+
+    def validate_keys(self, value):
+        if "p256dh" not in value or "auth" not in value:
+            raise serializers.ValidationError("keys must contain 'p256dh' and 'auth'.")
+        return value
+
+    def create(self, validated_data):
+        keys = validated_data.pop("keys")
+        validated_data["p256dh"] = keys["p256dh"]
+        validated_data["auth"] = keys["auth"]
+        obj, _ = PushSubscription.objects.update_or_create(
+            user=validated_data["user"],
+            endpoint=validated_data["endpoint"],
+            defaults={
+                "p256dh": validated_data["p256dh"],
+                "auth": validated_data["auth"],
+                "organization": validated_data["organization"],
+            },
+        )
+        return obj

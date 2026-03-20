@@ -85,6 +85,7 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
       - CHOKIDAR_INTERVAL=2000
+      - VITE_VAPID_PUBLIC_KEY=BOWOizc-rJADzuW1kY5K8pyPsr_xnP-CkJPHTB_pBuDKKx5Qqu09im4Z4YgDjNb7xCt6wHJZlFtsToLn8vudOuA
 
 volumes:
   postgres_data:

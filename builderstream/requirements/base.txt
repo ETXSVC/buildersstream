@@ -52,3 +52,6 @@ django-jazzmin>=3.0,<4.0
 
 # SAML 2.0 SSO (Enterprise)
 python3-saml>=1.15,<2.0
+
+# Web Push Notifications (VAPID)
+pywebpush>=2.0,<3.0

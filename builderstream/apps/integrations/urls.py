@@ -7,6 +7,7 @@ from .views import (
     IntegrationConnectionViewSet,
     PublicAPIContactListView,
     PublicAPIProjectListView,
+    PushSubscriptionView,
     QuickBooksOAuthView,
     WeatherForecastView,
     WebhookEndpointViewSet,
@@ -25,6 +26,8 @@ urlpatterns = [
     path("quickbooks/callback/", QuickBooksOAuthView.as_view(), name="quickbooks-callback"),
     # Weather
     path("weather/forecast/", WeatherForecastView.as_view(), name="weather-forecast"),
+    # Web Push
+    path("push-subscriptions/", PushSubscriptionView.as_view(), name="push-subscriptions"),
 ]
 
 # Public API endpoints (API-key authenticated, not JWT)

@@ -130,6 +130,29 @@ class WebhookEndpoint(TenantModel):
         return not self.events or event_type in self.events
 
 
+class PushSubscription(TenantModel):
+    """Web Push subscription registered by a browser/device."""
+
+    user = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="push_subscriptions",
+    )
+    endpoint = models.TextField()
+    p256dh = models.TextField()
+    auth = models.TextField()
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["organization", "user"], name="integ_push_org_user_idx"),
+        ]
+        unique_together = [["user", "endpoint"]]
+
+    def __str__(self):
+        return f"PushSubscription({self.user}, {self.endpoint[:60]})"
+
+
 class APIKey(TenantModel):
     """API key for programmatic access to the public API."""
 
