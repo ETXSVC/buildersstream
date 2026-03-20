@@ -182,15 +182,25 @@ class SSOACSView(APIView):
         # Issue JWT tokens
         from rest_framework_simplejwt.tokens import RefreshToken
         refresh = RefreshToken.for_user(user)
-        access = str(refresh.access_token)
 
-        # Return as JSON — the frontend at /sso-callback reads these from URL query params
-        # In production the redirect should use HttpOnly cookies instead
+        # Deliver tokens as HttpOnly cookies — never in the URL or JS-accessible storage.
+        # The SPA at /sso-callback calls hydrate() which picks up the cookies automatically.
         from django.http import HttpResponseRedirect
-        frontend_url = getattr(request, "build_absolute_uri", lambda x: x)(
-            f"/sso-callback?access={access}&refresh={str(refresh)}&org={config.organization_id}"
+        secure = request.is_secure()
+        response = HttpResponseRedirect(
+            request.build_absolute_uri(f"/sso-callback?org={config.organization_id}")
         )
-        return HttpResponseRedirect(frontend_url)
+        response.set_cookie(
+            "bs_access", str(refresh.access_token),
+            httponly=True, secure=secure, samesite="Lax",
+            max_age=int(refresh.access_token.lifetime.total_seconds()),
+        )
+        response.set_cookie(
+            "bs_refresh", str(refresh),
+            httponly=True, secure=secure, samesite="Lax",
+            max_age=int(refresh.lifetime.total_seconds()),
+        )
+        return response
 
 
 class SSOMetadataView(APIView):
@@ -213,11 +223,6 @@ class SSOMetadataView(APIView):
         except Exception as exc:
             logger.error("SAML metadata generation failed: %s", exc)
             return Response({"detail": "Metadata generation error."}, status=500)
-
-
-class SSOConfigurationViewSet:
-    """CRUD for SSOConfiguration — mounted in accounts URLs (admin only)."""
-    pass  # Registered via accounts/urls.py
 
 
 # ---------------------------------------------------------------------------

@@ -541,24 +541,40 @@ class ForecastService:
     # ------------------------------------------------------------------ #
 
     @staticmethod
+    def _month_date(today: date, offset: int) -> date:
+        """Return the first day of the month `offset` months from today. Handles multi-year rollover."""
+        total_month = today.month - 1 + offset          # 0-based month index
+        year = today.year + total_month // 12
+        month = total_month % 12 + 1
+        return date(year, month, 1)
+
+    @staticmethod
+    def _month_end(month_date: date) -> date:
+        """Return the last day of the given month."""
+        if month_date.month == 12:
+            return date(month_date.year + 1, 1, 1) - timedelta(days=1)
+        return date(month_date.year, month_date.month + 1, 1) - timedelta(days=1)
+
+    @staticmethod
     def _cash_flow_forecast(org, today: date, months: int) -> list:
-        from apps.financials.models import Invoice, Expense, Budget
+        from apps.financials.models import Invoice, Expense
+
+        # Compute outflow average once (prior 3 months) and reuse for all forecast months
+        three_months_ago = today - timedelta(days=90)
+        expense_total = (
+            Expense.objects.filter(
+                organization=org,
+                expense_date__gte=three_months_ago,
+                expense_date__lt=today.replace(day=1),
+            ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+        )
+        avg_monthly_outflow = (expense_total / Decimal("3")).quantize(Decimal("0.01"))
 
         results = []
         for i in range(months):
-            # Month window
-            if today.month + i <= 12:
-                month_date = today.replace(month=today.month + i, day=1)
-            else:
-                overflow = today.month + i - 12
-                month_date = today.replace(year=today.year + 1, month=overflow, day=1)
-
+            month_date = ForecastService._month_date(today, i)
+            month_end = ForecastService._month_end(month_date)
             month_label = month_date.strftime("%Y-%m")
-            # Last day of the month
-            if month_date.month == 12:
-                month_end = month_date.replace(year=month_date.year + 1, month=1, day=1) - timedelta(days=1)
-            else:
-                month_end = month_date.replace(month=month_date.month + 1, day=1) - timedelta(days=1)
 
             # Expected inflows: invoices due in this month (unpaid)
             inflows = (
@@ -570,32 +586,13 @@ class ForecastService:
                 ).aggregate(total=Sum("total"))["total"] or Decimal("0")
             )
 
-            # Expected outflows: budgeted expenses for this month
-            # Use historical average from the same month last year if no budget
-            outflows = ForecastService._budgeted_outflows(org, month_date, month_end)
-
             results.append({
                 "month": month_label,
                 "inflows": float(inflows),
-                "outflows": float(outflows),
-                "net": float(inflows - outflows),
+                "outflows": float(avg_monthly_outflow),
+                "net": float(inflows - avg_monthly_outflow),
             })
         return results
-
-    @staticmethod
-    def _budgeted_outflows(org, month_start: date, month_end: date) -> Decimal:
-        from apps.financials.models import Expense
-
-        # Use prior 3-month average as a proxy for outflows
-        three_months_ago = month_start - timedelta(days=90)
-        avg = (
-            Expense.objects.filter(
-                organization=org,
-                expense_date__gte=three_months_ago,
-                expense_date__lt=month_start,
-            ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
-        )
-        return (avg / Decimal("3")).quantize(Decimal("0.01"))
 
     # ------------------------------------------------------------------ #
     # Pipeline forecast
@@ -630,11 +627,7 @@ class ForecastService:
 
         results = []
         for i in range(months):
-            if today.month + i <= 12:
-                month_date = today.replace(month=today.month + i, day=1)
-            else:
-                overflow = today.month + i - 12
-                month_date = today.replace(year=today.year + 1, month=overflow, day=1)
+            month_date = ForecastService._month_date(today, i)
             month_label = month_date.strftime("%Y-%m")
             results.append({
                 "month": month_label,

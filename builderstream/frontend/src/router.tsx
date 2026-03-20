@@ -1,4 +1,26 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useAuthStore } from '@/stores/auth';
+
+/** Handles the redirect from the SSO ACS endpoint. Calls hydrate() to pick up
+ *  the HttpOnly cookies set by the backend, then navigates into the app. */
+function SsoCallbackPage() {
+  const hydrate = useAuthStore((s) => s.hydrate);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    hydrate().then(() => {
+      navigate('/', { replace: true });
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div className="flex h-screen items-center justify-center bg-slate-50">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+    </div>
+  );
+}
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { ResponsiveLayout } from '@/layouts/ResponsiveLayout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -38,6 +60,7 @@ export const router = createBrowserRouter(
         { path: '/pay/:token', element: <PayInvoicePage /> },
         { path: '/portal/login', element: <PortalLoginPage /> },
         { path: '/portal', element: <Navigate to="/portal/login" replace /> },
+        { path: '/sso-callback', element: <SsoCallbackPage /> },
       ],
     },
     {
@@ -148,7 +171,6 @@ export const router = createBrowserRouter(
   {
     future: {
       v7_relativeSplatPath: true,
-      v7_startTransition: true,
     },
   },
 );

@@ -191,7 +191,11 @@ class LeadViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
             limits = org.plan_limits
             max_leads = limits.get("max_crm_leads")
             if max_leads is not None:
-                active_count = Lead.objects.filter(organization=org).count()
+                active_count = Lead.objects.filter(
+                    organization=org,
+                    pipeline_stage__is_won_stage=False,
+                    pipeline_stage__is_lost_stage=False,
+                ).count()
                 if active_count >= max_leads:
                     raise PlanLimitExceeded(
                         detail=(

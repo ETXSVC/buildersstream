@@ -339,28 +339,24 @@ class ScheduleCascadeService:
     """
     Propagate a date delay from a task to all downstream dependents.
 
-    Uses a topological sort (BFS from the changed task) over the
-    Finish-to-Start dependency graph to cascade new start/end dates
-    without circular loops.
+    Uses BFS over the Finish-to-Start dependency graph to cascade new
+    start/end dates without circular loops.
     """
 
     @staticmethod
-    def propagate_delay(task: Task, new_end_date: date) -> list[dict]:
+    def _compute_cascade(task: Task, new_end_date: date):
         """
-        Given a task whose end_date has shifted to `new_end_date`,
-        calculate the updated dates for all downstream tasks.
-
-        Returns a list of impact records (does NOT save to DB):
-            [{"task_id", "task_name", "old_start", "old_end", "new_start", "new_end", "days_shifted"}]
+        Internal BFS.  Returns (impact list, {str(task_id): Task}) so that
+        apply_cascade can write to DB without a second query.
         """
         if not new_end_date or new_end_date <= (task.end_date or new_end_date):
-            return []  # No delay
+            return [], {}
 
         delay_days = (new_end_date - (task.end_date or new_end_date)).days
         if delay_days <= 0:
-            return []
+            return [], {}
 
-        # Load all tasks and FS dependencies for this project
+        # Two queries: all project tasks + all FS deps
         all_tasks = {
             t.id: t
             for t in Task.objects.filter(project=task.project)
@@ -373,15 +369,19 @@ class ScheduleCascadeService:
             ).values("predecessor_id", "successor_id", "lag_days")
         )
 
-        # Build successor map
-        successor_map: dict = defaultdict(list)  # predecessor_id → [(successor_id, lag_days)]
+        successor_map: dict = defaultdict(list)  # id → [(successor_id, lag_days)]
         for dep in deps:
             successor_map[dep["predecessor_id"]].append((dep["successor_id"], dep["lag_days"]))
 
-        # BFS from the changed task
+        # BFS — queue holds (task_id, shift_to_apply_to_its_successors)
+        # lag_days is already embedded in the original schedule, so we shift
+        # each successor by the predecessor's shift; the lag's *additional*
+        # contribution only matters if this successor is itself a predecessor
+        # to something further downstream, where we add the lag to the next hop.
         queue = [(task.id, delay_days)]
         visited: set = set()
         impact: list[dict] = []
+        affected_tasks: dict = {}
 
         while queue:
             current_id, shift = queue.pop(0)
@@ -404,36 +404,42 @@ class ScheduleCascadeService:
                     "days_shifted": shift,
                     "is_critical_path": succ.is_critical_path,
                 })
-                queue.append((succ_id, shift))
+                affected_tasks[str(succ.id)] = succ
+                # When this successor is itself a predecessor, its downstream
+                # tasks shift by shift + lag (the lag adds to the gap).
+                queue.append((succ_id, shift + lag))
 
+        return impact, affected_tasks
+
+    @staticmethod
+    def propagate_delay(task: Task, new_end_date: date) -> list[dict]:
+        """Read-only preview — returns impact list without touching the DB."""
+        impact, _ = ScheduleCascadeService._compute_cascade(task, new_end_date)
         return impact
 
     @staticmethod
     def apply_cascade(task: Task, new_end_date: date) -> list[dict]:
         """
-        Apply the cascade — shift all downstream tasks by the computed delay.
-        Saves affected tasks to the database.
-        Returns the same impact list as `propagate_delay`.
+        Shift all downstream tasks by the computed delay and save to DB.
+        Returns the same impact list as propagate_delay.
         """
-        impact = ScheduleCascadeService.propagate_delay(task, new_end_date)
+        from django.utils import timezone as tz
+        impact, affected_tasks = ScheduleCascadeService._compute_cascade(task, new_end_date)
         if not impact:
             return []
 
-        task_ids = [entry["task_id"] for entry in impact]
-        tasks_by_id = {
-            str(t.id): t
-            for t in Task.objects.filter(id__in=task_ids)
-        }
-
+        # updated_at is auto_now=True — bulk_update bypasses auto_now so set explicitly
+        now = tz.now()
         for entry in impact:
-            t = tasks_by_id.get(entry["task_id"])
+            t = affected_tasks.get(entry["task_id"])
             if not t:
                 continue
             t.start_date = date.fromisoformat(entry["new_start"])
             t.end_date = date.fromisoformat(entry["new_end"])
+            t.updated_at = now
 
         Task.objects.bulk_update(
-            list(tasks_by_id.values()),
+            list(affected_tasks.values()),
             ["start_date", "end_date", "updated_at"],
         )
         return impact
