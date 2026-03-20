@@ -68,6 +68,12 @@ class NotificationService:
         except Exception:
             logger.exception("Failed to push WebSocket notification %s", notif.pk)
 
+        # Push via Web Push to registered browser subscriptions
+        try:
+            NotificationService.send_web_push(user, title=title, body=body, url=data.get("url", "/"))
+        except Exception:
+            logger.exception("Failed to send web push for notification %s", notif.pk)
+
         return notif
 
     @staticmethod
@@ -98,6 +104,55 @@ class NotificationService:
                 body=body,
                 data=data or {},
             )
+
+    @staticmethod
+    def send_web_push(user, title: str, body: str = "", url: str = "/"):
+        """Send a Web Push notification to all of the user's registered subscriptions."""
+        from django.conf import settings
+        from apps.integrations.models import PushSubscription
+
+        vapid_private_key = getattr(settings, "VAPID_PRIVATE_KEY", "")
+        vapid_claims_email = getattr(settings, "VAPID_CLAIMS_EMAIL", "")
+        if not vapid_private_key:
+            return
+
+        subscriptions = PushSubscription.objects.filter(user=user)
+        if not subscriptions.exists():
+            return
+
+        try:
+            from pywebpush import webpush, WebPushException
+        except ImportError:
+            logger.warning("pywebpush not installed — skipping web push")
+            return
+
+        import json
+        payload = json.dumps({"title": title, "body": body, "url": url, "tag": "builderstream"})
+        stale_ids = []
+
+        for sub in subscriptions:
+            try:
+                webpush(
+                    subscription_info={
+                        "endpoint": sub.endpoint,
+                        "keys": {"p256dh": sub.p256dh, "auth": sub.auth},
+                    },
+                    data=payload,
+                    vapid_private_key=vapid_private_key,
+                    vapid_claims={"sub": f"mailto:{vapid_claims_email}"},
+                )
+            except WebPushException as exc:
+                response = getattr(exc, "response", None)
+                status = getattr(response, "status_code", None) if response else None
+                if status in (404, 410):
+                    stale_ids.append(sub.pk)
+                else:
+                    logger.warning("Web push failed for sub %s: %s", sub.pk, exc)
+            except Exception as exc:
+                logger.warning("Web push error for sub %s: %s", sub.pk, exc)
+
+        if stale_ids:
+            PushSubscription.objects.filter(pk__in=stale_ids).delete()
 
     @staticmethod
     def _get_prefs(user, org):
