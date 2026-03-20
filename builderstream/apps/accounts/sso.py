@@ -86,6 +86,10 @@ class SSOConfiguration(TenantModel):
                 },
                 "x509cert": self.idp_x509_cert,
             },
+            "security": {
+                "wantAssertionsSigned": True,
+                "wantResponseSigned": True,
+            },
         }
 
 
