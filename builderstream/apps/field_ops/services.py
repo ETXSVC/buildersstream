@@ -41,12 +41,11 @@ class TimeClockService:
             return open_entry, False  # already clocked in
 
         is_within_geofence = None
-        if gps_data and project.geofence_center:
+        geofence_center = getattr(project, "geofence_center", None)
+        if gps_data and geofence_center:
             is_within_geofence = TimeClockService._check_geofence(
-                gps_data, project.geofence_center, project.geofence_radius_m
+                gps_data, geofence_center, project.geofence_radius_m
             )
-        elif gps_data:
-            is_within_geofence = None  # no geofence configured — no check needed
 
         entry = TimeEntry.objects.create(
             organization=organization,
