@@ -273,7 +273,7 @@ class PublicAPIContactListView(APIView):
 
 
 class PushSubscriptionView(APIView):
-    """Register or update a Web Push subscription for the current user."""
+    """Register or remove Web Push subscriptions for the current user."""
 
     permission_classes = [IsOrganizationMember]
 
@@ -286,6 +286,15 @@ class PushSubscriptionView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save(user=request.user, organization_id=org_id)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def delete(self, request):
+        """Unsubscribe — removes all push subscriptions for the current user."""
+        endpoint = request.data.get("endpoint")
+        qs = PushSubscription.objects.filter(user=request.user)
+        if endpoint:
+            qs = qs.filter(endpoint=endpoint)
+        qs.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class WeatherForecastView(APIView):

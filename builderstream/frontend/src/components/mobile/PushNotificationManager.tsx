@@ -75,6 +75,19 @@ export const PushNotificationManager = () => {
     }
   }, []);
 
+  const unsubscribe = async () => {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      const endpoint = sub?.endpoint;
+      if (sub) await sub.unsubscribe();
+      await apiClient.delete('/api/v1/integrations/push-subscriptions/', { data: endpoint ? { endpoint } : undefined });
+    } catch (err) {
+      console.warn('Push unsubscribe failed:', err);
+    }
+    setPermission('default');
+  };
+
   const subscribe = async () => {
     if (!VAPID_PUBLIC_KEY) {
       console.warn('VAPID public key not configured');
@@ -109,11 +122,20 @@ export const PushNotificationManager = () => {
 
   if (permission === 'granted') {
     return (
-      <div className="flex items-center gap-2 rounded-lg bg-green-50 px-4 py-2 text-sm text-green-700">
-        <svg className="h-4 w-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-        </svg>
-        Push notifications enabled
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 rounded-lg bg-green-50 px-4 py-2 text-sm text-green-700">
+          <svg className="h-4 w-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
+          Push notifications enabled
+        </div>
+        <button
+          type="button"
+          onClick={unsubscribe}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+        >
+          Disable
+        </button>
       </div>
     );
   }
