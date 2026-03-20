@@ -222,7 +222,7 @@ function TimeEntriesTable() {
           )}
           {data?.results.map((entry) => (
             <tr key={entry.id} className="group hover:bg-slate-50 transition-colors">
-              <td className="px-4 py-3 font-medium text-slate-900">{entry.employee_name}</td>
+              <td className="px-4 py-3 font-medium text-slate-900">{entry.user_name}</td>
               <td className="px-4 py-3 text-slate-500 text-xs">{entry.project_name ?? '—'}</td>
               <td className="px-4 py-3 text-slate-600">
                 {new Date(entry.clock_in).toLocaleDateString()}
@@ -354,7 +354,7 @@ function ExpensesTable() {
           )}
           {data?.results.map((exp) => (
             <tr key={exp.id} className="group hover:bg-slate-50 transition-colors">
-              <td className="px-4 py-3 font-medium text-slate-900">{exp.employee_name}</td>
+              <td className="px-4 py-3 font-medium text-slate-900">{exp.user_name}</td>
               <td className="px-4 py-3 text-slate-500 text-xs">{exp.project_name ?? '—'}</td>
               <td className="px-4 py-3 text-slate-600">{fmtDate(exp.incurred_date)}</td>
               <td className="px-4 py-3 text-slate-600">{EXPENSE_CATEGORIES[exp.category] ?? exp.category}</td>
