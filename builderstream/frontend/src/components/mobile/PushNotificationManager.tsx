@@ -32,7 +32,10 @@ async function getOrCreateSubscription(reg: ServiceWorkerRegistration): Promise<
   try {
     return await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
   } catch (err) {
-    // Key mismatch — unsubscribe existing and retry with current key
+    // NotAllowedError = OS/browser blocked push regardless of Notification.permission
+    // (e.g. Windows notifications for Edge are off). Don't retry — propagate.
+    if (err instanceof DOMException && err.name === 'NotAllowedError') throw err;
+    // Other errors (key mismatch) — unsubscribe existing and retry
     console.warn('Push subscribe failed (may be key mismatch), retrying:', err);
     const existing = await reg.pushManager.getSubscription();
     if (existing) await existing.unsubscribe();
@@ -61,9 +64,12 @@ export const PushNotificationManager = () => {
         .then(() => setPermission('granted'))
         .catch((err) => {
           console.warn('Push registration on mount failed:', err);
-          // Still show granted since the browser permission is granted,
-          // but surface a retry button via 'error' state
-          setErrorMsg('Could not register with server. Tap to retry.');
+          const isBlocked = err instanceof DOMException && err.name === 'NotAllowedError';
+          setErrorMsg(
+            isBlocked
+              ? 'Push blocked by OS. On Windows: Settings → System → Notifications → Microsoft Edge → turn on.'
+              : 'Could not register. Tap to retry.'
+          );
           setPermission('error');
         });
     }
@@ -89,8 +95,12 @@ export const PushNotificationManager = () => {
       setPermission('granted');
     } catch (err) {
       console.warn('Push subscription failed:', err);
-      const msg = err instanceof Error ? err.message : String(err);
-      setErrorMsg(msg);
+      const isBlocked = err instanceof DOMException && err.name === 'NotAllowedError';
+      setErrorMsg(
+        isBlocked
+          ? 'Push blocked by OS. On Windows: Settings → System → Notifications → Microsoft Edge → turn on.'
+          : err instanceof Error ? err.message : String(err)
+      );
       setPermission('error');
     }
   };
