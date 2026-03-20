@@ -150,16 +150,25 @@ export const PushNotificationManager = () => {
 
   if (permission === 'error') {
     return (
-      <button
-        type="button"
-        onClick={subscribe}
-        className="flex items-center gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-100"
-      >
-        <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
-        </svg>
-        {errorMsg || 'Push setup failed — tap to retry'}
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={subscribe}
+          className="flex items-center gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-100"
+        >
+          <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
+          </svg>
+          {errorMsg || 'Push setup failed — tap to retry'}
+        </button>
+        <button
+          type="button"
+          onClick={unsubscribe}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+        >
+          Disable
+        </button>
+      </div>
     );
   }
 
