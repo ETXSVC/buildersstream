@@ -6,9 +6,8 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/api/client';
 
-type PermissionState = 'default' | 'granted' | 'denied' | 'unsupported' | 'registering';
+type PermissionState = 'default' | 'granted' | 'denied' | 'unsupported' | 'registering' | 'error';
 
-// VAPID public key — replace with actual key from server in production
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY ?? '';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
@@ -30,12 +29,11 @@ function subscriptionToPayload(sub: PushSubscription) {
 
 async function getOrCreateSubscription(reg: ServiceWorkerRegistration): Promise<PushSubscription> {
   const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-
-  // Try subscribing directly — if the existing subscription has a different VAPID key,
-  // browsers throw a DOMException. We catch it, unsubscribe, then retry.
   try {
     return await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
-  } catch {
+  } catch (err) {
+    // Key mismatch — unsubscribe existing and retry with current key
+    console.warn('Push subscribe failed (may be key mismatch), retrying:', err);
     const existing = await reg.pushManager.getSubscription();
     if (existing) await existing.unsubscribe();
     return await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
@@ -44,12 +42,10 @@ async function getOrCreateSubscription(reg: ServiceWorkerRegistration): Promise<
 
 export const PushNotificationManager = () => {
   const [permission, setPermission] = useState<PermissionState>('default');
+  const [errorMsg, setErrorMsg] = useState('');
 
-  // On mount: detect current permission state. If already granted, ensure
-  // a subscription is registered with the backend (handles page reloads and
-  // VAPID key rotations silently).
   useEffect(() => {
-    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+    if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
       setPermission('unsupported');
       return;
     }
@@ -63,13 +59,23 @@ export const PushNotificationManager = () => {
         .then((reg) => getOrCreateSubscription(reg))
         .then((sub) => apiClient.post('/api/v1/integrations/push-subscriptions/', subscriptionToPayload(sub)))
         .then(() => setPermission('granted'))
-        .catch(() => setPermission('granted')); // permission is still granted even if backend POST fails
+        .catch((err) => {
+          console.warn('Push registration on mount failed:', err);
+          // Still show granted since the browser permission is granted,
+          // but surface a retry button via 'error' state
+          setErrorMsg('Could not register with server. Tap to retry.');
+          setPermission('error');
+        });
     }
   }, []);
 
   const subscribe = async () => {
-    if (!VAPID_PUBLIC_KEY) return;
+    if (!VAPID_PUBLIC_KEY) {
+      console.warn('VAPID public key not configured');
+      return;
+    }
     setPermission('registering');
+    setErrorMsg('');
     try {
       const result = await Notification.requestPermission();
       if (result !== 'granted') {
@@ -83,7 +89,9 @@ export const PushNotificationManager = () => {
       setPermission('granted');
     } catch (err) {
       console.warn('Push subscription failed:', err);
-      setPermission(Notification.permission as PermissionState);
+      const msg = err instanceof Error ? err.message : String(err);
+      setErrorMsg(msg);
+      setPermission('error');
     }
   };
 
@@ -105,6 +113,21 @@ export const PushNotificationManager = () => {
       <div className="rounded-lg bg-blue-50 px-4 py-2 text-sm text-blue-700">
         Notifications blocked. Enable in browser settings to receive alerts.
       </div>
+    );
+  }
+
+  if (permission === 'error') {
+    return (
+      <button
+        type="button"
+        onClick={subscribe}
+        className="flex items-center gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-100"
+      >
+        <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
+        </svg>
+        {errorMsg || 'Push setup failed — tap to retry'}
+      </button>
     );
   }
 
