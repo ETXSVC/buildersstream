@@ -7,16 +7,13 @@ test.use({ storageState: STORAGE_STATE });
 test.describe('Dashboard', () => {
   test('loads dashboard with widgets', async ({ page }) => {
     await page.goto('/dashboard');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
-    // The page renders a personalised h1 ("Welcome back, <name>!").
     // The WidgetCard component renders widget titles in <h3> elements.
-    // Wait for at least one widget heading to confirm the grid has loaded.
     await expect(
       page.getByRole('heading', { name: /project overview/i }).first(),
     ).toBeVisible();
 
-    // The WidgetCard wrapper is a plain div — verify multiple widget titles
-    // are present to confirm several widgets rendered successfully.
     await expect(
       page.getByRole('heading', { name: /financial summary/i }).first(),
     ).toBeVisible();
@@ -24,15 +21,16 @@ test.describe('Dashboard', () => {
 
   test('shows project metrics', async ({ page }) => {
     await page.goto('/dashboard');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     // ProjectMetricsWidget renders MetricCard labels as small text nodes.
-    // "Total Projects" and "Active" are always present regardless of data.
     await expect(page.getByText(/total projects/i).first()).toBeVisible();
     await expect(page.getByText(/active/i).first()).toBeVisible();
   });
 
   test('can refresh dashboard', async ({ page }) => {
     await page.goto('/dashboard');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     // Wait for the dashboard to finish loading before trying to refresh
     await expect(
@@ -52,6 +50,7 @@ test.describe('Dashboard', () => {
 
   test('subnav shows Analytics link', async ({ page }) => {
     await page.goto('/dashboard');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     // DashboardPage renders <SubNav items={[{label:'Dashboard',...},{label:'Analytics',...}]} />
     // SubNav produces <NavLink> elements which render as <a> tags.

@@ -7,6 +7,7 @@ test.use({ storageState: STORAGE_STATE });
 test.describe('CRM page', () => {
   test('loads CRM page with KPI cards', async ({ page }) => {
     await page.goto('/crm');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     // KpiCard accessible name includes label + value; use filter({ hasText })
     await expect(page.locator('[role="button"]').filter({ hasText: /total leads/i }).first()).toBeVisible();
@@ -17,12 +18,12 @@ test.describe('CRM page', () => {
 
   test('KPI card Total Leads navigates to leads list', async ({ page }) => {
     await page.goto('/crm');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     // Click the Total Leads KPI card (role=button set when onClick is present)
     await page.locator('[role="button"]').filter({ hasText: /total leads/i }).first().click();
 
-    // The leads tab toggle button should now be active (amber background)
-    // and the leads list / empty state should be visible
+    // The leads tab toggle button should now be active and the leads list / empty state should be visible
     const leadsTabButton = page.locator('button', { hasText: 'leads' });
     await expect(leadsTabButton).toBeVisible();
 
@@ -35,6 +36,7 @@ test.describe('CRM page', () => {
 
   test('KPI card Contacts navigates to contacts', async ({ page }) => {
     await page.goto('/crm');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     // Click the Contacts KPI card
     await page.locator('[role="button"]').filter({ hasText: /contacts/i }).first().click();
@@ -52,6 +54,7 @@ test.describe('CRM page', () => {
 
   test('can create a new contact', async ({ page }) => {
     await page.goto('/crm');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     // Switch to Contacts tab
     await page.locator('button', { hasText: 'contacts' }).click();
@@ -83,6 +86,7 @@ test.describe('CRM page', () => {
 
   test('can search contacts', async ({ page }) => {
     await page.goto('/crm');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     // Switch to Contacts tab
     await page.locator('button', { hasText: 'contacts' }).click();
@@ -102,6 +106,7 @@ test.describe('CRM page', () => {
 
   test('subnav shows Estimating link', async ({ page }) => {
     await page.goto('/crm');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     // SubNav renders NavLinks — which produce <a> elements
     await expect(page.getByRole('link', { name: 'Estimating' })).toBeVisible();

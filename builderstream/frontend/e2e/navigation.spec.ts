@@ -7,6 +7,7 @@ test.use({ storageState: STORAGE_STATE });
 
 test('sidebar has 8 top-level nav items', async ({ page }) => {
   await page.goto('/dashboard');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   const sidebar = page.locator('aside').first();
 
@@ -22,6 +23,7 @@ test('sidebar has 8 top-level nav items', async ({ page }) => {
 
 test('navigates to each main section', async ({ page }) => {
   await page.goto('/dashboard');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   const sidebar = page.locator('aside').first();
 
@@ -40,6 +42,7 @@ test('navigates to each main section', async ({ page }) => {
 
 test('sidebar Overview link navigates to dashboard', async ({ page }) => {
   await page.goto('/projects');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   const sidebar = page.locator('aside').first();
   await sidebar.getByText('Overview').click();
@@ -48,6 +51,7 @@ test('sidebar Overview link navigates to dashboard', async ({ page }) => {
 
 test('sidebar Company link navigates to company page', async ({ page }) => {
   await page.goto('/dashboard');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   const sidebar = page.locator('aside').first();
   await sidebar.getByText('Company').click();
@@ -57,6 +61,7 @@ test('sidebar Company link navigates to company page', async ({ page }) => {
 
 test('sidebar Team Messaging link navigates to collaboration', async ({ page }) => {
   await page.goto('/dashboard');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   const sidebar = page.locator('aside').first();
   await sidebar.getByText('Team Messaging').click();
@@ -65,6 +70,7 @@ test('sidebar Team Messaging link navigates to collaboration', async ({ page }) 
 
 test('Settings opens branding page', async ({ page }) => {
   await page.goto('/dashboard');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   const sidebar = page.locator('aside').first();
   await sidebar.getByText('Settings').click();
@@ -74,7 +80,7 @@ test('Settings opens branding page', async ({ page }) => {
 
 test('active nav item is visually highlighted', async ({ page }) => {
   await page.goto('/projects');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   // The active NavLink gets 'bs-sidebar-link-active' class
   const activeLink = page.locator('aside').first().locator('a.bs-sidebar-link-active');
@@ -86,6 +92,7 @@ test('active nav item is visually highlighted', async ({ page }) => {
 
 test('header shows company name', async ({ page }) => {
   await page.goto('/dashboard');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   // The branding name or fallback "BuilderStream" is in the header
   const header = page.locator('header').first();
@@ -97,6 +104,7 @@ test('header shows company name', async ({ page }) => {
 
 test('header shows logged-in user name', async ({ page }) => {
   await page.goto('/dashboard');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   const header = page.locator('header').first();
   // User name is rendered as "{first_name} {last_name}" in a <span>
@@ -105,12 +113,14 @@ test('header shows logged-in user name', async ({ page }) => {
 
 test('header has Sign out button', async ({ page }) => {
   await page.goto('/dashboard');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
 });
 
 test('header has notification bell', async ({ page }) => {
   await page.goto('/dashboard');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   // NotificationBell renders a button with a bell icon
   const header = page.locator('header').first();
@@ -119,6 +129,7 @@ test('header has notification bell', async ({ page }) => {
 
 test('header search button is visible', async ({ page }) => {
   await page.goto('/dashboard');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   const header = page.locator('header').first();
   await expect(header.getByText('Search')).toBeVisible();
@@ -126,6 +137,7 @@ test('header search button is visible', async ({ page }) => {
 
 test('command palette opens on search button click', async ({ page }) => {
   await page.goto('/dashboard');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   // Click the Search button in the header
   const header = page.locator('header').first();
@@ -139,31 +151,37 @@ test('command palette opens on search button click', async ({ page }) => {
 
 test('direct navigation to /projects renders projects page', async ({ page }) => {
   await page.goto('/projects');
-  await expect(page.getByRole('heading', { name: 'Projects' })).toBeVisible();
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
+  await expect(page.getByRole('heading', { name: 'Projects', exact: true })).toBeVisible();
 });
 
 test('direct navigation to /crm renders CRM page', async ({ page }) => {
   await page.goto('/crm');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
   await expect(page.getByText(/contacts|leads|pipeline/i).first()).toBeVisible();
 });
 
 test('direct navigation to /financials renders financials page', async ({ page }) => {
   await page.goto('/financials');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
   await expect(page.getByText(/invoices|revenue|financials/i).first()).toBeVisible();
 });
 
 test('direct navigation to /field-ops renders field ops page', async ({ page }) => {
   await page.goto('/field-ops');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
   await expect(page.getByText(/field ops|time entries|crew/i).first()).toBeVisible();
 });
 
 test('direct navigation to /company renders company page', async ({ page }) => {
   await page.goto('/company');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
   await expect(page.getByRole('heading', { name: 'Company' })).toBeVisible();
 });
 
 test('direct navigation to /settings/branding renders settings', async ({ page }) => {
   await page.goto('/settings/branding');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
   await expect(page.getByText(/branding|white.?label|company name/i).first()).toBeVisible();
 });
 
@@ -171,6 +189,7 @@ test('direct navigation to /settings/branding renders settings', async ({ page }
 
 test('Company page loads', async ({ page }) => {
   await page.goto('/company');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   await expect(page.getByRole('heading', { name: 'Company' })).toBeVisible();
   await expect(page.getByText('Total Employees')).toBeVisible();
@@ -184,28 +203,28 @@ test('Company page loads', async ({ page }) => {
 
 test('Team page loads collaboration', async ({ page }) => {
   await page.goto('/collaboration');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   await expect(page.getByText('Channels', { exact: false })).toBeVisible({ timeout: 10000 });
 });
 
 test('collaboration page has Team Chat sidebar header', async ({ page }) => {
   await page.goto('/collaboration');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   await expect(page.getByText('Team Chat')).toBeVisible({ timeout: 10000 });
 });
 
 test('collaboration page has DM section', async ({ page }) => {
   await page.goto('/collaboration');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
-  await expect(page.getByText('Direct Messages', { exact: false })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText('Direct Messages', { exact: true })).toBeVisible({ timeout: 10000 });
 });
 
 test('collaboration page has Archived section', async ({ page }) => {
   await page.goto('/collaboration');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   await expect(page.getByText('Archived', { exact: false })).toBeVisible({ timeout: 10000 });
 });
@@ -214,7 +233,7 @@ test('collaboration page has Archived section', async ({ page }) => {
 
 test('sign out redirects to login', async ({ page }) => {
   await page.goto('/dashboard');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   await page.getByRole('button', { name: /sign out/i }).first().click();
   await page.waitForURL(/\/login/, { timeout: 15000 });

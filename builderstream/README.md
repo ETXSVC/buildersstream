@@ -1,4 +1,4 @@
-# BuilderStream v3.3.0
+# BuilderStream v3.3.2
 
 A full-featured SaaS platform for construction management companies. Covers the entire project lifecycle from lead capture through project closeout, payroll, field operations, and client billing.
 

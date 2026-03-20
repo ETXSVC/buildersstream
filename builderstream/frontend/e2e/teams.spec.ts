@@ -5,14 +5,14 @@ test.use({ storageState: STORAGE_STATE });
 
 test('Company page shows Teams KPI card', async ({ page }) => {
   await page.goto('/company');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   await expect(page.locator('[role="button"]').filter({ hasText: /^Teams/ }).first()).toBeVisible();
 });
 
 test('Teams tab is visible on Company page', async ({ page }) => {
   await page.goto('/company');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   // The tab button shows "Teams (N)"
   await expect(page.getByRole('button', { name: /Teams \(/ })).toBeVisible();
@@ -20,7 +20,7 @@ test('Teams tab is visible on Company page', async ({ page }) => {
 
 test('can switch to Teams tab', async ({ page }) => {
   await page.goto('/company');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   await page.getByRole('button', { name: /Teams \(/ }).click();
 
@@ -32,7 +32,7 @@ test('can create a team', async ({ page }) => {
   const teamName = `E2E Team ${Date.now()}`;
 
   await page.goto('/company');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   await page.getByRole('button', { name: /Teams \(/ }).click();
   await page.getByText('New Team').click();
@@ -48,7 +48,7 @@ test('can expand a team to see members', async ({ page }) => {
   const teamName = `E2E Expand ${Date.now()}`;
 
   await page.goto('/company');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   // Create a team first
   await page.getByRole('button', { name: /Teams \(/ }).click();
@@ -66,7 +66,7 @@ test('can expand a team to see members', async ({ page }) => {
 
 test('Team selector appears in new project modal', async ({ page }) => {
   await page.goto('/projects');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   await page.getByRole('button', { name: '+ New Project' }).click();
 
@@ -76,6 +76,7 @@ test('Team selector appears in new project modal', async ({ page }) => {
 
 test('sidebar shows Team Messaging not Team', async ({ page }) => {
   await page.goto('/dashboard');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   const sidebar = page.locator('aside').first();
   await expect(sidebar.getByText('Team Messaging')).toBeVisible();

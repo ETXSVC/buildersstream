@@ -5,7 +5,7 @@ test.use({ storageState: STORAGE_STATE });
 
 test('Company page loads with KPI cards', async ({ page }) => {
   await page.goto('/company');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   await expect(page.getByRole('heading', { name: 'Company' })).toBeVisible();
   await expect(page.getByText('Total Employees')).toBeVisible();
@@ -16,7 +16,7 @@ test('Company page loads with KPI cards', async ({ page }) => {
 
 test('Company page shows Employees tab by default', async ({ page }) => {
   await page.goto('/company');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   // Employees tab is active by default
   await expect(page.getByRole('button', { name: /Employees/i }).first()).toBeVisible();
@@ -27,7 +27,7 @@ test('Company page shows Employees tab by default', async ({ page }) => {
 
 test('Company page can switch to Contractors tab', async ({ page }) => {
   await page.goto('/company');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   // Use the tab button specifically (not the KPI card div[role=button])
   await page.locator('button').filter({ hasText: /^Contractors \(/ }).click();
@@ -38,7 +38,7 @@ test('Company page can switch to Contractors tab', async ({ page }) => {
 
 test('Company page can switch to Team Members tab', async ({ page }) => {
   await page.goto('/company');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   // Use the tab button specifically (not the KPI card div[role=button])
   await page.locator('button').filter({ hasText: /^Team Members \(/ }).click();
@@ -49,7 +49,7 @@ test('Company page can switch to Team Members tab', async ({ page }) => {
 
 test('Team Members tab shows employee list', async ({ page }) => {
   await page.goto('/company');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   await page.locator('button').filter({ hasText: /^Team Members \(/ }).click();
 
@@ -61,7 +61,7 @@ test('Team Members tab shows employee list', async ({ page }) => {
 
 test('Team Members tab Add Employee modal opens and closes', async ({ page }) => {
   await page.goto('/company');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   await page.locator('button').filter({ hasText: /^Team Members \(/ }).click();
   await page.getByRole('button', { name: 'Add Employee' }).click();
@@ -75,7 +75,7 @@ test('Team Members tab Add Employee modal opens and closes', async ({ page }) =>
 
 test('Team Members KPI card navigates to team members tab', async ({ page }) => {
   await page.goto('/company');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   // Click the "Team Members" KPI card
   await page.locator('[role="button"]').filter({ hasText: /Team Members/i }).first().click();

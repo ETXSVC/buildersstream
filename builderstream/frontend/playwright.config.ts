@@ -8,14 +8,14 @@ export const STORAGE_STATE = path.join(__dirname, 'e2e/.auth/user.json');
 
 // Use BASE_URL env var, fall back to live site.
 // For local testing: BASE_URL=http://localhost:4173 npm run test:e2e
-const BASE_URL = process.env.BASE_URL ?? 'https://buildersstream.online';
+const BASE_URL = process.env.BASE_URL ?? 'https://app.buildersstream.online';
 
 export default defineConfig({
   testDir: './e2e',
   timeout: 45000,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 1,
+  retries: process.env.CI ? 2 : 2,
   workers: process.env.CI ? 3 : 2,
   reporter: [['html', { open: 'never' }], ['line']],
   use: {

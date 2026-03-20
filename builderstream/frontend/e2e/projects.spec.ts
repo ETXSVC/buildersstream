@@ -6,6 +6,7 @@ test.use({ storageState: STORAGE_STATE });
 test.describe('Projects page', () => {
   test('loads projects page with KPI cards', async ({ page }) => {
     await page.goto('/projects');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     await expect(page.locator('[role="button"]').filter({ hasText: /total projects/i }).first()).toBeVisible();
     await expect(page.locator('[role="button"]').filter({ hasText: /^active/i }).first()).toBeVisible();
@@ -15,7 +16,7 @@ test.describe('Projects page', () => {
 
   test('KPI card Total Projects clears filters', async ({ page }) => {
     await page.goto('/projects');
-    await page.waitForLoadState('networkidle');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     // Set a filter first, then click Total Projects to clear it
     await page.getByTitle('Status filter').selectOption('prospect');
@@ -26,7 +27,7 @@ test.describe('Projects page', () => {
 
   test('KPI card Active filters to production projects', async ({ page }) => {
     await page.goto('/projects');
-    await page.waitForLoadState('networkidle');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     await page.locator('[role="button"]').filter({ hasText: /^active/i }).first().click();
 
@@ -37,6 +38,7 @@ test.describe('Projects page', () => {
 
   test('KPI card Health Red filters projects', async ({ page }) => {
     await page.goto('/projects');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     await page.locator('[role="button"]').filter({ hasText: /health.*red/i }).first().click();
 
@@ -47,6 +49,7 @@ test.describe('Projects page', () => {
 
   test('subnav shows Scheduling and Documents links', async ({ page }) => {
     await page.goto('/projects');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     await expect(page.getByRole('link', { name: 'Scheduling' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Documents' })).toBeVisible();
@@ -54,6 +57,7 @@ test.describe('Projects page', () => {
 
   test('can filter by status', async ({ page }) => {
     await page.goto('/projects');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     const statusSelect = page.getByTitle('Status filter');
     await expect(statusSelect).toBeVisible();
@@ -68,7 +72,7 @@ test.describe('Projects page', () => {
 
   test('can filter by health status', async ({ page }) => {
     await page.goto('/projects');
-    await page.waitForLoadState('networkidle');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     const healthSelect = page.getByTitle('Health filter');
     await healthSelect.selectOption('green');
@@ -79,6 +83,7 @@ test.describe('Projects page', () => {
 
   test('search input is visible and accepts text', async ({ page }) => {
     await page.goto('/projects');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     const search = page.getByPlaceholder('Search projects…');
     await expect(search).toBeVisible();
@@ -91,6 +96,7 @@ test.describe('Projects page', () => {
 
   test('can open create project modal', async ({ page }) => {
     await page.goto('/projects');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     await page.getByRole('button', { name: /\+ new project/i }).click();
 
@@ -100,6 +106,7 @@ test.describe('Projects page', () => {
 
   test('create project modal has required fields', async ({ page }) => {
     await page.goto('/projects');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
     await page.getByRole('button', { name: /\+ new project/i }).click();
 
     await expect(page.getByRole('heading', { name: /new project/i })).toBeVisible();
@@ -110,6 +117,7 @@ test.describe('Projects page', () => {
 
   test('create project modal closes on cancel', async ({ page }) => {
     await page.goto('/projects');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
     await page.getByRole('button', { name: /\+ new project/i }).click();
 
     await expect(page.getByRole('heading', { name: /new project/i })).toBeVisible();
@@ -121,7 +129,7 @@ test.describe('Projects page', () => {
 
   test('can create and delete a project', async ({ page }) => {
     await page.goto('/projects');
-    await page.waitForLoadState('networkidle');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     const projectName = `E2E Project ${Date.now()}`;
 
@@ -131,6 +139,13 @@ test.describe('Projects page', () => {
     await page.getByPlaceholder(/johnson kitchen/i).fill(projectName);
     await page.getByTitle('Project type').selectOption('residential_remodel');
     await page.getByPlaceholder('0', { exact: true }).fill('100000');
+
+    // Select first available customer contact (required field)
+    await page.waitForFunction(() => {
+      const sel = document.querySelector('select[title="Client"]') as HTMLSelectElement;
+      return sel && sel.options.length > 1;
+    }, { timeout: 10000 });
+    await page.getByTitle('Client').selectOption({ index: 1 });
 
     await page.getByRole('button', { name: /save|create/i }).click();
 
@@ -152,7 +167,7 @@ test.describe('Projects page', () => {
 
   test('can edit a project name', async ({ page }) => {
     await page.goto('/projects');
-    await page.waitForLoadState('networkidle');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     const projectName = `Edit Test ${Date.now()}`;
 
@@ -161,6 +176,14 @@ test.describe('Projects page', () => {
     await page.getByPlaceholder(/johnson kitchen/i).fill(projectName);
     await page.getByTitle('Project type').selectOption('kitchen_bath');
     await page.getByPlaceholder('0', { exact: true }).fill('50000');
+
+    // Select first available customer contact (required field)
+    await page.waitForFunction(() => {
+      const sel = document.querySelector('select[title="Client"]') as HTMLSelectElement;
+      return sel && sel.options.length > 1;
+    }, { timeout: 10000 });
+    await page.getByTitle('Client').selectOption({ index: 1 });
+
     await page.getByRole('button', { name: /save|create/i }).click();
     await expect(page.getByText(projectName)).toBeVisible({ timeout: 10000 });
 
@@ -189,6 +212,7 @@ test.describe('Projects page', () => {
 
   test('Kanban View link navigates to kanban page', async ({ page }) => {
     await page.goto('/projects');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     await expect(page.getByRole('link', { name: /kanban view/i })).toBeVisible();
     await page.getByRole('link', { name: /kanban view/i }).click();
@@ -197,7 +221,7 @@ test.describe('Projects page', () => {
 
   test('project card links to project detail', async ({ page }) => {
     await page.goto('/projects');
-    await page.waitForLoadState('networkidle');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     const firstCard = page.locator('a[href^="/projects/"]').first();
     if ((await firstCard.count()) === 0) return; // no projects to click
@@ -209,7 +233,7 @@ test.describe('Projects page', () => {
 
   test('status chart renders when projects exist', async ({ page }) => {
     await page.goto('/projects');
-    await page.waitForLoadState('networkidle');
+    await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
     const hasProjects = await page.locator('a[href^="/projects/"]').count();
     if (hasProjects === 0) return;

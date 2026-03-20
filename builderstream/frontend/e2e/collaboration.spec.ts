@@ -5,25 +5,22 @@ test.use({ storageState: STORAGE_STATE });
 
 test('loads collaboration page', async ({ page }) => {
   await page.goto('/collaboration');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
-  // "Channels" section heading is rendered as uppercase text inside the aside
-  await expect(page.getByText('Channels', { exact: false })).toBeVisible();
-
-  // The + button next to "Team Chat" header or a "New Channel" button should be present
-  const plusBtn = page.locator('button[title="New channel"], button').filter({ hasText: '+' }).first();
-  const newChannelBtn = page.getByRole('button', { name: /new channel/i }).first();
-
-  const hasPlusBtn = await plusBtn.isVisible().catch(() => false);
-  const hasNewChannelBtn = await newChannelBtn.isVisible().catch(() => false);
-
-  expect(hasPlusBtn || hasNewChannelBtn).toBe(true);
+  // "Team Chat" header is always rendered in the sidebar (static text)
+  await expect(page.getByText('Team Chat')).toBeVisible({ timeout: 15000 });
 });
 
 test('can open create channel modal', async ({ page }) => {
   await page.goto('/collaboration');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
+
+  // Wait for Team Chat header to confirm page rendered
+  await expect(page.getByText('Team Chat')).toBeVisible({ timeout: 15000 });
 
   // Click the + button with title "New channel" in the Team Chat header
   const newChannelBtn = page.locator('button[title="New channel"]').first();
+  await expect(newChannelBtn).toBeVisible({ timeout: 10000 });
   await newChannelBtn.click();
 
   // Modal should appear with "Create Channel" heading
@@ -35,9 +32,14 @@ test('can open create channel modal', async ({ page }) => {
 
 test('create channel modal closes on cancel', async ({ page }) => {
   await page.goto('/collaboration');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
+
+  // Wait for Team Chat header to confirm page rendered
+  await expect(page.getByText('Team Chat')).toBeVisible({ timeout: 15000 });
 
   // Open the modal
   const newChannelBtn = page.locator('button[title="New channel"]').first();
+  await expect(newChannelBtn).toBeVisible({ timeout: 10000 });
   await newChannelBtn.click();
 
   await expect(page.getByRole('heading', { name: 'Create Channel' })).toBeVisible();
@@ -51,10 +53,14 @@ test('create channel modal closes on cancel', async ({ page }) => {
 
 test('can create a channel', async ({ page }) => {
   await page.goto('/collaboration');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
+
+  // Wait for Team Chat header to confirm page rendered
+  await expect(page.getByText('Team Chat')).toBeVisible({ timeout: 15000 });
 
   // Open the Create Channel modal
   const newChannelBtn = page.locator('button[title="New channel"]').first();
+  await expect(newChannelBtn).toBeVisible({ timeout: 10000 });
   await newChannelBtn.click();
 
   await expect(page.getByRole('heading', { name: 'Create Channel' })).toBeVisible();
@@ -72,17 +78,22 @@ test('can create a channel', async ({ page }) => {
 
 test('subnav shows Issues link', async ({ page }) => {
   await page.goto('/collaboration');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
 
   // SubNav renders NavLinks — find the "Issues" link
-  await expect(page.getByRole('link', { name: 'Issues' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Issues' })).toBeVisible({ timeout: 10000 });
 });
 
 test('can open new DM modal', async ({ page }) => {
   await page.goto('/collaboration');
-  await page.waitForLoadState('networkidle');
+  await page.locator('aside').first().waitFor({ state: 'visible', timeout: 30000 });
+
+  // Wait for Team Chat header to confirm page rendered
+  await expect(page.getByText('Team Chat')).toBeVisible({ timeout: 15000 });
 
   // The + button next to "Direct Messages" section
   const dmPlusBtn = page.locator('button[title="New direct message"]').first();
+  await expect(dmPlusBtn).toBeVisible({ timeout: 10000 });
   await dmPlusBtn.scrollIntoViewIfNeeded();
   await dmPlusBtn.click();
 

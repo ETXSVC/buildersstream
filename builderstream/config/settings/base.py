@@ -296,7 +296,7 @@ SIMPLE_JWT = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "BuilderStream API",
     "DESCRIPTION": "Construction Management Platform API",
-    "VERSION": "3.2.0",
+    "VERSION": "3.3.2",
     "SERVE_INCLUDE_SCHEMA": False,
     "SCHEMA_PATH_PREFIX": "/api/v1/",
     "COMPONENT_SPLIT_REQUEST": True,

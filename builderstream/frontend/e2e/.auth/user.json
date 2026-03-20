@@ -2,20 +2,20 @@
   "cookies": [
     {
       "name": "bs_refresh",
-      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3NDM3NDA2NiwiaWF0IjoxNzczNzY5MjY2LCJqdGkiOiIwMDEzYzJkODI5ZTU0NWZmYjIyODBlNWIxZmMzN2RjNiIsInVzZXJfaWQiOiJkMjc5MmI2Ni1iNTcyLTQzZWUtOGY5NC0yNzYzMzA1ODkxMmYifQ.X9boQpRMSUwH0FYFp_JAae_drMs3aT1xuox2u5WSg7g",
-      "domain": "buildersstream.online",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3NDYyNTYyNCwiaWF0IjoxNzc0MDIwODI0LCJqdGkiOiJlYTNhYjY0NDQyMDQ0MTY1ODljYWRjMDIyMjI0NzE2OSIsInVzZXJfaWQiOiJkMjc5MmI2Ni1iNTcyLTQzZWUtOGY5NC0yNzYzMzA1ODkxMmYifQ.UM5q3NrWQ1eF44HqM5hRN2i6PG6JsdvisvdAX5QpbZs",
+      "domain": "app.buildersstream.online",
       "path": "/api/v1/auth/token/refresh/",
-      "expires": 1774374066.398456,
+      "expires": 1774625624.908941,
       "httpOnly": true,
       "secure": true,
       "sameSite": "Lax"
     },
     {
       "name": "bs_access",
-      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzczNzcxMDY2LCJpYXQiOjE3NzM3NjkyNjYsImp0aSI6IjBkNTEwMTZmZTg4YzRkYWI5MmZhYWUzYTljMmZhMTZlIiwidXNlcl9pZCI6ImQyNzkyYjY2LWI1NzItNDNlZS04Zjk0LTI3NjMzMDU4OTEyZiJ9.CexvYhwISIfF0BG-fptZv6x_wY6JgqXviQ13vUIhXBY",
-      "domain": "buildersstream.online",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzc0MDIyNjI0LCJpYXQiOjE3NzQwMjA4MjQsImp0aSI6ImRmMTI2MDZkNDYxZTQxMmNhMDE4MGE1M2E2M2E5OGU3IiwidXNlcl9pZCI6ImQyNzkyYjY2LWI1NzItNDNlZS04Zjk0LTI3NjMzMDU4OTEyZiJ9.NwuMy5pwHqYky5s77z0D_BivNeqDjPejTYL95OZBuTY",
+      "domain": "app.buildersstream.online",
       "path": "/",
-      "expires": 1773771066.398185,
+      "expires": 1774022624.908717,
       "httpOnly": true,
       "secure": true,
       "sameSite": "Lax"

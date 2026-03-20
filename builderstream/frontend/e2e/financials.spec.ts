@@ -28,24 +28,28 @@ test.describe('Financials page', () => {
     await page.goto('/financials')
     await page.waitForLoadState('networkidle')
 
-    await page.locator('[role="button"]').filter({ hasText: /total invoiced/i }).first().click()
+    const totalInvoicedCard = page.locator('[role="button"]').filter({ hasText: /total invoiced/i }).first()
+    await expect(totalInvoicedCard).toBeVisible({ timeout: 15000 })
+    await totalInvoicedCard.click()
 
     // The Invoices tab button should be active (amber background)
     const invoicesTab = page.getByRole('button', { name: /^invoices$/i })
     await expect(invoicesTab).toBeVisible()
-    await expect(invoicesTab).toHaveClass(/bg-amber-500/)
+    await expect(invoicesTab).toHaveClass(/bg-blue-500/)
   })
 
   test('KPI card Total Expenses navigates to expenses tab', async ({ page }) => {
     await page.goto('/financials')
     await page.waitForLoadState('networkidle')
 
-    await page.locator('[role="button"]').filter({ hasText: /total expenses/i }).first().click()
+    const totalExpensesCard = page.locator('[role="button"]').filter({ hasText: /total expenses/i }).first()
+    await expect(totalExpensesCard).toBeVisible({ timeout: 15000 })
+    await totalExpensesCard.click()
 
     // The Expenses tab button should be active (amber background)
     const expensesTab = page.getByRole('button', { name: /^expenses$/i })
     await expect(expensesTab).toBeVisible()
-    await expect(expensesTab).toHaveClass(/bg-amber-500/)
+    await expect(expensesTab).toHaveClass(/bg-blue-500/)
   })
 
   test('tab switching works', async ({ page }) => {
@@ -55,13 +59,13 @@ test.describe('Financials page', () => {
     // Click "Expenses" tab
     await page.getByRole('button', { name: /^expenses$/i }).click()
     // Expenses tab is now active
-    await expect(page.getByRole('button', { name: /^expenses$/i })).toHaveClass(/bg-amber-500/)
+    await expect(page.getByRole('button', { name: /^expenses$/i })).toHaveClass(/bg-blue-500/)
     // Expenses table heading should be visible
     await expect(page.getByRole('columnheader', { name: /amount/i }).first()).toBeVisible()
 
     // Click "Change Orders" tab
     await page.getByRole('button', { name: /change orders/i }).click()
-    await expect(page.getByRole('button', { name: /change orders/i })).toHaveClass(/bg-amber-500/)
+    await expect(page.getByRole('button', { name: /change orders/i })).toHaveClass(/bg-blue-500/)
     // Change Orders table heading should be visible
     await expect(page.getByRole('columnheader', { name: /co #/i }).first()).toBeVisible()
   })

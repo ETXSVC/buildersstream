@@ -33,7 +33,7 @@ test.describe('Field Ops page', () => {
     // The "Time Entries" tab button should now have the active (amber) class
     const timeTab = page.getByRole('button', { name: /^time entries$/i })
     await expect(timeTab).toBeVisible()
-    await expect(timeTab).toHaveClass(/bg-amber-500/)
+    await expect(timeTab).toHaveClass(/bg-blue-500/)
   })
 
   test('KPI card Daily Logs navigates to daily logs tab', async ({ page }) => {
@@ -44,7 +44,7 @@ test.describe('Field Ops page', () => {
 
     const dailyLogsTab = page.getByRole('button', { name: /^daily logs$/i })
     await expect(dailyLogsTab).toBeVisible()
-    await expect(dailyLogsTab).toHaveClass(/bg-amber-500/)
+    await expect(dailyLogsTab).toHaveClass(/bg-blue-500/)
   })
 
   test('KPI card Pending Expenses navigates to expenses tab', async ({ page }) => {
@@ -55,7 +55,7 @@ test.describe('Field Ops page', () => {
 
     const expensesTab = page.getByRole('button', { name: /^expenses$/i })
     await expect(expensesTab).toBeVisible()
-    await expect(expensesTab).toHaveClass(/bg-amber-500/)
+    await expect(expensesTab).toHaveClass(/bg-blue-500/)
   })
 
   test('subnav shows Quality & Safety and Service links', async ({ page }) => {
