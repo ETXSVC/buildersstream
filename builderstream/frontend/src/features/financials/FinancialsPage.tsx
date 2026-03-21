@@ -581,42 +581,83 @@ function PurchaseOrdersTable({ search }: { search: string }) {
 
 // ─── Modals ───────────────────────────────────────────────────────────────────
 
+type LineItemRow = { description: string; quantity: string; unit: string; unit_price: string };
+const emptyLine = (): LineItemRow => ({ description: '', quantity: '1', unit: '', unit_price: '' });
+
 function InvoiceModal({ invoice, onClose }: { invoice?: Invoice; onClose: () => void }) {
   const { data: projectsData } = useProjects();
   const create = useCreateInvoice();
   const update = useUpdateInvoice();
   const isEdit = !!invoice;
+  const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
     project: invoice?.project ?? '',
-    title: '',
     due_date: invoice?.due_date ?? '',
     status: invoice?.status ?? 'draft',
   });
 
+  const [lines, setLines] = useState<LineItemRow[]>([emptyLine()]);
+
   useEffect(() => {
     setForm({
       project: invoice?.project ?? '',
-      title: '',
       due_date: invoice?.due_date ?? '',
       status: invoice?.status ?? 'draft',
     });
+    setLines([emptyLine()]);
   }, [invoice]);
 
-  function handleSubmit(e: React.FormEvent) {
+  function setLine(i: number, field: keyof LineItemRow, value: string) {
+    setLines((ls) => ls.map((l, idx) => idx === i ? { ...l, [field]: value } : l));
+  }
+
+  const lineTotal = (l: LineItemRow) => {
+    const q = parseFloat(l.quantity) || 0;
+    const p = parseFloat(l.unit_price) || 0;
+    return q * p;
+  };
+
+  const subtotal = lines.reduce((s, l) => s + lineTotal(l), 0);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const payload: Record<string, unknown> = {
-      status: form.status,
-      due_date: form.due_date || null,
-    };
-    if (!isEdit) {
-      if (!form.project) return;
-      payload.project = form.project;
-    }
-    if (isEdit) {
-      update.mutate({ id: invoice.id, payload }, { onSuccess: onClose });
-    } else {
-      create.mutate(payload, { onSuccess: onClose });
+    if (!isEdit && !form.project) return;
+    setSaving(true);
+    try {
+      const payload: Record<string, unknown> = { status: form.status, due_date: form.due_date || null };
+      if (!isEdit) payload.project = form.project;
+
+      const saved: Invoice = await new Promise((resolve, reject) => {
+        if (isEdit) {
+          update.mutate({ id: invoice.id, payload }, { onSuccess: resolve, onError: reject });
+        } else {
+          create.mutate(payload, { onSuccess: resolve, onError: reject });
+        }
+      });
+
+      // POST each non-empty line item then recalculate
+      const validLines = lines.filter((l) => l.description.trim() && parseFloat(l.unit_price) > 0);
+      if (validLines.length > 0) {
+        const { apiClient } = await import('@/api/client');
+        for (let i = 0; i < validLines.length; i++) {
+          const l = validLines[i];
+          await apiClient.post('/api/v1/financials/invoice-line-items/', {
+            invoice: saved.id,
+            description: l.description,
+            quantity: parseFloat(l.quantity) || 1,
+            unit: l.unit,
+            unit_price: parseFloat(l.unit_price),
+            sort_order: i,
+          });
+        }
+        await apiClient.post(`/api/v1/financials/invoices/${saved.id}/recalculate/`);
+      }
+      onClose();
+    } catch {
+      // errors surfaced by react-query toasts
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -625,13 +666,8 @@ function InvoiceModal({ invoice, onClose }: { invoice?: Invoice; onClose: () => 
       <form onSubmit={handleSubmit} className="space-y-4">
         {!isEdit && (
           <Field label="Project *">
-            <select
-              title="Project"
-              required
-              value={form.project}
-              onChange={(e) => setForm((f) => ({ ...f, project: e.target.value }))}
-              className={selectCls}
-            >
+            <select title="Project" required value={form.project}
+              onChange={(e) => setForm((f) => ({ ...f, project: e.target.value }))} className={selectCls}>
               <option value="">Select project…</option>
               {projectsData?.results.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
@@ -640,27 +676,86 @@ function InvoiceModal({ invoice, onClose }: { invoice?: Invoice; onClose: () => 
           </Field>
         )}
         <Field label="Status">
-          <select
-            title="Status"
-            value={form.status}
-            onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-            className={selectCls}
-          >
+          <select title="Status" value={form.status}
+            onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))} className={selectCls}>
             {['draft', 'sent', 'viewed', 'partial', 'paid', 'overdue', 'void'].map((s) => (
               <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
             ))}
           </select>
         </Field>
         <Field label="Due Date">
-          <input
-            type="date"
-            title="Due Date"
-            value={form.due_date}
-            onChange={(e) => setForm((f) => ({ ...f, due_date: e.target.value }))}
-            className={inputCls}
-          />
+          <input type="date" title="Due Date" value={form.due_date}
+            onChange={(e) => setForm((f) => ({ ...f, due_date: e.target.value }))} className={inputCls} />
         </Field>
-        <ModalActions onClose={onClose} isPending={create.isPending || update.isPending} isEdit={isEdit} />
+
+        {/* Line Items */}
+        {!isEdit && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-slate-700">Line Items</label>
+              <button type="button" onClick={() => setLines((ls) => [...ls, emptyLine()])}
+                className="text-xs text-blue-600 hover:text-blue-800 font-medium">+ Add line</button>
+            </div>
+            <div className="rounded-lg border border-slate-200 overflow-hidden">
+              <table className="w-full text-xs">
+                <thead className="bg-slate-50 text-slate-500">
+                  <tr>
+                    <th className="px-2 py-1.5 text-left font-medium w-1/2">Description</th>
+                    <th className="px-2 py-1.5 text-right font-medium w-16">Qty</th>
+                    <th className="px-2 py-1.5 text-left font-medium w-16">Unit</th>
+                    <th className="px-2 py-1.5 text-right font-medium w-24">Unit Price</th>
+                    <th className="px-2 py-1.5 text-right font-medium w-24">Total</th>
+                    <th className="w-6" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {lines.map((l, i) => (
+                    <tr key={i}>
+                      <td className="px-2 py-1">
+                        <input value={l.description} onChange={(e) => setLine(i, 'description', e.target.value)}
+                          placeholder="Description" className="w-full border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1" />
+                      </td>
+                      <td className="px-2 py-1">
+                        <input type="number" min="0" step="any" value={l.quantity} onChange={(e) => setLine(i, 'quantity', e.target.value)}
+                          className="w-full border-0 bg-transparent text-right focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1" />
+                      </td>
+                      <td className="px-2 py-1">
+                        <input value={l.unit} onChange={(e) => setLine(i, 'unit', e.target.value)}
+                          placeholder="ea" className="w-full border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1" />
+                      </td>
+                      <td className="px-2 py-1">
+                        <input type="number" min="0" step="any" value={l.unit_price} onChange={(e) => setLine(i, 'unit_price', e.target.value)}
+                          placeholder="0.00" className="w-full border-0 bg-transparent text-right focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1" />
+                      </td>
+                      <td className="px-2 py-1 text-right text-slate-600">
+                        {lineTotal(l) > 0 ? `$${lineTotal(l).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '—'}
+                      </td>
+                      <td className="px-1">
+                        {lines.length > 1 && (
+                          <button type="button" onClick={() => setLines((ls) => ls.filter((_, idx) => idx !== i))}
+                            className="text-slate-300 hover:text-red-400 font-bold leading-none">×</button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                {subtotal > 0 && (
+                  <tfoot className="bg-slate-50 border-t border-slate-200">
+                    <tr>
+                      <td colSpan={4} className="px-2 py-1.5 text-right text-xs font-medium text-slate-600">Subtotal</td>
+                      <td className="px-2 py-1.5 text-right text-xs font-semibold text-slate-900">
+                        ${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td />
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </div>
+          </div>
+        )}
+
+        <ModalActions onClose={onClose} isPending={saving} isEdit={isEdit} />
       </form>
     </Modal>
   );
