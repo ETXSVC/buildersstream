@@ -8,6 +8,8 @@ import type { ProjectStatus } from '@/types/projects';
 import type { Document } from '@/types/documents';
 import { STATUS_LABELS, STATUS_COLORS, HEALTH_COLORS } from '@/types/projects';
 import { ProjectComments } from './ProjectComments';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@/api/client';
 
 type Tab = 'overview' | 'milestones' | 'team' | 'comments' | 'documents';
 
@@ -375,24 +377,7 @@ export const ProjectDetailPage = () => {
       )}
 
       {tab === 'team' && (
-        <div className="space-y-3">
-          {(!project.team_members || project.team_members.length === 0) ? (
-            <p className="text-sm text-slate-400">No team members assigned.</p>
-          ) : (
-            project.team_members.map((member) => (
-              <div key={member.user_id} className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold text-sm">
-                  {member.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-900">{member.name}</p>
-                  <p className="text-xs text-slate-500">{member.email}</p>
-                </div>
-                <span className="ml-auto text-xs text-slate-400 capitalize">{member.role}</span>
-              </div>
-            ))
-          )}
-        </div>
+        <TeamTab projectId={project.id} />
       )}
 
       {tab === 'comments' && (
@@ -621,6 +606,101 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between text-sm">
       <span className="text-slate-500">{label}</span>
       <span className="font-medium text-slate-900">{value}</span>
+    </div>
+  );
+}
+
+const ROLES = ['member', 'project_manager', 'superintendent', 'foreman', 'estimator', 'safety_officer'];
+
+function TeamTab({ projectId }: { projectId: string }) {
+  const qc = useQueryClient();
+  const [userId, setUserId] = useState('');
+  const [role, setRole] = useState('member');
+  const [adding, setAdding] = useState(false);
+
+  const { data: members, isLoading } = useQuery({
+    queryKey: ['project-team', projectId],
+    queryFn: () => apiClient.get(`/api/v1/projects/${projectId}/team-members/`).then(r => r.data),
+  });
+
+  const { data: memberships } = useQuery({
+    queryKey: ['org-memberships'],
+    queryFn: () => apiClient.get('/api/v1/tenants/memberships/').then(r => r.data?.results ?? r.data),
+  });
+
+  const addMember = useMutation({
+    mutationFn: (payload: { user: string; role: string }) =>
+      apiClient.post(`/api/v1/projects/${projectId}/team-members/`, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['project-team', projectId] });
+      setUserId('');
+      setAdding(false);
+    },
+  });
+
+  const removeMember = useMutation({
+    mutationFn: (uid: string) =>
+      apiClient.delete(`/api/v1/projects/${projectId}/team-members/`, { data: { user: uid } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['project-team', projectId] }),
+  });
+
+  const existingIds = new Set((members ?? []).map((m: any) => m.user));
+  const available = (memberships ?? []).filter((m: any) => !existingIds.has(m.user));
+
+  return (
+    <div className="space-y-3">
+      {/* Add member row */}
+      {adding ? (
+        <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
+          <select value={userId} onChange={(e) => setUserId(e.target.value)}
+            className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Select member…</option>
+            {available.map((m: any) => (
+              <option key={m.user} value={m.user}>{m.user_name || m.user_email || m.user}</option>
+            ))}
+          </select>
+          <select value={role} onChange={(e) => setRole(e.target.value)}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            {ROLES.map(r => <option key={r} value={r}>{r.replace(/_/g, ' ')}</option>)}
+          </select>
+          <button type="button" disabled={!userId || addMember.isPending}
+            onClick={() => addMember.mutate({ user: userId, role })}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+            Add
+          </button>
+          <button type="button" onClick={() => setAdding(false)}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 hover:bg-slate-50">
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <button type="button" onClick={() => setAdding(true)}
+          className="flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-colors">
+          <span className="text-lg leading-none">+</span> Add Team Member
+        </button>
+      )}
+
+      {/* Member list */}
+      {isLoading && <p className="text-sm text-slate-400">Loading…</p>}
+      {!isLoading && (members ?? []).length === 0 && (
+        <p className="text-sm text-slate-400">No team members assigned.</p>
+      )}
+      {(members ?? []).map((member: any) => (
+        <div key={member.id} className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold text-sm">
+            {(member.user_name || '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-900">{member.user_name}</p>
+            <p className="text-xs text-slate-500 capitalize">{member.role?.replace(/_/g, ' ')}</p>
+          </div>
+          <button type="button" onClick={() => removeMember.mutate(member.user)}
+            disabled={removeMember.isPending}
+            className="ml-auto text-xs text-slate-300 hover:text-red-400 transition-colors disabled:opacity-50">
+            Remove
+          </button>
+        </div>
+      ))}
     </div>
   );
 }
