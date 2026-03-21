@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import Gantt from 'frappe-gantt';
 import { fmtDate } from '@/utils/date';
 import { useParams, Link } from 'react-router-dom';
 import { useProject, useUpdateProjectStatus, useUpdateProject } from '@/hooks/useProjects';
@@ -354,7 +355,7 @@ export const ProjectDetailPage = () => {
       )}
 
       {tab === 'milestones' && (
-        <MilestonesTab projectId={project.id} initialMilestones={project.milestones} />
+        <MilestonesTab project={project} initialMilestones={project.milestones} />
       )}
 
       {tab === 'team' && (
@@ -591,8 +592,12 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MilestonesTab({ projectId, initialMilestones }: { projectId: string; initialMilestones: any[] }) {
+function MilestonesTab({ project, initialMilestones }: { project: any; initialMilestones: any[] }) {
+  const projectId = project.id;
   const qc = useQueryClient();
+  const ganttRef = useRef<HTMLDivElement>(null);
+  const ganttInstance = useRef<any>(null);
+  const [viewMode, setViewMode] = useState<'Day' | 'Week' | 'Month'>('Month');
   const [addingName, setAddingName] = useState('');
   const [addingDate, setAddingDate] = useState('');
   const [showAdd, setShowAdd] = useState(false);
@@ -611,7 +616,7 @@ function MilestonesTab({ projectId, initialMilestones }: { projectId: string; in
     onSuccess: invalidate,
   });
 
-  const setDue = useMutation({
+  const patchDue = useMutation({
     mutationFn: ({ id, due_date }: { id: string; due_date: string }) =>
       apiClient.patch(`/api/v1/projects/${projectId}/milestones/${id}/`, { due_date }),
     onSuccess: invalidate,
@@ -629,110 +634,151 @@ function MilestonesTab({ projectId, initialMilestones }: { projectId: string; in
         name: addingName,
         due_date: addingDate || null,
       }),
-    onSuccess: () => {
-      invalidate();
-      setAddingName('');
-      setAddingDate('');
-      setShowAdd(false);
-    },
+    onSuccess: () => { invalidate(); setAddingName(''); setAddingDate(''); setShowAdd(false); },
   });
 
+  // Build + render Gantt whenever milestones or viewMode changes
+  useEffect(() => {
+    if (!ganttRef.current) return;
+    const withDates = (milestones ?? []).filter((m: any) => m.due_date);
+    if (!withDates.length) return;
+
+    // Each milestone = point-in-time: 1-day bar at due_date, preceded by a lead bar from project start
+    const projectStart = project.start_date ?? withDates[0].due_date;
+    const tasks = withDates.map((m: any) => {
+      // Make bar span from project start to due_date (minimum 1 day)
+      const start = projectStart <= m.due_date ? projectStart : m.due_date;
+      return {
+        id: m.id,
+        name: m.name,
+        start,
+        end: m.due_date,
+        progress: m.is_completed ? 100 : 0,
+        custom_class: m.is_completed ? 'milestone-done' : m.is_overdue ? 'milestone-overdue' : 'milestone-upcoming',
+      };
+    });
+
+    ganttRef.current.innerHTML = '';
+    ganttInstance.current = new Gantt(ganttRef.current, tasks, {
+      view_mode: viewMode,
+      date_format: 'YYYY-MM-DD',
+      popup_trigger: 'click',
+      on_date_change: (task: any, _start: Date, end: Date) => {
+        const due = end.toISOString().split('T')[0];
+        patchDue.mutate({ id: task.id, due_date: due });
+      },
+      on_progress_change: () => {},
+      on_click: () => {},
+    });
+
+    return () => { if (ganttRef.current) ganttRef.current.innerHTML = ''; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [milestones, viewMode]);
+
+  useEffect(() => {
+    if (ganttInstance.current) ganttInstance.current.change_view_mode(viewMode);
+  }, [viewMode]);
+
+  const withDates = (milestones ?? []).filter((m: any) => m.due_date);
+  const noDates = (milestones ?? []).filter((m: any) => !m.due_date);
+
   return (
-    <div className="space-y-3">
-      {(milestones ?? []).map((m: any) => (
-        <div key={m.id} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-4">
-          {/* Complete toggle */}
-          <button
-            type="button"
-            onClick={() => toggle.mutate({ id: m.id, is_completed: !m.is_completed })}
-            className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-              m.is_completed
-                ? 'border-green-500 bg-green-500 text-white'
-                : 'border-slate-300 bg-white hover:border-green-400'
-            }`}
-          >
-            {m.is_completed && (
-              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            )}
-          </button>
-
-          {/* Name */}
-          <span className={`flex-1 text-sm font-medium ${m.is_completed ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
-            {m.name}
-          </span>
-
-          {/* Due date */}
-          <input
-            type="date"
-            defaultValue={m.due_date ?? ''}
-            onBlur={(e) => {
-              if (e.target.value !== (m.due_date ?? '')) {
-                setDue.mutate({ id: m.id, due_date: e.target.value });
-              }
-            }}
-            className="rounded border border-slate-200 px-2 py-1 text-xs text-slate-500 focus:border-blue-400 focus:outline-none"
-          />
-
-          {/* Overdue badge */}
-          {m.is_overdue && !m.is_completed && (
-            <span className="text-xs font-medium text-red-500">Overdue</span>
-          )}
-
-          {/* Delete */}
-          <button
-            type="button"
-            onClick={() => deleteMilestone.mutate(m.id)}
-            disabled={deleteMilestone.isPending}
-            className="text-slate-200 hover:text-red-400 transition-colors disabled:opacity-50"
-            title="Delete milestone"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+    <div className="space-y-4">
+      {/* Gantt toolbar */}
+      {withDates.length > 0 && (
+        <div className="flex items-center justify-between">
+          <div className="flex rounded-lg border border-slate-200 bg-white overflow-hidden text-sm">
+            {(['Day', 'Week', 'Month'] as const).map(m => (
+              <button key={m} type="button" onClick={() => setViewMode(m)}
+                className={`px-3 py-1.5 font-medium transition-colors ${viewMode === m ? 'bg-blue-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>
+                {m}
+              </button>
+            ))}
+          </div>
+          <span className="text-xs text-slate-400">Drag bars to change due dates</span>
         </div>
-      ))}
+      )}
+
+      {/* Gantt chart */}
+      {withDates.length > 0 ? (
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <style>{`
+            .milestone-done .bar { fill: #22c55e !important; }
+            .milestone-overdue .bar { fill: #ef4444 !important; }
+            .milestone-upcoming .bar { fill: #3b82f6 !important; }
+            .gantt .bar-label { fill: #fff !important; font-size: 11px !important; }
+            .gantt-container { font-family: inherit !important; }
+          `}</style>
+          <div ref={ganttRef} className="p-2" />
+        </div>
+      ) : (
+        !showAdd && <p className="text-sm text-slate-400">Add milestones with due dates to see the Gantt chart.</p>
+      )}
+
+      {/* Milestone rows (below chart — complete / delete / dates) */}
+      <div className="space-y-2">
+        {(milestones ?? []).map((m: any) => (
+          <div key={m.id} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+            <button type="button"
+              onClick={() => toggle.mutate({ id: m.id, is_completed: !m.is_completed })}
+              className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                m.is_completed ? 'border-green-500 bg-green-500 text-white' : 'border-slate-300 hover:border-green-400'
+              }`}>
+              {m.is_completed && (
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </button>
+
+            <span className={`flex-1 text-sm font-medium ${m.is_completed ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+              {m.name}
+            </span>
+
+            <input type="date" defaultValue={m.due_date ?? ''}
+              onBlur={(e) => { if (e.target.value !== (m.due_date ?? '')) patchDue.mutate({ id: m.id, due_date: e.target.value }); }}
+              className="rounded border border-slate-200 px-2 py-1 text-xs text-slate-500 focus:border-blue-400 focus:outline-none" />
+
+            {m.is_overdue && !m.is_completed && (
+              <span className="text-xs font-medium text-red-500">Overdue</span>
+            )}
+
+            <button type="button" onClick={() => deleteMilestone.mutate(m.id)}
+              disabled={deleteMilestone.isPending}
+              className="text-slate-200 hover:text-red-400 transition-colors">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        ))}
+
+        {noDates.length > 0 && withDates.length > 0 && (
+          <p className="text-xs text-slate-400 pl-1">↑ Set due dates on the rows above to show them in the chart.</p>
+        )}
+      </div>
 
       {/* Add milestone */}
       {showAdd ? (
         <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
-          <input
-            type="text"
-            placeholder="Milestone name…"
-            value={addingName}
+          <input type="text" placeholder="Milestone name…" value={addingName}
             onChange={e => setAddingName(e.target.value)}
-            className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            type="date"
-            value={addingDate}
-            onChange={e => setAddingDate(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="button"
-            disabled={!addingName.trim() || addMilestone.isPending}
+            className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <input type="date" value={addingDate} onChange={e => setAddingDate(e.target.value)}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <button type="button" disabled={!addingName.trim() || addMilestone.isPending}
             onClick={() => addMilestone.mutate()}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
             Add
           </button>
-          <button
-            type="button"
-            onClick={() => setShowAdd(false)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 hover:bg-slate-50"
-          >
+          <button type="button" onClick={() => setShowAdd(false)}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 hover:bg-slate-50">
             Cancel
           </button>
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => setShowAdd(true)}
-          className="flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-colors"
-        >
+        <button type="button" onClick={() => setShowAdd(true)}
+          className="flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-colors">
           <span className="text-lg leading-none">+</span> Add Milestone
         </button>
       )}
