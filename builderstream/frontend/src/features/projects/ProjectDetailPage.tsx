@@ -610,7 +610,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-const ROLES = ['member', 'project_manager', 'superintendent', 'foreman', 'estimator', 'safety_officer'];
+const MEMBER_ROLES = ['member', 'lead', 'foreman', 'superintendent', 'safety_officer', 'estimator'];
 
 function initials(name: string) {
   return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
@@ -618,28 +618,22 @@ function initials(name: string) {
 
 function TeamTab({ projectId }: { projectId: string }) {
   const qc = useQueryClient();
-  const [userId, setUserId] = useState('');
+  const [empId, setEmpId] = useState('');
   const [role, setRole] = useState('member');
   const [adding, setAdding] = useState(false);
   const [teamId, setTeamId] = useState('');
   const [changingTeam, setChangingTeam] = useState(false);
 
-  // Individual project members (ProjectTeamMember — platform users)
-  const { data: members, isLoading: membersLoading } = useQuery({
-    queryKey: ['project-team', projectId],
-    queryFn: () => apiClient.get(`/api/v1/projects/${projectId}/team-members/`).then(r => r.data),
-  });
-
-  // Org memberships — for the "add individual member" dropdown
-  const { data: memberships } = useQuery({
-    queryKey: ['org-memberships'],
-    queryFn: () => apiClient.get('/api/v1/tenants/memberships/').then(r => r.data?.results ?? r.data),
-  });
-
   // All org teams — for the "assign crew team" dropdown
   const { data: teamsData } = useQuery({
     queryKey: ['org-teams'],
     queryFn: () => apiClient.get('/api/v1/teams/').then(r => r.data?.results ?? r.data),
+  });
+
+  // All employees — for the "add member" dropdown
+  const { data: employeesData } = useQuery({
+    queryKey: ['org-employees'],
+    queryFn: () => apiClient.get('/api/v1/payroll/employees/?is_active=true&page_size=500').then(r => r.data?.results ?? r.data),
   });
 
   // Current project (to read project.team / project.team_name)
@@ -653,156 +647,147 @@ function TeamTab({ projectId }: { projectId: string }) {
       apiClient.patch(`/api/v1/projects/${projectId}/`, { team: tid }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['project', projectId] });
+      qc.invalidateQueries({ queryKey: ['org-teams'] });
       setChangingTeam(false);
       setTeamId('');
     },
   });
 
-  const addMember = useMutation({
-    mutationFn: (payload: { user: string; role: string }) =>
-      apiClient.post(`/api/v1/projects/${projectId}/team-members/`, payload),
+  const addEmployee = useMutation({
+    mutationFn: ({ tid, eid, r }: { tid: string; eid: string; r: string }) =>
+      apiClient.post(`/api/v1/teams/${tid}/add-member/`, { employee_id: eid, role: r }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['project-team', projectId] });
-      setUserId('');
+      qc.invalidateQueries({ queryKey: ['org-teams'] });
+      setEmpId('');
       setAdding(false);
     },
   });
 
-  const removeMember = useMutation({
-    mutationFn: (uid: string) =>
-      apiClient.delete(`/api/v1/projects/${projectId}/team-members/`, { data: { user: uid } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['project-team', projectId] }),
+  const removeEmployee = useMutation({
+    mutationFn: ({ tid, eid }: { tid: string; eid: string }) =>
+      apiClient.delete(`/api/v1/teams/${tid}/remove-member/${eid}/`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['org-teams'] }),
   });
 
-  const existingIds = new Set((members ?? []).map((m: any) => m.user));
-  const available = (memberships ?? []).filter((m: any) => !existingIds.has(m.user));
   const teams: any[] = teamsData ?? [];
+  const employees: any[] = employeesData ?? [];
 
-  // Find the full team object to show its employee members
+  // Find the full team object (includes members[] with employees)
   const assignedTeam = project?.team
     ? teams.find((t: any) => t.id === project.team)
     : null;
 
-  return (
-    <div className="space-y-6">
+  const existingEmpIds = new Set((assignedTeam?.members ?? []).map((m: any) => m.employee));
+  const availableEmps = employees.filter((e: any) => !existingEmpIds.has(e.id));
 
-      {/* ── Section 1: Crew Team (teams.Team → payroll.Employee) ── */}
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-700">Crew Team</h3>
-          {!changingTeam && (
-            <button type="button" onClick={() => { setChangingTeam(true); setTeamId(project?.team ?? ''); }}
-              className="text-xs text-blue-600 hover:underline">
-              {project?.team ? 'Change' : 'Assign team'}
-            </button>
+  return (
+    <div className="space-y-4">
+      {/* ── Team assignment ── */}
+      <div className="flex items-center justify-between">
+        <div>
+          {project?.team ? (
+            <span className="text-sm font-medium text-slate-900">{project.team_name}</span>
+          ) : (
+            <span className="text-sm text-slate-400">No team assigned</span>
           )}
         </div>
-
-        {changingTeam ? (
-          <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
-            <select value={teamId} onChange={e => setTeamId(e.target.value)}
-              className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">— No team —</option>
-              {teams.map((t: any) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
-            <button type="button" disabled={assignTeam.isPending}
-              onClick={() => assignTeam.mutate(teamId || null)}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
-              Save
-            </button>
-            <button type="button" onClick={() => setChangingTeam(false)}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 hover:bg-slate-50">
-              Cancel
-            </button>
-          </div>
-        ) : project?.team ? (
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <p className="text-sm font-medium text-slate-900">{project.team_name}</p>
-            {assignedTeam?.members?.length > 0 ? (
-              <div className="mt-3 space-y-2">
-                {assignedTeam.members.map((m: any) => (
-                  <div key={m.id} className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600 font-semibold text-xs">
-                      {initials(m.employee_name || '?')}
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-800">{m.employee_name}</p>
-                      <p className="text-xs text-slate-400 capitalize">{m.role?.replace(/_/g, ' ')}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-2 text-xs text-slate-400">No employees in this team yet.</p>
-            )}
-          </div>
-        ) : (
-          <p className="text-sm text-slate-400">No crew team assigned.</p>
-        )}
-      </div>
-
-      {/* ── Section 2: Individual Members (ProjectTeamMember → platform users) ── */}
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-700">Individual Members</h3>
-        </div>
-
-        {adding ? (
-          <div className="mb-3 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
-            <select value={userId} onChange={(e) => setUserId(e.target.value)}
-              className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">Select member…</option>
-              {available.map((m: any) => (
-                <option key={m.user} value={m.user}>{m.user_full_name || m.user_email || m.user}</option>
-              ))}
-            </select>
-            <select value={role} onChange={(e) => setRole(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-              {ROLES.map(r => <option key={r} value={r}>{r.replace(/_/g, ' ')}</option>)}
-            </select>
-            <button type="button" disabled={!userId || addMember.isPending}
-              onClick={() => addMember.mutate({ user: userId, role })}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
-              Add
-            </button>
-            <button type="button" onClick={() => setAdding(false)}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 hover:bg-slate-50">
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <button type="button" onClick={() => setAdding(true)}
-            className="mb-3 flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-colors">
-            <span className="text-lg leading-none">+</span> Add Member
+        {!changingTeam && (
+          <button type="button" onClick={() => { setChangingTeam(true); setTeamId(project?.team ?? ''); }}
+            className="text-xs text-blue-600 hover:underline">
+            {project?.team ? 'Change team' : 'Assign team'}
           </button>
         )}
-
-        {membersLoading && <p className="text-sm text-slate-400">Loading…</p>}
-        {!membersLoading && (members ?? []).length === 0 && (
-          <p className="text-sm text-slate-400">No individual members assigned.</p>
-        )}
-        <div className="space-y-2">
-          {(members ?? []).map((member: any) => (
-            <div key={member.id} className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold text-sm">
-                {initials(member.user_name || '?')}
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-900">{member.user_name}</p>
-                <p className="text-xs text-slate-500 capitalize">{member.role?.replace(/_/g, ' ')}</p>
-              </div>
-              <button type="button" onClick={() => removeMember.mutate(member.user)}
-                disabled={removeMember.isPending}
-                className="ml-auto text-xs text-slate-300 hover:text-red-400 transition-colors disabled:opacity-50">
-                Remove
-              </button>
-            </div>
-          ))}
-        </div>
       </div>
 
+      {changingTeam && (
+        <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
+          <select value={teamId} onChange={e => setTeamId(e.target.value)}
+            className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">— No team —</option>
+            {teams.map((t: any) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+          <button type="button" disabled={assignTeam.isPending}
+            onClick={() => assignTeam.mutate(teamId || null)}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+            Save
+          </button>
+          <button type="button" onClick={() => setChangingTeam(false)}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 hover:bg-slate-50">
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {/* ── Employee / contractor list ── */}
+      {project?.team && (
+        <>
+          {adding ? (
+            <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
+              <select value={empId} onChange={e => setEmpId(e.target.value)}
+                className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Select employee / contractor…</option>
+                {availableEmps.map((e: any) => (
+                  <option key={e.id} value={e.id}>
+                    {e.full_name || `${e.first_name} ${e.last_name}`}
+                    {e.employment_type === 'contractor' ? ' (contractor)' : ''}
+                    {e.trade ? ` — ${e.trade}` : ''}
+                  </option>
+                ))}
+              </select>
+              <select value={role} onChange={e => setRole(e.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {MEMBER_ROLES.map(r => <option key={r} value={r}>{r.replace(/_/g, ' ')}</option>)}
+              </select>
+              <button type="button" disabled={!empId || addEmployee.isPending}
+                onClick={() => addEmployee.mutate({ tid: project.team, eid: empId, r: role })}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+                Add
+              </button>
+              <button type="button" onClick={() => setAdding(false)}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 hover:bg-slate-50">
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setAdding(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-colors">
+              <span className="text-lg leading-none">+</span> Add Employee / Contractor
+            </button>
+          )}
+
+          <div className="mt-3 space-y-2">
+            {(assignedTeam?.members ?? []).length === 0 && !adding && (
+              <p className="text-sm text-slate-400">No members in this team yet.</p>
+            )}
+            {(assignedTeam?.members ?? []).map((m: any) => (
+              <div key={m.id} className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold text-sm">
+                  {initials(m.employee_name || '?')}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-900">{m.employee_name}</p>
+                  <p className="text-xs text-slate-500 capitalize">
+                    {m.role?.replace(/_/g, ' ')}
+                    {m.employee_trade ? ` · ${m.employee_trade}` : ''}
+                  </p>
+                </div>
+                <button type="button"
+                  onClick={() => removeEmployee.mutate({ tid: project.team, eid: m.employee })}
+                  disabled={removeEmployee.isPending}
+                  className="ml-auto text-xs text-slate-300 hover:text-red-400 transition-colors disabled:opacity-50">
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {!project?.team && !changingTeam && (
+        <p className="text-sm text-slate-400">Assign a team above to manage employees and contractors.</p>
+      )}
     </div>
   );
 }
