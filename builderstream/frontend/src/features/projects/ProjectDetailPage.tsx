@@ -354,26 +354,7 @@ export const ProjectDetailPage = () => {
       )}
 
       {tab === 'milestones' && (
-        <div className="space-y-3">
-          {(!project.milestones || project.milestones.length === 0) ? (
-            <p className="text-sm text-slate-400">No milestones yet.</p>
-          ) : (
-            project.milestones.map((m) => (
-              <div key={m.id} className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4">
-                <div className="flex items-center gap-3">
-                  <div className={`h-3 w-3 rounded-full ${
-                    m.status === 'completed' ? 'bg-green-500' : m.is_overdue ? 'bg-red-500' : 'bg-blue-400'
-                  }`} />
-                  <span className="text-sm font-medium text-slate-900">{m.name}</span>
-                </div>
-                <div className="flex items-center gap-4 text-xs text-slate-500">
-                  {m.due_date && <span>Due {fmtDate(m.due_date)}</span>}
-                  {m.is_overdue && <span className="text-red-500 font-medium">Overdue</span>}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+        <MilestonesTab projectId={project.id} initialMilestones={project.milestones} />
       )}
 
       {tab === 'team' && (
@@ -606,6 +587,155 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between text-sm">
       <span className="text-slate-500">{label}</span>
       <span className="font-medium text-slate-900">{value}</span>
+    </div>
+  );
+}
+
+function MilestonesTab({ projectId, initialMilestones }: { projectId: string; initialMilestones: any[] }) {
+  const qc = useQueryClient();
+  const [addingName, setAddingName] = useState('');
+  const [addingDate, setAddingDate] = useState('');
+  const [showAdd, setShowAdd] = useState(false);
+
+  const { data: milestones } = useQuery({
+    queryKey: ['project-milestones', projectId],
+    queryFn: () => apiClient.get(`/api/v1/projects/${projectId}/milestones/`).then(r => r.data),
+    initialData: initialMilestones,
+  });
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['project-milestones', projectId] });
+
+  const toggle = useMutation({
+    mutationFn: ({ id, is_completed }: { id: string; is_completed: boolean }) =>
+      apiClient.patch(`/api/v1/projects/${projectId}/milestones/${id}/`, { is_completed }),
+    onSuccess: invalidate,
+  });
+
+  const setDue = useMutation({
+    mutationFn: ({ id, due_date }: { id: string; due_date: string }) =>
+      apiClient.patch(`/api/v1/projects/${projectId}/milestones/${id}/`, { due_date }),
+    onSuccess: invalidate,
+  });
+
+  const deleteMilestone = useMutation({
+    mutationFn: (id: string) =>
+      apiClient.delete(`/api/v1/projects/${projectId}/milestones/${id}/`),
+    onSuccess: invalidate,
+  });
+
+  const addMilestone = useMutation({
+    mutationFn: () =>
+      apiClient.post(`/api/v1/projects/${projectId}/milestones/`, {
+        name: addingName,
+        due_date: addingDate || null,
+      }),
+    onSuccess: () => {
+      invalidate();
+      setAddingName('');
+      setAddingDate('');
+      setShowAdd(false);
+    },
+  });
+
+  return (
+    <div className="space-y-3">
+      {(milestones ?? []).map((m: any) => (
+        <div key={m.id} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-4">
+          {/* Complete toggle */}
+          <button
+            type="button"
+            onClick={() => toggle.mutate({ id: m.id, is_completed: !m.is_completed })}
+            className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+              m.is_completed
+                ? 'border-green-500 bg-green-500 text-white'
+                : 'border-slate-300 bg-white hover:border-green-400'
+            }`}
+          >
+            {m.is_completed && (
+              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </button>
+
+          {/* Name */}
+          <span className={`flex-1 text-sm font-medium ${m.is_completed ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+            {m.name}
+          </span>
+
+          {/* Due date */}
+          <input
+            type="date"
+            defaultValue={m.due_date ?? ''}
+            onBlur={(e) => {
+              if (e.target.value !== (m.due_date ?? '')) {
+                setDue.mutate({ id: m.id, due_date: e.target.value });
+              }
+            }}
+            className="rounded border border-slate-200 px-2 py-1 text-xs text-slate-500 focus:border-blue-400 focus:outline-none"
+          />
+
+          {/* Overdue badge */}
+          {m.is_overdue && !m.is_completed && (
+            <span className="text-xs font-medium text-red-500">Overdue</span>
+          )}
+
+          {/* Delete */}
+          <button
+            type="button"
+            onClick={() => deleteMilestone.mutate(m.id)}
+            disabled={deleteMilestone.isPending}
+            className="text-slate-200 hover:text-red-400 transition-colors disabled:opacity-50"
+            title="Delete milestone"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      ))}
+
+      {/* Add milestone */}
+      {showAdd ? (
+        <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
+          <input
+            type="text"
+            placeholder="Milestone name…"
+            value={addingName}
+            onChange={e => setAddingName(e.target.value)}
+            className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="date"
+            value={addingDate}
+            onChange={e => setAddingDate(e.target.value)}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="button"
+            disabled={!addingName.trim() || addMilestone.isPending}
+            onClick={() => addMilestone.mutate()}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            Add
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowAdd(false)}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowAdd(true)}
+          className="flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-colors"
+        >
+          <span className="text-lg leading-none">+</span> Add Milestone
+        </button>
+      )}
     </div>
   );
 }

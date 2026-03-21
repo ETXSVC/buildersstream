@@ -160,6 +160,34 @@ class ProjectViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @action(
+        detail=True,
+        methods=["patch", "delete"],
+        url_path=r"milestones/(?P<milestone_pk>[^/.]+)",
+    )
+    def milestone_detail(self, request, pk=None, milestone_pk=None):
+        project = self.get_object()
+        try:
+            milestone = ProjectMilestone.objects.get(pk=milestone_pk, project=project)
+        except ProjectMilestone.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.method == "DELETE":
+            milestone.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        # PATCH — handle is_completed toggle auto-setting completed_date
+        data = request.data.copy()
+        if "is_completed" in data and data["is_completed"] and not milestone.completed_date:
+            data.setdefault("completed_date", timezone.now().date().isoformat())
+        elif "is_completed" in data and not data["is_completed"]:
+            data["completed_date"] = None
+
+        serializer = MilestoneSerializer(milestone, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
     # -- Custom action: project activity ----------------------------------
     @action(detail=True, methods=["get"], url_path="activity")
     def activity(self, request, pk=None):
