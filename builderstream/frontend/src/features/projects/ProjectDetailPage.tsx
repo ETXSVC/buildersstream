@@ -637,21 +637,29 @@ function MilestonesTab({ project, initialMilestones }: { project: any; initialMi
     onSuccess: () => { invalidate(); setAddingName(''); setAddingDate(''); setShowAdd(false); },
   });
 
-  // Build + render Gantt whenever milestones or viewMode changes
+  // Stable ref so on_date_change closure never goes stale
+  const patchDueRef = useRef(patchDue.mutate);
+  useEffect(() => { patchDueRef.current = patchDue.mutate; });
+
+  // Local date string without UTC shift (toISOString shifts by timezone)
+  const toLocalDate = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+  // Build + render Gantt whenever milestones changes
   useEffect(() => {
     if (!ganttRef.current) return;
     const withDates = (milestones ?? []).filter((m: any) => m.due_date);
     if (!withDates.length) return;
 
-    // Each milestone = point-in-time: 1-day bar at due_date, preceded by a lead bar from project start
-    const projectStart = project.start_date ?? withDates[0].due_date;
+    // Each milestone = 14-day bar ending on due_date (gives each its own position on the timeline)
     const tasks = withDates.map((m: any) => {
-      // Make bar span from project start to due_date (minimum 1 day)
-      const start = projectStart <= m.due_date ? projectStart : m.due_date;
+      const due = new Date(m.due_date + 'T12:00:00'); // noon to avoid DST edge cases
+      const start = new Date(due);
+      start.setDate(start.getDate() - 13);
       return {
         id: m.id,
         name: m.name,
-        start,
+        start: toLocalDate(start),
         end: m.due_date,
         progress: m.is_completed ? 100 : 0,
         custom_class: m.is_completed ? 'milestone-done' : m.is_overdue ? 'milestone-overdue' : 'milestone-upcoming',
@@ -664,19 +672,18 @@ function MilestonesTab({ project, initialMilestones }: { project: any; initialMi
       date_format: 'YYYY-MM-DD',
       popup_trigger: 'click',
       on_date_change: (task: any, _start: Date, end: Date) => {
-        const due = end.toISOString().split('T')[0];
-        patchDue.mutate({ id: task.id, due_date: due });
+        patchDueRef.current({ id: task.id, due_date: toLocalDate(end) });
       },
       on_progress_change: () => {},
       on_click: () => {},
     });
-
-    return () => { if (ganttRef.current) ganttRef.current.innerHTML = ''; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [milestones, viewMode]);
+  }, [milestones]);
 
+  // Switch view mode on existing instance (no rebuild needed)
   useEffect(() => {
-    if (ganttInstance.current) ganttInstance.current.change_view_mode(viewMode);
+    if (!ganttInstance.current) return;
+    ganttInstance.current.change_view_mode(viewMode);
   }, [viewMode]);
 
   const withDates = (milestones ?? []).filter((m: any) => m.due_date);
