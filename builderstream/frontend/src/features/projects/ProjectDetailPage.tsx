@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import Gantt from 'frappe-gantt';
 import { fmtDate } from '@/utils/date';
 import { useParams, Link } from 'react-router-dom';
 import { useProject, useUpdateProjectStatus, useUpdateProject } from '@/hooks/useProjects';
@@ -595,9 +594,6 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function MilestonesTab({ project, initialMilestones }: { project: any; initialMilestones: any[] }) {
   const projectId = project.id;
   const qc = useQueryClient();
-  const ganttRef = useRef<HTMLDivElement>(null);
-  const ganttInstance = useRef<any>(null);
-  const [viewMode, setViewMode] = useState<'Day' | 'Week' | 'Month'>('Month');
   const [addingName, setAddingName] = useState('');
   const [addingDate, setAddingDate] = useState('');
   const [showAdd, setShowAdd] = useState(false);
@@ -637,133 +633,168 @@ function MilestonesTab({ project, initialMilestones }: { project: any; initialMi
     onSuccess: () => { invalidate(); setAddingName(''); setAddingDate(''); setShowAdd(false); },
   });
 
-  // Stable ref so on_date_change closure never goes stale
-  const patchDueRef = useRef(patchDue.mutate);
-  useEffect(() => { patchDueRef.current = patchDue.mutate; });
+  const list: any[] = milestones ?? [];
 
-  // Local date string without UTC shift (toISOString shifts by timezone)
-  const toLocalDate = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  // --- Gantt calculation ---
+  // Sort milestones that have due dates
+  const dated = [...list.filter(m => m.due_date)].sort(
+    (a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
+  );
 
-  // Build + render Gantt whenever milestones changes
-  useEffect(() => {
-    if (!ganttRef.current) return;
-    const withDates = (milestones ?? []).filter((m: any) => m.due_date);
-    if (!withDates.length) return;
+  // Timeline bounds: project start → project estimated completion (or ±padding around milestones)
+  const d = (s: string) => new Date(s + 'T12:00:00').getTime();
+  const pad = 14 * 24 * 3600 * 1000; // 14 days padding
+  const tStart = dated.length
+    ? (project.start_date ? Math.min(d(project.start_date), d(dated[0].due_date) - pad) : d(dated[0].due_date) - pad)
+    : 0;
+  const tEnd = dated.length
+    ? (project.estimated_completion
+        ? Math.max(d(project.estimated_completion), d(dated[dated.length - 1].due_date) + pad)
+        : d(dated[dated.length - 1].due_date) + pad)
+    : 0;
+  const tSpan = tEnd - tStart || 1;
 
-    // Each milestone = 14-day bar ending on due_date (gives each its own position on the timeline)
-    const tasks = withDates.map((m: any) => {
-      const due = new Date(m.due_date + 'T12:00:00'); // noon to avoid DST edge cases
-      const start = new Date(due);
-      start.setDate(start.getDate() - 13);
-      return {
-        id: m.id,
-        name: m.name,
-        start: toLocalDate(start),
-        end: m.due_date,
-        progress: m.is_completed ? 100 : 0,
-        custom_class: m.is_completed ? 'milestone-done' : m.is_overdue ? 'milestone-overdue' : 'milestone-upcoming',
-      };
-    });
+  // Generate month header labels
+  const monthLabels: { label: string; pct: number }[] = [];
+  if (dated.length) {
+    const cur = new Date(tStart);
+    cur.setDate(1);
+    while (cur.getTime() < tEnd) {
+      const pct = ((cur.getTime() - tStart) / tSpan) * 100;
+      monthLabels.push({
+        label: cur.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+        pct,
+      });
+      cur.setMonth(cur.getMonth() + 1);
+    }
+  }
 
-    ganttRef.current.innerHTML = '';
-    ganttInstance.current = new Gantt(ganttRef.current, tasks, {
-      view_mode: viewMode,
-      date_format: 'YYYY-MM-DD',
-      popup_trigger: 'click',
-      on_date_change: (task: any, _start: Date, end: Date) => {
-        patchDueRef.current({ id: task.id, due_date: toLocalDate(end) });
-      },
-      on_progress_change: () => {},
-      on_click: () => {},
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [milestones]);
-
-  // Switch view mode on existing instance (no rebuild needed)
-  useEffect(() => {
-    if (!ganttInstance.current) return;
-    ganttInstance.current.change_view_mode(viewMode);
-  }, [viewMode]);
-
-  const withDates = (milestones ?? []).filter((m: any) => m.due_date);
-  const noDates = (milestones ?? []).filter((m: any) => !m.due_date);
+  const pct = (date: string) => Math.min(100, Math.max(0, ((d(date) - tStart) / tSpan) * 100));
 
   return (
     <div className="space-y-4">
-      {/* Gantt toolbar */}
-      {withDates.length > 0 && (
-        <div className="flex items-center justify-between">
-          <div className="flex rounded-lg border border-slate-200 bg-white overflow-hidden text-sm">
-            {(['Day', 'Week', 'Month'] as const).map(m => (
-              <button key={m} type="button" onClick={() => setViewMode(m)}
-                className={`px-3 py-1.5 font-medium transition-colors ${viewMode === m ? 'bg-blue-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>
-                {m}
-              </button>
+      {/* Gantt chart */}
+      {dated.length > 0 ? (
+        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+          {/* Month header */}
+          <div className="relative h-7 border-b border-slate-100 bg-slate-50">
+            {monthLabels.map((ml, i) => (
+              <span key={i} className="absolute top-1 text-[10px] text-slate-400 font-medium"
+                style={{ left: `calc(${ml.pct}% + 4px)` }}>
+                {ml.label}
+              </span>
             ))}
           </div>
-          <span className="text-xs text-slate-400">Drag bars to change due dates</span>
-        </div>
-      )}
 
-      {/* Gantt chart */}
-      {withDates.length > 0 ? (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-          <style>{`
-            .milestone-done .bar { fill: #22c55e !important; }
-            .milestone-overdue .bar { fill: #ef4444 !important; }
-            .milestone-upcoming .bar { fill: #3b82f6 !important; }
-            .gantt .bar-label { fill: #fff !important; font-size: 11px !important; }
-            .gantt-container { font-family: inherit !important; }
-          `}</style>
-          <div ref={ganttRef} className="p-2" />
+          {/* Milestone rows */}
+          <div className="divide-y divide-slate-50">
+            {dated.map((m) => {
+              const barEnd = pct(m.due_date);
+              const color = m.is_completed
+                ? 'bg-green-400'
+                : m.is_overdue
+                ? 'bg-red-400'
+                : 'bg-blue-400';
+              return (
+                <div key={m.id} className="flex items-center gap-3 px-4 py-2.5 group hover:bg-slate-50">
+                  {/* Completion toggle */}
+                  <button type="button"
+                    onClick={() => toggle.mutate({ id: m.id, is_completed: !m.is_completed })}
+                    className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                      m.is_completed ? 'border-green-500 bg-green-500 text-white' : 'border-slate-300 hover:border-green-400'
+                    }`}>
+                    {m.is_completed && (
+                      <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+
+                  {/* Name label */}
+                  <span className={`w-36 flex-shrink-0 truncate text-xs font-medium ${m.is_completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}
+                    title={m.name}>
+                    {m.name}
+                  </span>
+
+                  {/* Bar track */}
+                  <div className="relative flex-1 h-5 rounded bg-slate-100">
+                    {/* Bar fills from left to due date */}
+                    <div
+                      className={`absolute inset-y-0 left-0 rounded ${color} flex items-center justify-end pr-1.5 transition-all`}
+                      style={{ width: `${barEnd}%`, minWidth: '2px' }}>
+                    </div>
+                    {/* Diamond marker at due date */}
+                    <div
+                      className={`absolute top-0.5 h-4 w-4 rotate-45 rounded-sm ${color} border-2 border-white shadow-sm`}
+                      style={{ left: `calc(${barEnd}% - 8px)` }}
+                    />
+                  </div>
+
+                  {/* Date picker */}
+                  <input type="date" defaultValue={m.due_date}
+                    onBlur={(e) => { if (e.target.value && e.target.value !== m.due_date) patchDue.mutate({ id: m.id, due_date: e.target.value }); }}
+                    className="w-28 flex-shrink-0 rounded border border-slate-200 px-2 py-0.5 text-xs text-slate-500 focus:border-blue-400 focus:outline-none" />
+
+                  {/* Delete */}
+                  <button type="button" onClick={() => deleteMilestone.mutate(m.id)}
+                    className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-400 transition-all">
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Today marker */}
+          {(() => {
+            const todayPct = pct(new Date().toISOString().split('T')[0]);
+            if (todayPct < 0 || todayPct > 100) return null;
+            return (
+              <div className="pointer-events-none absolute inset-y-0" style={{ left: `calc(${todayPct}% + 144px + 3rem)` }}>
+                <div className="h-full w-px bg-red-400 opacity-60" />
+              </div>
+            );
+          })()}
         </div>
       ) : (
-        !showAdd && <p className="text-sm text-slate-400">Add milestones with due dates to see the Gantt chart.</p>
+        !showAdd && (
+          <p className="text-sm text-slate-400">
+            Set due dates on milestones below to see the Gantt chart.
+          </p>
+        )
       )}
 
-      {/* Milestone rows (below chart — complete / delete / dates) */}
-      <div className="space-y-2">
-        {(milestones ?? []).map((m: any) => (
-          <div key={m.id} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
-            <button type="button"
-              onClick={() => toggle.mutate({ id: m.id, is_completed: !m.is_completed })}
-              className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-                m.is_completed ? 'border-green-500 bg-green-500 text-white' : 'border-slate-300 hover:border-green-400'
-              }`}>
-              {m.is_completed && (
-                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </button>
-
-            <span className={`flex-1 text-sm font-medium ${m.is_completed ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
-              {m.name}
-            </span>
-
-            <input type="date" defaultValue={m.due_date ?? ''}
-              onBlur={(e) => { if (e.target.value !== (m.due_date ?? '')) patchDue.mutate({ id: m.id, due_date: e.target.value }); }}
-              className="rounded border border-slate-200 px-2 py-1 text-xs text-slate-500 focus:border-blue-400 focus:outline-none" />
-
-            {m.is_overdue && !m.is_completed && (
-              <span className="text-xs font-medium text-red-500">Overdue</span>
-            )}
-
-            <button type="button" onClick={() => deleteMilestone.mutate(m.id)}
-              disabled={deleteMilestone.isPending}
-              className="text-slate-200 hover:text-red-400 transition-colors">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+      {/* Milestones without dates */}
+      {list.filter(m => !m.due_date).map((m: any) => (
+        <div key={m.id} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 group">
+          <button type="button"
+            onClick={() => toggle.mutate({ id: m.id, is_completed: !m.is_completed })}
+            className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+              m.is_completed ? 'border-green-500 bg-green-500 text-white' : 'border-slate-300 hover:border-green-400'
+            }`}>
+            {m.is_completed && (
+              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
-            </button>
-          </div>
-        ))}
-
-        {noDates.length > 0 && withDates.length > 0 && (
-          <p className="text-xs text-slate-400 pl-1">↑ Set due dates on the rows above to show them in the chart.</p>
-        )}
-      </div>
+            )}
+          </button>
+          <span className={`flex-1 text-sm font-medium ${m.is_completed ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+            {m.name}
+          </span>
+          <input type="date" defaultValue=""
+            onBlur={(e) => { if (e.target.value) patchDue.mutate({ id: m.id, due_date: e.target.value }); }}
+            className="rounded border border-slate-200 px-2 py-1 text-xs text-slate-400 focus:border-blue-400 focus:outline-none"
+            placeholder="Set date" />
+          <button type="button" onClick={() => deleteMilestone.mutate(m.id)}
+            className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-400 transition-all">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      ))}
 
       {/* Add milestone */}
       {showAdd ? (
