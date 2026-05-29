@@ -1,1 +1,0 @@
-export { IssuesPage } from './IssuesPage';
