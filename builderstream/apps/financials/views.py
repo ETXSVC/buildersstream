@@ -1,0 +1,758 @@
+"""Financial Management Suite — ViewSets and report views."""
+import logging
+from datetime import date
+from decimal import Decimal
+
+from django.db.models import F
+from django.http import HttpResponse
+from django.utils import timezone
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from apps.core.mixins import TenantViewSetMixin
+from apps.core.permissions import IsOrganizationAdmin, IsOrganizationMember, role_required
+from apps.tenants.context import get_current_organization
+
+from .models import (
+    DunningRule,
+    DunningEvent,
+    Budget,
+    ChangeOrder,
+    ChangeOrderLineItem,
+    CostCode,
+    Expense,
+    Invoice,
+    InvoiceLineItem,
+    Payment,
+    PurchaseOrder,
+    PurchaseOrderLineItem,
+)
+from .serializers import (
+    BudgetListSerializer,
+    BudgetSerializer,
+    ChangeOrderCreateSerializer,
+    ChangeOrderLineItemCreateSerializer,
+    ChangeOrderLineItemSerializer,
+    ChangeOrderListSerializer,
+    ChangeOrderSerializer,
+    CostCodeListSerializer,
+    CostCodeSerializer,
+    ExpenseCreateSerializer,
+    ExpenseListSerializer,
+    ExpenseSerializer,
+    InvoiceCreateSerializer,
+    InvoiceLineItemCreateSerializer,
+    InvoiceLineItemSerializer,
+    InvoiceListSerializer,
+    InvoiceSerializer,
+    PaymentCreateSerializer,
+    PaymentSerializer,
+    PurchaseOrderCreateSerializer,
+    PurchaseOrderLineItemCreateSerializer,
+    PurchaseOrderLineItemSerializer,
+    PurchaseOrderListSerializer,
+    PurchaseOrderSerializer,
+)
+from .services import (
+    ChangeOrderService,
+    InvoicingService,
+    JobCostingService,
+    PurchaseOrderService,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class CostCodeViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
+    """CRUD for cost codes (CSI MasterFormat classification)."""
+
+    queryset = CostCode.objects.all()
+    permission_classes = [IsOrganizationMember]
+    filterset_fields = ["division", "is_labor", "is_active"]
+    search_fields = ["code", "name"]
+    ordering_fields = ["division", "code", "name"]
+    ordering = ["division", "code"]
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return CostCodeListSerializer
+        return CostCodeSerializer
+
+
+class BudgetViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
+    """CRUD for project budget lines."""
+
+    queryset = Budget.objects.select_related("project", "cost_code")
+    permission_classes = [IsOrganizationMember]
+    filterset_fields = ["project", "budget_type", "cost_code"]
+    ordering = ["project", "cost_code"]
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return BudgetListSerializer
+        return BudgetSerializer
+
+    @action(detail=False, methods=["get"], url_path="summary")
+    def summary(self, request):
+        """GET /budgets/summary/?project_id=<uuid> — job cost summary."""
+        project_id = request.query_params.get("project_id")
+        if not project_id:
+            return Response({"detail": "project_id query param required."}, status=400)
+
+        from apps.projects.models import Project
+        try:
+            project = Project.objects.get(pk=project_id)
+        except Project.DoesNotExist:
+            return Response({"detail": "Project not found."}, status=404)
+
+        data = JobCostingService.get_project_cost_summary(project)
+        return Response(data)
+
+    @action(detail=False, methods=["post"], url_path="sync-actuals")
+    def sync_actuals(self, request):
+        """POST /budgets/sync-actuals/?project_id=<uuid> — sync expense actuals to budget lines."""
+        project_id = request.data.get("project_id") or request.query_params.get("project_id")
+        if not project_id:
+            return Response({"detail": "project_id required."}, status=400)
+
+        from apps.projects.models import Project
+        try:
+            project = Project.objects.get(pk=project_id)
+        except Project.DoesNotExist:
+            return Response({"detail": "Project not found."}, status=404)
+
+        JobCostingService.update_budget_actuals(project)
+        return Response({"detail": "Budget actuals synced."})
+
+
+class ExpenseViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
+    """CRUD for project expenses with approval workflow."""
+
+    queryset = Expense.objects.select_related("project", "cost_code", "submitted_by", "approved_by")
+    permission_classes = [IsOrganizationMember]
+    filterset_fields = ["project", "expense_type", "approval_status", "cost_code"]
+    search_fields = ["description", "vendor_name"]
+    ordering_fields = ["expense_date", "amount", "approval_status"]
+    ordering = ["-expense_date"]
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return ExpenseListSerializer
+        if self.action == "create":
+            return ExpenseCreateSerializer
+        return ExpenseSerializer
+
+    def perform_create(self, serializer):
+        org_id = self.get_organization()
+        serializer.save(
+            organization_id=org_id,
+            submitted_by=self.request.user,
+            created_by=self.request.user,
+        )
+
+    @action(detail=True, methods=["post"], url_path="approve")
+    def approve(self, request, pk=None):
+        """POST /expenses/{pk}/approve/ — approve an expense."""
+        expense = self.get_object()
+        expense.approval_status = "approved"
+        expense.approved_by = request.user
+        expense.approved_at = timezone.now()
+        expense.save(update_fields=["approval_status", "approved_by", "approved_at", "updated_at"])
+
+        # Sync actuals on the related budget line
+        if expense.budget_line:
+            JobCostingService.update_budget_actuals(expense.project)
+
+        return Response(ExpenseSerializer(expense, context=self.get_serializer_context()).data)
+
+    @action(detail=True, methods=["post"], url_path="reject")
+    def reject(self, request, pk=None):
+        """POST /expenses/{pk}/reject/ — reject an expense."""
+        expense = self.get_object()
+        expense.approval_status = "rejected"
+        expense.save(update_fields=["approval_status", "updated_at"])
+        return Response(ExpenseSerializer(expense, context=self.get_serializer_context()).data)
+
+
+class InvoiceViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
+    """CRUD for client invoices."""
+
+    queryset = Invoice.objects.select_related("project", "client", "created_by").prefetch_related("line_items")
+    permission_classes = [IsOrganizationMember]
+    filterset_fields = ["project", "status", "invoice_type", "client"]
+    search_fields = ["invoice_number", "sent_to_email"]
+    ordering_fields = ["issue_date", "due_date", "total", "status"]
+    ordering = ["-created_at"]
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return InvoiceListSerializer
+        if self.action == "create":
+            return InvoiceCreateSerializer
+        return InvoiceSerializer
+
+    def perform_create(self, serializer):
+        org_id = self.get_organization()
+        from apps.tenants.models import Organization
+        org = Organization.objects.get(pk=org_id)
+        invoice_number = InvoicingService.generate_invoice_number(org)
+        serializer.save(
+            organization_id=org_id,
+            invoice_number=invoice_number,
+            created_by=self.request.user,
+        )
+
+    def create(self, request, *args, **kwargs):
+        """Override to return full InvoiceSerializer (with id, public_token) on create."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        response_data = InvoiceSerializer(
+            serializer.instance, context=self.get_serializer_context()
+        ).data
+        headers = self.get_success_headers(response_data)
+        return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
+
+    @action(detail=True, methods=["post"], url_path="send")
+    def send_invoice(self, request, pk=None):
+        """POST /invoices/{pk}/send/ — mark invoice as sent."""
+        invoice = self.get_object()
+        recipient = request.data.get("email") or invoice.sent_to_email
+        if not recipient and invoice.client:
+            recipient = invoice.client.email or ""
+        InvoicingService.mark_sent(invoice, recipient, user=request.user)
+        return Response(InvoiceSerializer(invoice, context=self.get_serializer_context()).data)
+
+    @action(detail=True, methods=["post"], url_path="record-payment")
+    def record_payment(self, request, pk=None):
+        """POST /invoices/{pk}/record-payment/ — record a payment against an invoice."""
+        invoice = self.get_object()
+        serializer = PaymentCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        payment = InvoicingService.record_payment(
+            invoice=invoice,
+            amount=serializer.validated_data["amount"],
+            payment_date=serializer.validated_data["payment_date"],
+            payment_method=serializer.validated_data.get("payment_method", "check"),
+            reference_number=serializer.validated_data.get("reference_number", ""),
+            notes=serializer.validated_data.get("notes", ""),
+            recorded_by=request.user,
+        )
+        return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"], url_path="recalculate")
+    def recalculate(self, request, pk=None):
+        """POST /invoices/{pk}/recalculate/ — recalculate totals from line items."""
+        invoice = self.get_object()
+        InvoicingService.recalculate_invoice(invoice)
+        return Response(InvoiceSerializer(invoice, context=self.get_serializer_context()).data)
+
+    @action(detail=True, methods=["get"], url_path="export-pdf")
+    def export_pdf(self, request, pk=None):
+        """GET /invoices/{pk}/export-pdf/ — download invoice as PDF."""
+        from .services import InvoiceExportService
+
+        invoice = self.get_object()
+        pdf_buffer = InvoiceExportService.generate_invoice_pdf(invoice)
+        response = HttpResponse(pdf_buffer.read(), content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'attachment; filename="Invoice_{invoice.invoice_number}.pdf"'
+        )
+        return response
+
+    @action(detail=True, methods=["get"], url_path="generate-aia")
+    def generate_aia(self, request, pk=None):
+        """GET /invoices/{pk}/generate-aia/?form=g702|g703
+        Download AIA G702 Application for Payment or G703 Continuation Sheet PDF.
+        Only valid for invoice_type='progress' invoices.
+        """
+        from .services import AIABillingService
+
+        invoice = self.get_object()
+        if invoice.invoice_type != "progress":
+            return Response(
+                {"detail": "AIA billing forms are only available for Progress Billing invoices."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        form = request.query_params.get("form", "g702").lower()
+        if form == "g703":
+            pdf_buffer = AIABillingService.generate_g703(invoice)
+            filename = f"AIA_G703_{invoice.invoice_number}.pdf"
+        else:
+            pdf_buffer = AIABillingService.generate_g702(invoice)
+            filename = f"AIA_G702_{invoice.invoice_number}.pdf"
+
+        response = HttpResponse(pdf_buffer.read(), content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+    @action(detail=True, methods=["post"], url_path="send-email")
+    def send_email(self, request, pk=None):
+        """POST /invoices/{pk}/send-email/ — send invoice PDF to client via email (async)."""
+        from .tasks import send_invoice_email as send_invoice_email_task
+
+        invoice = self.get_object()
+        recipient = request.data.get("email") or ""
+        if not recipient and invoice.client:
+            recipient = invoice.client.email or ""
+        if not recipient:
+            return Response({"detail": "Recipient email required."}, status=400)
+
+        public_url = request.build_absolute_uri(
+            f"/api/v1/financials/public/invoices/{invoice.public_token}/"
+        )
+        InvoicingService.mark_sent(invoice, recipient, user=request.user)
+        send_invoice_email_task.delay(str(invoice.pk), recipient, public_url)
+        return Response({"detail": f"Invoice email queued for {recipient}."})
+
+
+class InvoiceLineItemViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
+    """CRUD for invoice line items."""
+
+    queryset = InvoiceLineItem.objects.select_related("invoice", "cost_code")
+    permission_classes = [IsOrganizationMember]
+    filterset_fields = ["invoice"]
+    ordering = ["sort_order"]
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return InvoiceLineItemCreateSerializer
+        return InvoiceLineItemSerializer
+
+    def get_queryset(self):
+        # Filter by invoices belonging to the org
+        org_id = self.get_organization()
+        return InvoiceLineItem.objects.filter(invoice__organization_id=org_id).select_related("invoice", "cost_code")
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        # Recalculate invoice totals after adding line item
+        InvoicingService.recalculate_invoice(instance.invoice)
+
+    def perform_destroy(self, instance):
+        invoice = instance.invoice
+        instance.delete()
+        InvoicingService.recalculate_invoice(invoice)
+
+
+class PaymentViewSet(TenantViewSetMixin, viewsets.ReadOnlyModelViewSet):
+    """Read-only ViewSet for payments (create via InvoiceViewSet.record_payment)."""
+
+    queryset = Payment.objects.select_related("invoice", "project", "recorded_by")
+    serializer_class = PaymentSerializer
+    permission_classes = [IsOrganizationMember]
+    filterset_fields = ["invoice", "project", "payment_method"]
+    ordering = ["-payment_date"]
+
+
+class ChangeOrderViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
+    """CRUD for change orders."""
+
+    queryset = ChangeOrder.objects.select_related("project", "client", "created_by").prefetch_related("line_items")
+    permission_classes = [IsOrganizationMember]
+    filterset_fields = ["project", "status", "client"]
+    search_fields = ["title", "description"]
+    ordering_fields = ["number", "cost_impact", "submitted_date", "status"]
+    ordering = ["project", "number"]
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return ChangeOrderListSerializer
+        if self.action == "create":
+            return ChangeOrderCreateSerializer
+        return ChangeOrderSerializer
+
+    def perform_create(self, serializer):
+        org_id = self.get_organization()
+        project = serializer.validated_data["project"]
+        number = ChangeOrderService.get_next_co_number(project)
+        serializer.save(
+            organization_id=org_id,
+            number=number,
+            created_by=self.request.user,
+        )
+
+    @action(detail=True, methods=["post"], url_path="submit")
+    def submit(self, request, pk=None):
+        """POST /change-orders/{pk}/submit/ — submit CO to client."""
+        co = self.get_object()
+        ChangeOrderService.submit_change_order(co, request.user)
+        return Response(ChangeOrderSerializer(co, context=self.get_serializer_context()).data)
+
+    @action(detail=True, methods=["post"], url_path="approve")
+    def approve(self, request, pk=None):
+        """POST /change-orders/{pk}/approve/ — approve CO and update project value."""
+        co = self.get_object()
+        approved_by_name = request.data.get("approved_by_name", "")
+        ChangeOrderService.approve_change_order(co, approved_by_name, request.user)
+        return Response(ChangeOrderSerializer(co, context=self.get_serializer_context()).data)
+
+    @action(detail=True, methods=["post"], url_path="reject")
+    def reject(self, request, pk=None):
+        """POST /change-orders/{pk}/reject/ — reject CO."""
+        co = self.get_object()
+        reason = request.data.get("reason", "")
+        ChangeOrderService.reject_change_order(co, reason, request.user)
+        return Response(ChangeOrderSerializer(co, context=self.get_serializer_context()).data)
+
+    @action(detail=True, methods=["post"], url_path="recalculate")
+    def recalculate(self, request, pk=None):
+        """POST /change-orders/{pk}/recalculate/ — recalculate cost_impact from line items."""
+        co = self.get_object()
+        ChangeOrderService.recalculate_cost_impact(co)
+        return Response(ChangeOrderSerializer(co, context=self.get_serializer_context()).data)
+
+
+class ChangeOrderLineItemViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
+    """CRUD for change order line items."""
+
+    queryset = ChangeOrderLineItem.objects.select_related("change_order", "cost_code")
+    permission_classes = [IsOrganizationMember]
+    filterset_fields = ["change_order"]
+    ordering = ["sort_order"]
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return ChangeOrderLineItemCreateSerializer
+        return ChangeOrderLineItemSerializer
+
+    def get_queryset(self):
+        org_id = self.get_organization()
+        return ChangeOrderLineItem.objects.filter(
+            change_order__organization_id=org_id
+        ).select_related("change_order", "cost_code")
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        ChangeOrderService.recalculate_cost_impact(instance.change_order)
+
+    def perform_destroy(self, instance):
+        co = instance.change_order
+        instance.delete()
+        ChangeOrderService.recalculate_cost_impact(co)
+
+
+class PurchaseOrderViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
+    """CRUD for purchase orders."""
+
+    queryset = PurchaseOrder.objects.select_related("project", "created_by").prefetch_related("line_items")
+    permission_classes = [IsOrganizationMember]
+    filterset_fields = ["project", "status", "vendor_name"]
+    search_fields = ["po_number", "vendor_name"]
+    ordering_fields = ["po_number", "issue_date", "total", "status"]
+    ordering = ["-created_at"]
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return PurchaseOrderListSerializer
+        if self.action == "create":
+            return PurchaseOrderCreateSerializer
+        return PurchaseOrderSerializer
+
+    def perform_create(self, serializer):
+        org_id = self.get_organization()
+        from apps.tenants.models import Organization
+        org = Organization.objects.get(pk=org_id)
+        po_number = PurchaseOrderService.generate_po_number(org)
+        serializer.save(
+            organization_id=org_id,
+            po_number=po_number,
+            created_by=self.request.user,
+        )
+
+    @action(detail=True, methods=["post"], url_path="receive")
+    def receive(self, request, pk=None):
+        """POST /purchase-orders/{pk}/receive/ — record received quantities per line item.
+
+        Body: { "line_items": { "<line_item_id>": <quantity>, ... } }
+        """
+        po = self.get_object()
+        received = request.data.get("line_items", {})
+        PurchaseOrderService.receive_line_items(po, received, user=request.user)
+        return Response(PurchaseOrderSerializer(po, context=self.get_serializer_context()).data)
+
+    @action(detail=True, methods=["post"], url_path="recalculate")
+    def recalculate(self, request, pk=None):
+        """POST /purchase-orders/{pk}/recalculate/ — recalculate totals from line items."""
+        po = self.get_object()
+        PurchaseOrderService.recalculate_po_totals(po)
+        return Response(PurchaseOrderSerializer(po, context=self.get_serializer_context()).data)
+
+
+class PurchaseOrderLineItemViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
+    """CRUD for PO line items."""
+
+    queryset = PurchaseOrderLineItem.objects.select_related("purchase_order", "cost_code")
+    permission_classes = [IsOrganizationMember]
+    filterset_fields = ["purchase_order"]
+    ordering = ["sort_order"]
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return PurchaseOrderLineItemCreateSerializer
+        return PurchaseOrderLineItemSerializer
+
+    def get_queryset(self):
+        org_id = self.get_organization()
+        return PurchaseOrderLineItem.objects.filter(
+            purchase_order__organization_id=org_id
+        ).select_related("purchase_order", "cost_code")
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        PurchaseOrderService.recalculate_po_totals(instance.purchase_order)
+
+    def perform_destroy(self, instance):
+        po = instance.purchase_order
+        instance.delete()
+        PurchaseOrderService.recalculate_po_totals(po)
+
+
+# ─────────────────────────────────────────────────────────────────────────── #
+#  Report Views                                                               #
+# ─────────────────────────────────────────────────────────────────────────── #
+
+class JobCostReportView(APIView):
+    """GET /financials/reports/job-cost/?project_id=<uuid>
+
+    Returns a full job cost summary comparing budgeted vs actual amounts
+    across all cost codes for a single project.
+    """
+
+    permission_classes = [IsOrganizationMember]
+
+    def get(self, request):
+        project_id = request.query_params.get("project_id")
+        if not project_id:
+            return Response({"detail": "project_id query param required."}, status=400)
+
+        from apps.projects.models import Project
+        try:
+            project = Project.objects.get(pk=project_id)
+        except Project.DoesNotExist:
+            return Response({"detail": "Project not found."}, status=404)
+
+        data = JobCostingService.get_project_cost_summary(project)
+        return Response(data)
+
+
+class CashFlowForecastView(APIView):
+    """GET /financials/reports/cash-flow/?months=6
+
+    Returns a month-by-month cash flow forecast for the organization.
+    """
+
+    permission_classes = [IsOrganizationMember]
+
+    def get(self, request):
+        try:
+            months = int(request.query_params.get("months", 6))
+            months = max(1, min(months, 24))
+        except (ValueError, TypeError):
+            months = 6
+
+        org = get_current_organization()
+        if not org:
+            return Response({"detail": "No organization context."}, status=400)
+
+        data = JobCostingService.get_cash_flow_forecast(org, months=months)
+        return Response({"months": months, "forecast": data})
+
+
+# ─────────────────────────────────────────────────────────────────────────── #
+#  Public (unauthenticated) Invoice Views                                     #
+# ─────────────────────────────────────────────────────────────────────────── #
+
+class PublicInvoiceView(APIView):
+    """Client-facing invoice view — no authentication required.
+
+    GET  /financials/public/invoices/{public_token}/
+         Returns invoice details safe for client consumption.
+         Increments view_count and sets viewed_at on first view.
+
+    GET  /financials/public/invoices/{public_token}/pdf/
+         Download invoice as PDF.
+    """
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def get(self, request, public_token):
+        try:
+            invoice = (
+                Invoice.objects.select_related("project", "client", "organization")
+                .prefetch_related("line_items")
+                .get(public_token=public_token)
+            )
+        except Invoice.DoesNotExist:
+            return Response({"detail": "Invoice not found."}, status=404)
+
+        if invoice.status == "void":
+            return Response({"detail": "This invoice has been voided."}, status=410)
+
+        # Track view
+        if invoice.viewed_at is None:
+            invoice.viewed_at = timezone.now()
+            invoice.save(update_fields=["viewed_at"])
+
+        Invoice.objects.filter(pk=invoice.pk).update(view_count=F("view_count") + 1)
+
+        # Upgrade status from "sent" → "viewed"
+        if invoice.status == "sent":
+            Invoice.objects.filter(pk=invoice.pk).update(status="viewed")
+            invoice.status = "viewed"
+
+        line_items = [
+            {
+                "description": item.description,
+                "quantity": str(item.quantity),
+                "unit": item.unit,
+                "unit_price": str(item.unit_price),
+                "line_total": str(item.line_total),
+                "cost_code": item.cost_code_id and str(item.cost_code_id),
+            }
+            for item in invoice.line_items.all()
+        ]
+
+        data = {
+            "invoice_number": invoice.invoice_number,
+            "invoice_type": invoice.get_invoice_type_display(),
+            "status": invoice.status,
+            "organization_name": invoice.organization.name,
+            "project_name": str(invoice.project),
+            "client_name": (
+                f"{invoice.client.first_name} {invoice.client.last_name}"
+                if invoice.client
+                else ""
+            ),
+            "issue_date": invoice.issue_date,
+            "due_date": invoice.due_date,
+            "subtotal": str(invoice.subtotal),
+            "tax_rate": str(invoice.tax_rate),
+            "tax_amount": str(invoice.tax_amount),
+            "retainage_percent": str(invoice.retainage_percent),
+            "retainage_amount": str(invoice.retainage_amount),
+            "total": str(invoice.total),
+            "amount_paid": str(invoice.amount_paid),
+            "balance_due": str(invoice.balance_due),
+            "terms": invoice.terms,
+            "notes": invoice.notes,
+            "is_paid": invoice.status == "paid",
+            "line_items": line_items,
+            "public_token": str(invoice.public_token),
+        }
+        return Response(data)
+
+
+class InvoicePaymentView(APIView):
+    """Create a Stripe PaymentIntent so clients can pay invoices online.
+
+    POST /financials/public/invoices/{public_token}/pay/
+         Returns { client_secret, amount, currency }.
+         Frontend uses Stripe.js to complete the payment.
+    """
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request, public_token):
+        try:
+            invoice = Invoice.objects.select_related("organization").get(
+                public_token=public_token
+            )
+        except Invoice.DoesNotExist:
+            return Response({"detail": "Invoice not found."}, status=404)
+
+        if invoice.status in ("paid", "void"):
+            return Response(
+                {"detail": "Invoice is already paid or void."}, status=400
+            )
+        if invoice.balance_due <= 0:
+            return Response({"detail": "No balance due on this invoice."}, status=400)
+
+        import stripe
+        from django.conf import settings as django_settings
+
+        stripe.api_key = django_settings.STRIPE_SECRET_KEY
+
+        try:
+            # Retrieve existing PaymentIntent if we already created one
+            if invoice.stripe_payment_intent_id:
+                try:
+                    pi = stripe.PaymentIntent.retrieve(invoice.stripe_payment_intent_id)
+                    if pi.status not in ("succeeded", "canceled", "requires_payment_method"):
+                        return Response({
+                            "client_secret": pi.client_secret,
+                            "amount": float(invoice.balance_due),
+                            "currency": "usd",
+                        })
+                except stripe.error.InvalidRequestError:
+                    pass  # create a fresh one below
+
+            pi = stripe.PaymentIntent.create(
+                amount=int(invoice.balance_due * Decimal("100")),  # cents
+                currency="usd",
+                metadata={
+                    "invoice_id": str(invoice.pk),
+                    "invoice_number": invoice.invoice_number,
+                    "organization_id": str(invoice.organization_id),
+                },
+                description=f"Invoice #{invoice.invoice_number} – {invoice.organization.name}",
+            )
+
+            Invoice.objects.filter(pk=invoice.pk).update(
+                stripe_payment_intent_id=pi.id
+            )
+
+            return Response({
+                "client_secret": pi.client_secret,
+                "amount": float(invoice.balance_due),
+                "currency": "usd",
+            })
+
+        except stripe.error.StripeError as exc:
+            logger.error(
+                "Stripe PaymentIntent error for invoice %s: %s",
+                invoice.invoice_number,
+                str(exc),
+            )
+            return Response(
+                {"detail": "Payment service temporarily unavailable."}, status=503
+            )
+
+class DunningRuleViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
+    """Dunning rule management (admin only)."""
+
+    queryset = DunningRule.objects.all()
+    permission_classes = [IsOrganizationAdmin]
+    filterset_fields = ["is_active", "action_type"]
+    ordering = ["days_past_due"]
+
+    def get_serializer_class(self):
+        from .serializers import DunningRuleSerializer
+        return DunningRuleSerializer
+
+
+class DunningEventViewSet(TenantViewSetMixin, viewsets.ReadOnlyModelViewSet):
+    """Read-only dunning event log."""
+
+    queryset = DunningEvent.objects.none()
+    permission_classes = [IsOrganizationAdmin]
+    ordering = ["-triggered_at"]
+
+    def get_queryset(self):
+        org = getattr(self.request, "organization", None)
+        if org:
+            return DunningEvent.objects.filter(
+                invoice__organization=org
+            ).select_related("invoice", "rule")
+        return DunningEvent.objects.none()
+
+    def get_serializer_class(self):
+        from .serializers import DunningEventSerializer
+        return DunningEventSerializer

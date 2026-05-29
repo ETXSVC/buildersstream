@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+  }
+}
+
+/* ── Branding CSS variable defaults ─────────────────────────────── */
+:root {
+  --color-primary: #3B82F6;
+  --color-primary-dark: #2563EB;
+  --color-accent: #1e293b;
+  --color-sidebar-bg: #0f172a;
+  --color-sidebar-text: #f8fafc;
+  --font-family: Inter, sans-serif;
+}
+
+/* Applied by useApplyBranding — elements that respond to org branding */
+.bs-sidebar {
+  background-color: var(--color-sidebar-bg);
+  color: var(--color-sidebar-text);
+}
+
+.bs-sidebar-link-active {
+  background-color: rgba(var(--color-primary-rgb, 59 130 246), 0.15);
+  color: var(--color-primary);
+}
+
+.bs-sidebar-link-active:hover {
+  background-color: rgba(var(--color-primary-rgb, 59 130 246), 0.22);
+}
+
+.bs-primary-icon {
+  background-color: var(--color-primary);
+}
+
+@layer utilities {
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* ── Frappe Gantt overrides ─────────────────────────────────────── */
+.gantt-container .bar-wrapper .bar {
+  fill: #3B82F6; /* blue-500 */
+}
+.gantt-container .bar-wrapper.gantt-critical .bar {
+  fill: #ef4444; /* red-500 */
+}
+.gantt-container .bar-progress {
+  fill: #2563EB; /* blue-600 */
+}
+.gantt-container .bar-wrapper.gantt-critical .bar-progress {
+  fill: #dc2626; /* red-600 */
+}
+.gantt-container .bar-label {
+  font-family: inherit;
+  font-size: 11px;
+}

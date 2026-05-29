@@ -1,0 +1,348 @@
+"""Tenant views."""
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from apps.core.permissions import ROLE_HIERARCHY, IsOrganizationAdmin, IsOrganizationOwner
+
+from .models import ActiveModule, Organization, OrganizationMembership
+from .serializers import (
+    InviteMemberSerializer,
+    ModuleActivationSerializer,
+    OrganizationMembershipSerializer,
+    OrganizationSerializer,
+)
+
+User = get_user_model()
+
+
+class OrganizationViewSet(viewsets.ModelViewSet):
+    """CRUD for organizations.
+
+    - Any authenticated user can create an org (becomes OWNER automatically).
+    - Only OWNER/ADMIN can update.
+    - Members can retrieve their own orgs.
+    """
+
+    queryset = Organization.objects.all()
+    serializer_class = OrganizationSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = "slug"
+
+    def get_queryset(self):
+        """Only return organizations the user belongs to."""
+        if self.request.user.is_staff:
+            return Organization.objects.all()
+        return Organization.objects.filter(
+            memberships__user=self.request.user,
+            memberships__is_active=True,
+        ).distinct()
+
+    def get_permissions(self):
+        if self.action in ("update", "partial_update", "destroy"):
+            return [IsAuthenticated(), IsOrganizationAdmin()]
+        return [IsAuthenticated()]
+
+    def perform_create(self, serializer):
+        """Auto-assign the creating user as OWNER.
+
+        The post_save signal handles membership creation, default module
+        activation, and Stripe customer setup.
+        """
+        serializer.save(owner=self.request.user)
+
+
+class MembershipViewSet(viewsets.ModelViewSet):
+    """Manage organization memberships.
+
+    - List members of the current organization.
+    - Invite new members (sends email placeholder).
+    - Update roles, deactivate members.
+    - Enforces max_users limit from subscription.
+    """
+
+    queryset = OrganizationMembership.objects.select_related("user", "organization")
+    serializer_class = OrganizationMembershipSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        org = getattr(self.request, "organization", None)
+        if org:
+            return self.queryset.filter(organization=org)
+        return self.queryset.none()
+
+    def get_permissions(self):
+        if self.action in ("create", "update", "partial_update", "destroy", "invite"):
+            return [IsAuthenticated(), IsOrganizationAdmin()]
+        return [IsAuthenticated()]
+
+    def _requester_role_level(self, org):
+        """Return the numeric hierarchy level of the requesting user in *org*."""
+        role = (
+            self.request.user.memberships.filter(organization=org, is_active=True)
+            .values_list("role", flat=True)
+            .first()
+        )
+        return ROLE_HIERARCHY.get(role, 0), role
+
+    def perform_update(self, serializer):
+        """Enforce role-hierarchy rules on membership updates.
+
+        - An admin cannot modify a member whose role is >= their own.
+        - An admin cannot promote a member to a role above their own.
+        """
+        from rest_framework.exceptions import PermissionDenied
+
+        target = serializer.instance
+        org = target.organization
+        requester_level, requester_role = self._requester_role_level(org)
+        target_level = ROLE_HIERARCHY.get(target.role, 0)
+
+        # Cannot touch a peer or superior
+        if target_level >= requester_level:
+            raise PermissionDenied(
+                "You cannot modify a member with an equal or higher role than your own."
+            )
+
+        # Cannot promote beyond own level
+        new_role = serializer.validated_data.get("role", target.role)
+        new_level = ROLE_HIERARCHY.get(new_role, 0)
+        if new_level > requester_level:
+            raise PermissionDenied(
+                f"You cannot assign a role higher than your own ({requester_role})."
+            )
+
+        serializer.save()
+
+    @action(detail=False, methods=["post"])
+    def invite(self, request):
+        """Invite a new member by email."""
+        serializer = InviteMemberSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        org = request.organization
+        if not org:
+            return Response(
+                {"detail": "No active organization."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Enforce max_users
+        current_count = org.memberships.filter(is_active=True).count()
+        if current_count >= org.max_users:
+            return Response(
+                {"detail": f"Organization has reached the maximum of {org.max_users} users."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        email = serializer.validated_data["email"]
+        role = serializer.validated_data["role"]
+
+        # Enforce role hierarchy: cannot invite with a role higher than your own
+        requester_level, requester_role = self._requester_role_level(org)
+        if ROLE_HIERARCHY.get(role, 0) > requester_level:
+            return Response(
+                {"detail": f"You cannot invite a member with a role higher than your own ({requester_role})."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Find or note the user
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # In production, send an invitation email here
+            return Response(
+                {"detail": f"Invitation will be sent to {email}."},
+                status=status.HTTP_202_ACCEPTED,
+            )
+
+        # Check for existing membership
+        membership, created = OrganizationMembership.objects.get_or_create(
+            user=user,
+            organization=org,
+            defaults={
+                "role": role,
+                "invited_by": request.user,
+                "invited_at": timezone.now(),
+            },
+        )
+
+        if not created:
+            if membership.is_active:
+                return Response(
+                    {"detail": "User is already a member of this organization."},
+                    status=status.HTTP_409_CONFLICT,
+                )
+            # Reactivate
+            membership.is_active = True
+            membership.role = role
+            membership.invited_by = request.user
+            membership.invited_at = timezone.now()
+            membership.save()
+
+        return Response(
+            OrganizationMembershipSerializer(membership).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class ModuleViewSet(viewsets.ModelViewSet):
+    """List and manage active modules for the organization."""
+
+    queryset = ActiveModule.objects.all()
+    serializer_class = ModuleActivationSerializer
+    permission_classes = [IsAuthenticated, IsOrganizationAdmin]
+
+    def get_queryset(self):
+        org = getattr(self.request, "organization", None)
+        if org:
+            return self.queryset.filter(organization=org)
+        return self.queryset.none()
+
+    def perform_create(self, serializer):
+        serializer.save(organization=self.request.organization)
+
+    def perform_update(self, serializer):
+        instance = self.get_object()
+        # Prevent deactivating always-active modules
+        if instance.module_key in ActiveModule.ALWAYS_ACTIVE:
+            serializer.validated_data["is_active"] = True
+        serializer.save()
+
+
+class SwitchOrganizationView(APIView):
+    """Allow users to switch their active organization context."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        org_id = request.data.get("organization_id")
+        if not org_id:
+            return Response(
+                {"detail": "organization_id is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate membership
+        try:
+            membership = OrganizationMembership.objects.select_related("organization").get(
+                user=request.user,
+                organization_id=org_id,
+                is_active=True,
+            )
+        except OrganizationMembership.DoesNotExist:
+            return Response(
+                {"detail": "You are not a member of this organization."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if not membership.organization.is_active:
+            return Response(
+                {"detail": "This organization is no longer active."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Update user's last active organization
+        request.user.last_active_organization = membership.organization
+        request.user.save(update_fields=["last_active_organization"])
+
+        return Response(
+            {"detail": "Switched organization.", "organization": OrganizationSerializer(membership.organization).data},
+            status=status.HTTP_200_OK,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Branding
+# ---------------------------------------------------------------------------
+
+class BrandingView(APIView):
+    """
+    GET  /api/v1/tenants/branding/ — public: return branding for current org (CSS vars + logo)
+    PUT  /api/v1/tenants/branding/ — admin only: save branding settings
+    """
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsOrganizationAdmin()]
+
+    def get(self, request):
+        from apps.tenants.models import OrganizationBranding
+        org = getattr(request, "organization", None)
+        if not org:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            branding = org.branding
+        except OrganizationBranding.DoesNotExist:
+            # Return defaults
+            return Response({
+                "company_name": org.name,
+                "logo_url": None,
+                "favicon_url": None,
+                "css_variables": {
+                    "--color-primary": "#f59e0b",
+                    "--color-primary-dark": "#d97706",
+                    "--color-accent": "#1e293b",
+                    "--color-sidebar-bg": "#0f172a",
+                    "--color-sidebar-text": "#f8fafc",
+                    "--font-family": "Inter, sans-serif",
+                },
+                "custom_css": "",
+                "support_email": "",
+                "support_phone": "",
+                "portal_welcome_message": "",
+            })
+
+        return Response({
+            "company_name": branding.company_name_override or org.name,
+            "logo_url": branding.logo.url if branding.logo else None,
+            "favicon_url": branding.favicon.url if branding.favicon else None,
+            "css_variables": branding.to_css_variables(),
+            "custom_css": branding.custom_css,
+            "support_email": branding.support_email,
+            "support_phone": branding.support_phone,
+            "portal_welcome_message": branding.portal_welcome_message,
+        })
+
+    def put(self, request):
+        from apps.tenants.models import OrganizationBranding
+        org = getattr(request, "organization", None)
+        if not org:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        branding, _ = OrganizationBranding.objects.get_or_create(organization=org)
+
+        updateable_fields = [
+            "company_name_override", "primary_color", "primary_dark",
+            "accent_color", "sidebar_bg", "sidebar_text", "font_family",
+            "custom_css", "support_email", "support_phone", "portal_welcome_message",
+        ]
+        for field in updateable_fields:
+            if field in request.data:
+                setattr(branding, field, request.data[field])
+
+        # Handle logo/favicon file uploads
+        if "logo" in request.FILES:
+            branding.logo = request.FILES["logo"]
+        if "favicon" in request.FILES:
+            branding.favicon = request.FILES["favicon"]
+
+        branding.save()
+
+        # Log the change
+        from apps.core.models import AuditLog
+        AuditLog.log(
+            action=AuditLog.Action.ORG_SETTINGS_CHANGED,
+            user=request.user,
+            org=org,
+            ip_address=request.META.get("REMOTE_ADDR"),
+            details={"changed": "branding"},
+        )
+
+        return Response({"detail": "Branding saved."}, status=status.HTTP_200_OK)
